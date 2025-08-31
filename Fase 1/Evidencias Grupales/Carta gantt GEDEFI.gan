@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="GEDEFI" company="" webLink="http://" view-date="2025-08-10" view-index="0" gantt-divider-location="351" resource-divider-location="300" version="3.3.3316" locale="es_ES">
+    <description/>
+    <view zooming-state="default:2" id="gantt-chart">
+        <field id="tpd3" name="Nombre" width="200" order="0"/>
+        <field id="tpd4" name="Fecha de inicio" width="75" order="1"/>
+        <field id="tpd5" name="Fecha de fin" width="75" order="2"/>
+        <field id="tpd15" name="Notas" width="20" order="3"/>
+        <option id="filter.completedTasks" value="false"/>
+        <option id="filter.dueTodayTasks" value="false"/>
+        <option id="filter.overdueTasks" value="false"/>
+        <option id="filter.inProgressTodayTasks" value="false"/>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Nombre" width="210" order="0"/>
+        <field id="1" name="Función" width="86" order="1"/>
+    </view>
+    <!-- -->
+    <calendars>
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="0"/>
+            <only-show-weekends value="false"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="9" uid="c112b457bda9407db0146cd6ddcad788" name="GEDEFI" meeting="false" start="2025-08-11" duration="88" complete="0" expand="true">
+            <task id="0" uid="ce57e5e36256418f9e67636b43d3a1d2" name="Inicio de proyecto" meeting="false" start="2025-08-11" duration="18" complete="0" expand="true">
+                <task id="10" uid="b5978addd1d04ae69ea999c96db34016" name="Documento de especificación de requisitos" meeting="false" start="2025-08-11" duration="6" complete="0" expand="true">
+                    <depend id="13" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="13" uid="3d41179e9683486987b245479fa2c332" name="Documento de alcance y visión" meeting="false" start="2025-08-18" duration="6" complete="0" expand="true">
+                    <depend id="12" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="12" uid="92b0d863c7eb48bfb885c810254816da" name="Presupuesto" meeting="false" start="2025-08-25" duration="6" complete="0" expand="true">
+                    <depend id="14" type="2" difference="0" hardness="Strong"/>
+                </task>
+            </task>
+            <task id="1" uid="106f5d6c8c504c38be4b839d6ece5d17" name="Diseño" meeting="false" start="2025-09-01" duration="6" complete="0" expand="true">
+                <task id="14" uid="dfad83c49f1942dca16f19504ffcb5fd" name="Mockups de interfaces" meeting="false" start="2025-09-01" duration="3" complete="0" expand="true">
+                    <depend id="15" type="2" difference="0" hardness="Strong"/>
+                    <depend id="16" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="15" uid="925ed9ff055140d99291f3cb0cc71063" name="Documento de arquitectura de software" meeting="false" start="2025-09-04" duration="3" complete="0" expand="true">
+                    <depend id="2" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="16" uid="e9ea7a52db144c71be68317b957bb3dd" name="Diagrama 4+1" meeting="false" start="2025-09-04" duration="3" complete="0" expand="true">
+                    <depend id="2" type="2" difference="0" hardness="Strong"/>
+                </task>
+            </task>
+            <task id="2" uid="442320e611c94c7e8f16a8459c2a03bf" name="Gestión de usuarios" meeting="false" start="2025-09-08" duration="12" complete="0" expand="true">
+                <depend id="4" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="4" uid="6c0dc376e33c413aa4b8e5009b3ad85f" name="Gestión de clubes" meeting="false" start="2025-09-22" duration="6" complete="0" expand="true">
+                <depend id="24" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="24" uid="4a0945ebe7764fd9a31060dad6fd2359" name="Gestión financiera" meeting="false" start="2025-09-29" duration="12" complete="0" expand="true">
+                <depend id="6" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="6" uid="a88fcef4318249848dbd5c3419897d58" name="Gestión administrativa" meeting="false" start="2025-10-13" duration="6" complete="0" expand="true">
+                <depend id="3" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="3" uid="7ded7cc242bd45dbacf481fcd80d1aa3" name="Gestión de canchas" meeting="false" start="2025-10-20" duration="6" complete="0" expand="true">
+                <depend id="5" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="5" uid="d27fdb2416ac42018db94974588ec7f4" name="Gestión de calendario deportivo" meeting="false" start="2025-10-27" duration="6" complete="0" expand="true">
+                <depend id="21" type="2" difference="0" hardness="Strong"/>
+                <depend id="25" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="7" uid="f8356fdc36f841d989b57f208914f283" name="Integración y pruebas" meeting="false" start="2025-11-03" duration="12" complete="0" expand="true">
+                <task id="21" uid="4208294943c54c32907efdc8d9df967a" name="Informe de pruebas" meeting="false" start="2025-11-03" duration="12" complete="0" expand="true">
+                    <depend id="22" type="2" difference="0" hardness="Strong"/>
+                    <depend id="23" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="25" uid="faa67f02a7194ef48a86c217ec568d0c" name="Corrección de errores" meeting="false" start="2025-11-03" duration="12" complete="0" expand="true">
+                    <depend id="22" type="2" difference="0" hardness="Strong"/>
+                    <depend id="23" type="2" difference="0" hardness="Strong"/>
+                </task>
+            </task>
+            <task id="8" uid="45e62c8d22a94ab28fc762d145473942" name="Cierre de proyecto" meeting="false" start="2025-11-17" duration="4" complete="0" expand="true">
+                <task id="23" uid="350dd0d67135494e86a89e793667828e" name="Manual de usuarios" meeting="false" start="2025-11-17" duration="4" complete="0" expand="true"/>
+                <task id="22" uid="0a40c82ad0e349bb88210594aa6e3b50" name="Documento de cierre" meeting="false" start="2025-11-17" duration="2" complete="0" expand="true"/>
+            </task>
+        </task>
+    </tasks>
+    <resources/>
+    <allocations/>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+</project>
