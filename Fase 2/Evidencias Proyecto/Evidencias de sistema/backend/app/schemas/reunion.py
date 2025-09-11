@@ -22,7 +22,7 @@ class ReunionRead(ReunionBase):
         from_atributtes = True
 
 
-class ReunionUpdate(BaseModel):
+class ReunionUpdate(ReunionBase):
     tipo_reunion: Optional[int] = None
     fecha_reunion: Optional[date] = None
     desc_reunion: Optional[str] = None
