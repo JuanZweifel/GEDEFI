@@ -15,6 +15,6 @@ class Reunion(Base):
     desc_reunion: Mapped[str] = mapped_column(String(500), nullable=True)
 
     # Relaciones
-    # asistencias_reunion: Mapped[list["Asistencia_reunion"]] = relationship(
-    #     "ASISTENCIA_REUNION", back_populates="reunion", cascade="all, delete-orphan"
-    # )
+    asistencias: Mapped[list["AsistenciaReunion"]] = relationship(
+        "AsistenciaReunion", back_populates="reunion", cascade="all, delete-orphan"
+    )
