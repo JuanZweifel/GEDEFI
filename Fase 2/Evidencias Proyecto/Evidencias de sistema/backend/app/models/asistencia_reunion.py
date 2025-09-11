@@ -13,7 +13,7 @@ class AsistenciaReunion(Base):
 
     # Claves foraneas
     correo_usu: Mapped[str] = mapped_column(
-        String(320), ForeignKey("USUARIO.correo_usu"), primary_key=True
+        String(320), ForeignKey("CUENTA_USUARIO.correo_usu"), primary_key=True
     )
     id_reunion: Mapped[int] = mapped_column(
         Integer, ForeignKey("REUNION.id_reunion"), primary_key=True

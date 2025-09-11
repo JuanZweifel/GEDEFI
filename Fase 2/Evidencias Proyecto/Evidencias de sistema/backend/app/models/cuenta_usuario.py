@@ -25,7 +25,7 @@ class CuentaUsuario(Base):
 
     # Relaciones
     usuario: Mapped["Usuario"] = relationship(
-        "Usuario", back_populates="cuenta_usuario"
+        "Usuario", back_populates="cuentas_usuario"
     )
     club: Mapped["Club"] = relationship("Club", back_populates="cuentas_usuario")
     asistencias: Mapped[list["AsistenciaReunion"]] = relationship(
