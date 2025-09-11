@@ -2,7 +2,6 @@ from sqlalchemy import String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
 from app.db import Base
-from .contrato_club import ContratoClub
 
 
 class Asociacion(Base):
@@ -11,7 +10,7 @@ class Asociacion(Base):
     id_asociacion: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     nombre_asociacion: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    #Relaciones
+    # Relaciones
     contratos_club: Mapped[list["ContratoClub"]] = relationship(
-        ContratoClub, back_populates="asociacion", cascade="all, delete-orphan"
+        "ContratoClub", back_populates="asociacion"
     )

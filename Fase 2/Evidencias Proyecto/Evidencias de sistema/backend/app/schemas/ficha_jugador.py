@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from typing import Optional, List
 from .estadistica_jugador import EstadisticaJugadorRead
 
+# TODO: Falta relacion con pais
+
 class FichaJugadorBase(BaseModel):
     rut_jugador: str
     primer_nombre: str
@@ -16,14 +18,17 @@ class FichaJugadorBase(BaseModel):
     pierna_habil: Optional[int] = None  # 1: derecha, 2: izquierda, 3: ambas
     genero: bool  # True: masculino, False: femenino
 
+
 class FichaJugadorCreate(FichaJugadorBase):
     pass
+
 
 class FichaJugadorRead(FichaJugadorBase):
     rut_jugador: str
 
     class Config:
         from_attributes = True
+
 
 class FichaJugadorUpdate(BaseModel):
     primer_nombre: Optional[str] = None
@@ -36,6 +41,7 @@ class FichaJugadorUpdate(BaseModel):
     correo_electronico: Optional[str] = None
     pierna_habil: Optional[int] = None  # 1: derecha, 2: izquierda, 3: ambas
     genero: Optional[bool] = None  # True: masculino, False: femenino
+
 
 class FichaJugadorWithDetails(FichaJugadorRead):
     estadisticas_jugadores: List[EstadisticaJugadorRead] = []

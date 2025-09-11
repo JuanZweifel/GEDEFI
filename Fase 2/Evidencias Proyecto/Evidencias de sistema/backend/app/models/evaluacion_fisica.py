@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
 from datetime import date
 from app.db import Base
-from .ficha_jugador import FichaJugador
+
 
 class EvaluacionFisica(Base):
     __tablename__ = "EVALUACION_FISICA"
@@ -16,7 +16,11 @@ class EvaluacionFisica(Base):
     talla_camiseta: Mapped[str] = mapped_column(String(5), nullable=True)
     talla_short: Mapped[str] = mapped_column(String(5), nullable=True)
     talla_medias: Mapped[str] = mapped_column(String(5), nullable=True)
-    rut_jugador: Mapped[str] = mapped_column(String(10), ForeignKey("FICHA_JUGADOR.rut_jugador"), nullable=False)
+    rut_jugador: Mapped[str] = mapped_column(
+        String(10), ForeignKey("FICHA_JUGADOR.rut_jugador"), nullable=False
+    )
 
     # Relaciones
-    ficha_jugador: Mapped[FichaJugador] = relationship(FichaJugador, back_populates="evaluaciones_fisicas", cascade="all, delete-orphan")
+    ficha_jugador: Mapped["FichaJugador"] = relationship(
+        "FichaJugador", back_populates="evaluaciones_fisicas"
+    )

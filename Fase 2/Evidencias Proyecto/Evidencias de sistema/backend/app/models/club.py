@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
 from datetime import date
 from app.db import Base
-
+from .contrato_club import ContratoClub
 
 class Club(Base):
     __tablename__ = "CLUB"
@@ -21,6 +21,6 @@ class Club(Base):
     cuentas_usuario: Mapped[list["CuentaUsuario"]] = relationship(
         "CuentaUsuario", back_populates="club", cascade="all, delete-orphan"
     )
-    # contratos_club: Mapped[list["ContratoClub"]] = relationship(
-    #     "ContratoClub", back_populates="club", cascade="all, delete-orphan"
-    # )
+    contratos_club: Mapped[list[ContratoClub]] = relationship(
+        "ContratoClub", back_populates="club", cascade="all, delete-orphan"
+    )

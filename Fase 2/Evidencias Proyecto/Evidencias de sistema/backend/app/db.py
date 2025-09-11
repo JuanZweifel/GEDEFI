@@ -4,7 +4,7 @@ from app.config import Settings
 
 settings = Settings()
 
-engine = create_engine(settings.database_url, echo=True)
+engine = create_engine(settings.database_url, echo="debug")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
