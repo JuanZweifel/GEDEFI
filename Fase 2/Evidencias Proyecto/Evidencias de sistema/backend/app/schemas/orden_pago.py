@@ -1,7 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
-from .club import ClubRead
 
 
 class OrdenPagoBase(BaseModel):
@@ -19,7 +18,3 @@ class OrdenPagoCreate(OrdenPagoBase):
 class OrdenPagoRead(OrdenPagoBase):
     id_orden: int
     model_config = ConfigDict(from_attributes=True)
-
-
-class OrdenPagoReadWithClub(OrdenPagoRead):
-    club: ClubRead
