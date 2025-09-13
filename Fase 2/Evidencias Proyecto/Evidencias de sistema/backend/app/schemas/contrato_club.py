@@ -30,6 +30,3 @@ class ContratoClubUpdate(BaseModel):
 
 class ContratoClubWithSeries(ContratoClubRead):
     series: List[SerieRead] = []
-
-
-# TODO: FALTA RELACION CON CLUB
