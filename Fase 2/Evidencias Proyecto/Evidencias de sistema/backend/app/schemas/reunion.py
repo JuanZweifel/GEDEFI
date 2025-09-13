@@ -1,8 +1,7 @@
 from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
-
-# TODO: Falta la relacion con ASISTENCIA_REUNION
+from .asistencia_reunion import AsistenciaReunionRead
 
 
 class ReunionBase(BaseModel):
@@ -17,12 +16,14 @@ class ReunionCreate(ReunionBase):
 
 class ReunionRead(ReunionBase):
     id_reunion: int
-
-    class Config:
-        from_atributtes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
-class ReunionUpdate(ReunionBase):
+class ReunionUpdate(BaseModel):
     tipo_reunion: Optional[int] = None
     fecha_reunion: Optional[date] = None
     desc_reunion: Optional[str] = None
+
+
+class ReunionReadWithAsistencia(ReunionRead):
+    asistencias: List[AsistenciaReunionRead] = Field(default_factory=list)
