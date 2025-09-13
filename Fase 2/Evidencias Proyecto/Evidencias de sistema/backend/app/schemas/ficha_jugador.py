@@ -13,7 +13,7 @@ class FichaJugadorBase(BaseModel):
     segundo_apellido: Optional[str] = None
     enfermedades_cronicas: Optional[str] = None
     fecha_nacimiento: date
-    nacionalidad: str
+    nacionalidad: int
     correo_electronico: str
     pierna_habil: Optional[int] = None  # 1: derecha, 2: izquierda, 3: ambas
     genero: bool  # True: masculino, False: femenino
@@ -37,7 +37,7 @@ class FichaJugadorUpdate(BaseModel):
     segundo_apellido: Optional[str] = None
     enfermedades_cronicas: Optional[str] = None
     fecha_nacimiento: Optional[date] = None
-    nacionalidad: Optional[str] = None
+    nacionalidad: Optional[int] = None
     correo_electronico: Optional[str] = None
     pierna_habil: Optional[int] = None  # 1: derecha, 2: izquierda, 3: ambas
     genero: Optional[bool] = None  # True: masculino, False: femenino

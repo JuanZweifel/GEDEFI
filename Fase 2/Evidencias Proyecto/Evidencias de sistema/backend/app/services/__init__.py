@@ -29,6 +29,22 @@ from .serie import (
     delete_serie,
 )
 
+from .ficha_jugador import (
+    create_ficha_jugador,
+    get_ficha_jugador,
+    get_fichas_jugadores,
+    update_ficha_jugador,
+    delete_ficha_jugador,
+)
+
+from .pais import (
+    create_pais,
+    get_pais,
+    get_paises,
+    update_pais,
+    delete_pais,
+)
+
 __all__ = [
     "create_reunion",
     "get_reunion",
@@ -49,4 +65,14 @@ __all__ = [
     "get_serie",
     "get_series",
     "delete_serie",
+    "create_ficha_jugador",
+    "get_ficha_jugador",
+    "get_fichas_jugadores",
+    "update_ficha_jugador",
+    "delete_ficha_jugador",
+    "create_pais",
+    "get_pais",
+    "get_paises",
+    "update_pais",
+    "delete_pais",
 ]
