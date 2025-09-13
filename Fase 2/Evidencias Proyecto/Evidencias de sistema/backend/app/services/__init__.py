@@ -2,7 +2,6 @@ from .reunion import *
 from .asociacion import *
 from .contrato_club import *
 from .serie import *
-from .estadistica_jugador import *
 
 # from .evaluacion_fisica import *
 from .ficha_jugador import *

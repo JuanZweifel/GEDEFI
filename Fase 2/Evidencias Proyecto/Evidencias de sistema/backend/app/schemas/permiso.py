@@ -13,6 +13,7 @@ class PermisoCreate(PermisoBase):
 
 
 class PermisoRead(PermisoBase):
+    id_permiso: int
     model_config = ConfigDict(from_attributes=True)
 
 

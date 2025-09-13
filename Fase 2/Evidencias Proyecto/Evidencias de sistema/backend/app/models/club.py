@@ -1,10 +1,11 @@
 from sqlalchemy import ForeignKey
-from sqlalchemy import String, Integer, Date
+from sqlalchemy import String, Integer, Date, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
 from datetime import date
 from app.db import Base
 from .contrato_club import ContratoClub
+
 
 class Club(Base):
     __tablename__ = "CLUB"
@@ -12,7 +13,7 @@ class Club(Base):
     id_club: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     nombre_club: Mapped[str] = mapped_column(String(250), nullable=False, unique=True)
     fecha_fundacion: Mapped[date] = mapped_column(Date, nullable=False)
-    mensualidad_activa: Mapped[bool] = mapped_column(Integer, default=True)
+    mensualidad_activa: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Relaciones
     ordenes_pago: Mapped[list["OrdenPago"]] = relationship(

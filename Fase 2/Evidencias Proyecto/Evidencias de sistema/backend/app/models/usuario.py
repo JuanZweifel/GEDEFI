@@ -14,7 +14,7 @@ class Usuario(Base):
     segundo_nombre_usu: Mapped[str] = mapped_column(String(12), nullable=True)
     primer_apellido_usu: Mapped[str] = mapped_column(String(12), nullable=False)
     segundo_apellido_usu: Mapped[str] = mapped_column(String(12), nullable=True)
-    fecha_nac_usu: Mapped[date] = mapped_column(Date, nullable=False)
+    fecha_nacimiento_usu: Mapped[date] = mapped_column(Date, nullable=False)
 
     # TODO: Agregar estos campos si es necesario
     # telefono_usu: Mapped[str] = mapped_column(String(15), nullable=False)

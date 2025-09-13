@@ -6,7 +6,7 @@ from .asistencia_reunion import AsistenciaReunionRead
 
 class CuentaUsuarioBase(BaseModel):
     correo_usu: EmailStr
-    contrasena_usu: SecretStr
+    contrasena_usu: str
     rol_usu: str
     rut_usu: str
     id_club: int

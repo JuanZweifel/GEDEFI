@@ -3,8 +3,8 @@ from app.models import Usuario
 from app.schemas import UsuarioCreate, UsuarioUpdate
 
 
-def get_usuario(db: Session, rut_usuario: str) -> Usuario | None:
-    return db.query(Usuario).filter(Usuario.rut_usuario == rut_usuario).first()
+def get_usuario(db: Session, rut_usu: str) -> Usuario | None:
+    return db.query(Usuario).filter(Usuario.rut_usu == rut_usu).first()
 
 
 def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
@@ -20,9 +20,9 @@ def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
 
 
 def update_usuario(
-    db: Session, rut_usuario: str, usuario_update: UsuarioUpdate
+    db: Session, rut_usu: str, usuario_update: UsuarioUpdate
 ) -> Usuario | None:
-    db_usuario = get_usuario(db, rut_usuario)
+    db_usuario = get_usuario(db, rut_usu)
     if not db_usuario:
         return None
     for key, value in usuario_update.dict(exclude_unset=True).items():
@@ -32,8 +32,8 @@ def update_usuario(
     return db_usuario
 
 
-def delete_usuario(db: Session, rut_usuario: str) -> bool:
-    db_usuario = get_usuario(db, rut_usuario)
+def delete_usuario(db: Session, rut_usu: str) -> bool:
+    db_usuario = get_usuario(db, rut_usu)
     if not db_usuario:
         return False
     db.delete(db_usuario)
