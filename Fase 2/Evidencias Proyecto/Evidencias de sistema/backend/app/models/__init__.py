@@ -6,6 +6,11 @@ from .ficha_jugador import FichaJugador
 from .evaluacion_fisica import EvaluacionFisica
 from .pais import Pais
 from .reunion import Reunion
+from .historial_ingreso import Historial_ingreso
+from .historial_egreso import Historial_egreso
+from .castigo import Castigo
+from .cancha import Cancha   
+from .calendario import Calendario
 from .asistencia_reunion import AsistenciaReunion
 from .cuenta_usuario import CuentaUsuario
 from .historial_permiso import HistorialPermiso
