@@ -11,7 +11,7 @@ from .historial_egreso import Historial_egreso
 from .castigo import Castigo
 from .cancha import Cancha   
 from .calendario import Calendario
-from .asistencia_reunion import AsistenciaReunion
+from .detalle_reunion import AsistenciaReunion
 from .cuenta_usuario import CuentaUsuario
 from .historial_permiso import HistorialPermiso
 from .usuario import Usuario

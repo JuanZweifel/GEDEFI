@@ -6,10 +6,10 @@ from datetime import date
 from app.db import Base
 
 
-class AsistenciaReunion(Base):
-    __tablename__ = "ASISTENCIA_REUNION"
+class DetalleReunion(Base):
+    __tablename__ = "DETALLE_REUNION"
 
-    asiste: Mapped[bool] = mapped_column(Boolean, default=False)
+    asistencia: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Claves foraneas
     correo_usu: Mapped[str] = mapped_column(
@@ -18,6 +18,8 @@ class AsistenciaReunion(Base):
     id_reunion: Mapped[int] = mapped_column(
         Integer, ForeignKey("REUNION.id_reunion"), primary_key=True
     )
+    hora_llegada: Mapped[date] = mapped_column(Date, nullable=True)
+    hora_salida: Mapped[date] = mapped_column(Date, nullable=True)
 
     # Relaciones
     reunion: Mapped["Reunion"] = relationship("Reunion", back_populates="asistencias")
