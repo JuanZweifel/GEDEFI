@@ -1,0 +1,139 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="1F0BFBA0-C3FB-B73B-992B-532FEC4898C5" name="CANCHA">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-20 16:00:26 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="id_cancha" id="19CE4A86-9ED0-5DF6-FF4C-7B4A5A59B173">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:47:58 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>2</dataTypeSize>
+<ownDataTypeParameters>2,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="nombre_cancha" id="580FD9B7-7DB5-BD4E-BF4B-32A1B8C31762">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:48:27 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>50</dataTypeSize>
+<ownDataTypeParameters>50,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="tipo_cancha" id="7EE1F620-8D41-67F8-69AC-4A7E2809139D">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:49:15 UTC</createdTime>
+<commentInRDBMS><![CDATA[1 tierra
+2 pasto sintético
+3 pasto natural]]></commentInRDBMS>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="direccion" id="23912021-94C2-DCBD-B767-115E3E3C2501">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:49:22 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>300</dataTypeSize>
+<ownDataTypeParameters>300,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="diponibilidad" id="33CFD4A0-AD68-1439-D725-E32A3462042D">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:49:27 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT006</logicalDatatype>
+<dataTypeSize>1</dataTypeSize>
+<ownDataTypeParameters>1,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="cancha_activa" id="2553C015-22C6-BE11-CC3B-1FECBC9B4B23">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 18:27:41 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT006</logicalDatatype>
+<dataTypeSize>1</dataTypeSize>
+<ownDataTypeParameters>1,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fecha_creacion" id="7C7E7F3F-CC09-D9A3-9E38-0C528BC9AA3D">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 18:27:57 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fecha_modificacion" id="80C9104F-69DD-9D0A-D62D-02F68978D363">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 18:28:07 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="5EC5F752-4FE7-029C-1519-8EF81849B659" name="CANCHA PK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:48:23 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<shouldEngineer>false</shouldEngineer>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="false"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>19CE4A86-9ED0-5DF6-FF4C-7B4A5A59B173</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

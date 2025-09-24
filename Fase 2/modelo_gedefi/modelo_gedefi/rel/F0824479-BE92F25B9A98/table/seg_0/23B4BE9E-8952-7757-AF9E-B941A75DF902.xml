@@ -1,0 +1,124 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="23B4BE9E-8952-7757-AF9E-B941A75DF902" name="RENDIMIENTO_ENTRENAMIENTO">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>09044FC4-4BF9-3B9A-EF7F-DC0FDA90A712</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="frecuencia_cardiaca" id="B8404131-EE55-197E-C127-009B13CDC132">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>072663D8-09F5-12C1-A1DA-B457EFE2E0A7</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="velocidad" id="9C1DB1D6-A680-538F-D7AB-773EE4A21DC0">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>A005454F-F4EA-D8CD-6B40-15AA349AE583</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="duracion_recorrido" id="A731EB6F-4DEF-5EAB-9C20-33FF963E5ECD">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>631600CC-2B13-6D93-89C2-48F598D6AF95</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="nivel_oxigeno" id="31549924-ED5B-C8FE-DFD8-94A127900C36">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>66A6626D-D860-2F83-932A-388DADF4E921</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="JUGADOR_rut_jugador" id="0662B0BB-B799-04CD-DF43-5C6775D4764C">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>C027EA50-A1E6-0249-8E2F-940FDEDAAAAD</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>10</dataTypeSize>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="DBE7AAB9-B911-1EF6-0C00-4D91857A4F39" referredColumn="09EA2545-8CAA-3B28-737F-1FD0975F5DCE"/>
+</associations>
+</Column>
+<Column name="ENTENAMIENTO_id_entrenamiento" id="32E58D4C-235B-7DBB-5E30-350AF4098FC8">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>74DDF64B-01D1-1010-E655-8745DB878783</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="0F0E2E78-B058-581E-B77F-300781CD44A9" referredColumn="9E0DC28D-BABB-3DEC-066B-24683724110A"/>
+</associations>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="12AD1268-4299-166A-87C4-5F3C043DD8B6" name="RENDIMIENTO_ENTRENAMIENTO_PK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>A9615E1C-56EE-1E7B-42AA-901F46E5FFE3</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="0662B0BB-B799-04CD-DF43-5C6775D4764C"/>
+<colUsage columnID="32E58D4C-235B-7DBB-5E30-350AF4098FC8"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="CB973DAA-2CDD-72FB-4AD5-7D1DA155EF46" name="RENDIMIENTO_ENTRENAMIENTO_ENTENAMIENTO_FK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>0DE22F5F-521A-595C-BD5A-37CC45B7FAF8</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="32E58D4C-235B-7DBB-5E30-350AF4098FC8"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="B1AC8B41-1DAC-378A-AB5B-FDB634759ADC" name="RENDIMIENTO_ENTRENAMIENTO_JUGADOR_FK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>70BD5BA8-28BE-87E6-DC2C-2923C544CBE3</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="0662B0BB-B799-04CD-DF43-5C6775D4764C"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

@@ -1,0 +1,96 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="3BCDA092-6F7D-07C6-CBA6-0701FCE508FC" name="ROL">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>7B5FEC24-2C14-C3BB-91DD-B241E3DE0064</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="id_rol" id="B806A379-2EB2-EB20-44EE-357C1B23F394">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>8DEE1EA8-9167-E58F-1AB9-D1643CC0D2CB</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="nombre_rol" id="8AA2AD78-6AC4-4206-3F29-911BA55C628B">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>1D2849A9-FEB5-761C-E024-EA1A17422107</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>50</dataTypeSize>
+<ownDataTypeParameters>50,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="desc_rol" id="93CC3D0D-8B62-119B-74FA-B475C90E9FA8">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>EEC3EE44-4AA7-7C09-25BC-41285B7424C5</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>300</dataTypeSize>
+<ownDataTypeParameters>300,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="rol_activo" id="A00C7274-DFE1-1725-6FCB-E41412B41002">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>E0992354-6683-59DF-6951-927E375792FB</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT006</logicalDatatype>
+<dataTypeSize>1</dataTypeSize>
+<ownDataTypeParameters>1,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="fecha_creacion" id="00BD67B5-6429-7B5A-D22E-CBD163F3EC92">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>FEBA1019-7A0A-9055-F0C4-CB79E6FB51CB</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="fecha_modificacion" id="795B54CE-0918-614C-C073-AF6845665880">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>44108F2C-3BED-AFEB-9A88-20EFA991B068</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="5D8599FE-FCFF-377B-A617-ABF8FE22AB01" name="ROL_PK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>37416FE6-1699-E0A4-68F9-F6D1D8738F76</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="B806A379-2EB2-EB20-44EE-357C1B23F394"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

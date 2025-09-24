@@ -1,0 +1,136 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="DE42CA03-3B05-39E8-5403-B05CB2F296C4" name="HISTORIAL_SERIE">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:37:25 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="id_serie" id="A7746A2F-F8AC-5BDE-B938-8E6F28B26F2F">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:37:25 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="nombre_serie" id="5222335E-4A9C-E143-6166-D22A30794C13">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:37:25 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>30</dataTypeSize>
+<ownDataTypeParameters>30,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="serie_activa" id="865DB914-1C5A-2F07-2AB8-FE2047EE7BDA">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:37:25 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT006</logicalDatatype>
+<dataTypeSize>1</dataTypeSize>
+<ownDataTypeParameters>1,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="id_club" id="94B86131-641F-C25E-00A4-F8F07DCCB7B3">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:37:25 UTC</createdTime>
+<generatorID>42218628-8E33-62DC-5B79-01EB5816219F</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fecha_creacion" id="2E5953EB-27EC-DFE2-823F-15479AFB3CA2">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:37:43 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fecha_modificacion" id="8010C713-5573-4F46-7ECC-8AF056B46AA3">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:37:53 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="rut_usuario" id="0900C693-4931-2C7D-4C4F-5A086BFC6021">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:38:04 UTC</createdTime>
+<generatorID>984236F9-2992-1609-5241-BEA463ED88DE</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<referedAttribute>E6CF8A42-320A-13DB-AA60-3B0B0D996DD6</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>10</dataTypeSize>
+<ownDataTypeParameters>10,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fecha_creacion_his" id="98F03052-8E2D-EBA3-69EA-BC31A0CE12C6">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 18:21:28 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="363ECF82-BDA1-55FA-AC3A-B5948395DC51" name="SERIE PK">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:37:25 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<shouldEngineer>false</shouldEngineer>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="false"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>A7746A2F-F8AC-5BDE-B938-8E6F28B26F2F</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

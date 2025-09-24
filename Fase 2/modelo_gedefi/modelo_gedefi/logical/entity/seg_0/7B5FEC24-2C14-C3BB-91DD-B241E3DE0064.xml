@@ -1,0 +1,109 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="7B5FEC24-2C14-C3BB-91DD-B241E3DE0064" name="ROL">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-15 17:40:45 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="id_rol" id="8DEE1EA8-9167-E58F-1AB9-D1643CC0D2CB">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-15 17:40:48 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="nombre_rol" id="1D2849A9-FEB5-761C-E024-EA1A17422107">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-15 17:40:50 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>50</dataTypeSize>
+<ownDataTypeParameters>50,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="desc_rol" id="EEC3EE44-4AA7-7C09-25BC-41285B7424C5">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-15 17:40:52 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>300</dataTypeSize>
+<ownDataTypeParameters>300,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="rol_activo" id="E0992354-6683-59DF-6951-927E375792FB">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-15 17:44:46 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT006</logicalDatatype>
+<dataTypeSize>1</dataTypeSize>
+<ownDataTypeParameters>1,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fecha_creacion" id="FEBA1019-7A0A-9055-F0C4-CB79E6FB51CB">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:44:48 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fecha_modificacion" id="44108F2C-3BED-AFEB-9A88-20EFA991B068">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-21 17:44:48 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="37416FE6-1699-E0A4-68F9-F6D1D8738F76" name="ROL PK">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-15 17:40:59 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>8DEE1EA8-9167-E58F-1AB9-D1643CC0D2CB</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

@@ -1,0 +1,196 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="39EAB647-2EF1-33CA-50DC-930362E7511B" name="HISTORIAL_JUGADOR">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>AC20A608-076A-81A1-D405-BBCCA2B2AD5D</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="id_historial_jugador" id="5C025AAC-74CD-293E-D85E-E4A687F4C9E4">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>73EFC632-DF88-13FA-7C62-7B56D349AB70</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="rut_jugador" id="51145BE2-309A-E016-8598-611C1081C926">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>AFFDDDCB-4ECB-9A43-C0F4-46D921D92738</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>10</dataTypeSize>
+<ownDataTypeParameters>10,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="primer_nombre" id="91CED6DC-7812-94C3-33CB-F43EC26C3E25">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>72F4100A-F6A1-C6D2-8113-2CC8B19276D0</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>30</dataTypeSize>
+<ownDataTypeParameters>30,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="segundo_nombre" id="DD836A7A-9362-2CA3-2A33-E80CBA3EF1E0">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>FB3D1FE8-B6B8-12DB-A4E9-91A3369C2573</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>30</dataTypeSize>
+<ownDataTypeParameters>30,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="primer_apellido" id="E14BEADD-DBCD-57B0-5453-C67E74D6ACFA">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>D3F9C393-2B34-ECED-2652-E1D6FE306DCC</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>30</dataTypeSize>
+<ownDataTypeParameters>30,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="segundo_apellido" id="BF9145C3-5030-AC57-9BB8-DD740E80AD58">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>22F20216-3061-C7E7-7C20-730E0666DCA1</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>30</dataTypeSize>
+<ownDataTypeParameters>30,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="fecha_nacimiento" id="1606DABE-EE39-54DF-3E6A-74CC1415F0B7">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>3D7EBF23-9FD8-EA13-A0E2-B6268EDAA0C5</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT007</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="enfermedades_cronicas" id="0A14DCE1-D96B-AA7E-F1DC-59C996800976">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>83270909-323F-FB90-ACF9-F4FFCD1E51C8</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>500</dataTypeSize>
+<ownDataTypeParameters>500,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="fono_jugador" id="32C00419-18FC-A12B-D337-AF05A2CE4120">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>65151CA7-3634-8801-54EE-C84E90812460</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>9</dataTypeSize>
+<ownDataTypeParameters>9,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="fecha_creacion" id="0AC5AB55-DD17-FF5B-B0D0-7D461885EF5F">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>2E460A08-1D46-B9CF-CC69-3D5B42C186EB</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="fecha_modificacion" id="B3D81B7B-5DDD-752E-B41D-8DFDC8F5DBF6">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>169F41A1-7EA0-3DC8-EA3D-47DC48C6E7D5</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="modificado_por" id="E0AC4075-5D3D-8F19-6783-D1DC895BAE3A">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>D1E1A476-4E3A-8B9E-B3BC-08459AB49FEB</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>10</dataTypeSize>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="8F537830-9516-15C9-78F8-2E684155D9EA" referredColumn="419C563F-C65C-00EE-4DA3-7F2560C9C069"/>
+</associations>
+</Column>
+<Column name="fecha_creacion_his" id="F05AF944-680F-8F15-517D-BEC9CE3A8A2D">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>0CB65392-CDE1-6A61-2E55-EFDE89B25C02</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="B1BD956C-9858-E821-5ADA-7946927CB258" name="HISTORIAL_JUGADOR_PK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>90DDDCBF-BA2B-3C5E-2D56-489C371AB3DE</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="5C025AAC-74CD-293E-D85E-E4A687F4C9E4"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="8855FA10-8756-767A-E061-C869F1A41B52" name="HISTORIAL_JUGADOR_USUARIO_FK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>C6989C66-B4B8-E67B-836D-DA10E53DC03E</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="E0AC4075-5D3D-8F19-6783-D1DC895BAE3A"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

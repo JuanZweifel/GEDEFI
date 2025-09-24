@@ -1,0 +1,149 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="F13F9879-5FCD-1EA3-9B34-DD4A8F849AE6" name="RENDIMIENTO_PARTIDO">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-20 16:11:31 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="id_serie" id="1B756D37-ED39-FF22-B7CA-886C67AA11AB">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-20 16:16:08 UTC</createdTime>
+<generatorID>028E977A-69B1-B550-3586-ADAF38423B6B</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<referedAttribute>0B89D12D-131C-7681-E088-8D76DA845A2C</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="id_partido" id="813CE84B-1490-E4E4-3149-591B795FF9F3">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-20 16:16:11 UTC</createdTime>
+<generatorID>52222D35-FA4F-C829-A158-CDC45F8FB235</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<referedAttribute>BD8CD2ED-49A2-9312-BB2F-4612ECE25721</referedAttribute>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="rut_jugador" id="09A67756-2C43-3616-FE92-A9341C8E76D0">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-20 16:20:40 UTC</createdTime>
+<generatorID>028E977A-69B1-B550-3586-ADAF38423B6B</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<referedAttribute>BD64A87F-190A-22E6-6815-A9B7F878F127</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>10</dataTypeSize>
+<ownDataTypeParameters>10,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="tiempo_jugado" id="D07512E9-205E-7C12-D714-0ADE64BF69DA">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:52:54 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="goles" id="EEFD80E6-4243-351A-D5BF-27BB1DBAAC1A">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:54:14 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="asistencias" id="351DD7A7-B59B-046F-C27D-8A87D1D24E21">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:56:55 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="amonestaciones" id="103DA865-8871-FE5B-3B2C-14F7BC59750C">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:55:00 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="amonestaciones_amarillas" id="EF11AF24-109A-7783-76EA-72617872F596">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:56:07 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="amonestaciones_rojas" id="774FD628-892E-8D6C-C0BB-A0DB7FF3C1A1">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-20 16:56:21 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="ABC74526-2EA2-921E-7001-3D701C615DA1" name="RENDIMIENTO_PARTIDO PK">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-20 16:16:08 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<shouldEngineer>false</shouldEngineer>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="false"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>1B756D37-ED39-FF22-B7CA-886C67AA11AB</attributeRef>
+<attributeRef>09A67756-2C43-3616-FE92-A9341C8E76D0</attributeRef>
+<attributeRef>813CE84B-1490-E4E4-3149-591B795FF9F3</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

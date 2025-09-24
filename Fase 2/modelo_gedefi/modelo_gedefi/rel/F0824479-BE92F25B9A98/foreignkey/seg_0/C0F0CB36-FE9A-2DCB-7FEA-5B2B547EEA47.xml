@@ -1,0 +1,17 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="C0F0CB36-FE9A-2DCB-7FEA-5B2B547EEA47" containerWithKeyObject="3AB94121-AA65-F975-AA6D-3B7861A45B1F" localFKIndex="207AE5A6-C9DA-ED64-A98F-CAF859026FE9" name="LESION_JUGADOR_FK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>5B8B5C88-EC70-8739-53E3-06CFE2B4BFC7</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<referredTableLongName>JUGADOR</referredTableLongName>
+<deleteRule>NO ACTION</deleteRule>
+<referredTableID>31D15E08-22EC-9414-729D-1C0C6B7E5839</referredTableID>
+<keyObject>D946E7CD-0501-2B76-7750-6B12843AB056</keyObject>
+<referredKeyID>D946E7CD-0501-2B76-7750-6B12843AB056</referredKeyID>
+<mandatory>true</mandatory>
+<refColNames>rut_jugador</refColNames>
+<transferable>true</transferable>
+<rely>false</rely>
+<columnDependencyConstraintGenerateInDDL>true</columnDependencyConstraintGenerateInDDL>
+</FKIndexAssociation>

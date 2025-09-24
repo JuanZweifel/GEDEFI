@@ -1,0 +1,19 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="club_detalle_ficha" directorySegmentName="seg_0" id="B3EAE438-3084-A164-9D09-D38E07822334">
+<createdBy>LUIS</createdBy>
+<createdTime>2025-09-20 16:14:52 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<sourcePk>F56DA9C0-325F-36CF-E813-B6ECA266596C</sourcePk>
+<identifying>true</identifying>
+<optionalSource>true</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>E44576C7-E680-9D56-1E7E-B8B114A98708</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>9DBA4B76-34AF-5902-70CB-6ADC9A686A95</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>

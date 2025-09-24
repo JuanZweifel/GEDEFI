@@ -1,0 +1,103 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="C761619F-F574-F0C5-326C-A9C43AC7639D" name="DETALLE_CLUB_JUGADOR">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>9DBA4B76-34AF-5902-70CB-6ADC9A686A95</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="fecha_ini" id="0DDDDBFF-2A10-252A-6E29-6515FC7DE563">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>2BB1AE91-8FBB-A265-E2A6-173B935B7451</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="fecha_fin" id="50ABAEAE-39E8-713F-BD2A-E96B2F1FE5C1">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>2260D439-8FA6-3E12-A130-3218B6FCC462</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="CLUB_id_club" id="3BD8660C-2BE5-F298-F6B6-04FA475BEC31">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>E135D056-B644-1FCB-8C2B-046E8E353F4A</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="53F0C1F4-A8AF-2AAF-74D2-00F425D19F14" referredColumn="5DF29EF9-7F36-2EF2-63E5-47D07921F324"/>
+</associations>
+</Column>
+<Column name="JUGADOR_rut_jugador" id="6A81817D-5D1D-4466-544A-2E13846779BF">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>93AECC1D-2ABE-2CE9-3560-ECF0EA387DB9</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>10</dataTypeSize>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="98921EF4-5CF9-B64B-5D48-34BF9D3CFCF4" referredColumn="09EA2545-8CAA-3B28-737F-1FD0975F5DCE"/>
+</associations>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="FC809248-3EA5-DB3C-10AC-00554BCFFD8D" name="DETALLE_CLUB_JUGADOR_PK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>9876C263-CB7F-DDF6-E5FB-B7F0EC7C0992</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="3BD8660C-2BE5-F298-F6B6-04FA475BEC31"/>
+<colUsage columnID="6A81817D-5D1D-4466-544A-2E13846779BF"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="35C39B84-9731-52B5-1A53-A37DC998A83A" name="DETALLE_CLUB_JUGADOR_CLUB_FK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>B3EAE438-3084-A164-9D09-D38E07822334</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="3BD8660C-2BE5-F298-F6B6-04FA475BEC31"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="32A08BB2-7244-3321-E3F3-21E916810C07" name="DETALLE_CLUB_JUGADOR_JUGADOR_FK">
+<createdBy>giova</createdBy>
+<createdTime>2025-09-21 19:07:09 UTC</createdTime>
+<generatorID>55EC50B3-A6CD-DA9A-42C9-0DEA9D00EB3A</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="6A81817D-5D1D-4466-544A-2E13846779BF"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

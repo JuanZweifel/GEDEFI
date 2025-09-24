@@ -1,0 +1,88 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="9F479B47-7C8C-3CF4-8924-188AA80BEFB2" name="PERMISO_ROL">
+<createdBy>juan_</createdBy>
+<createdTime>2025-09-22 20:13:53 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="fecha_ini_permiso_rol" id="59F2A68C-9162-E1DA-1D51-F1881E005B66">
+<createdBy>juan_</createdBy>
+<createdTime>2025-09-22 20:14:07 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fecha_fin_permiso_rol" id="AC00863A-3DFA-5006-5861-D3687E0FCE27">
+<createdBy>juan_</createdBy>
+<createdTime>2025-09-22 20:14:58 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT008</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="id_rol" id="27437701-9FB7-192C-FBA8-AEB5A79FE07A">
+<createdBy>juan_</createdBy>
+<createdTime>2025-09-22 20:15:52 UTC</createdTime>
+<generatorID>98802F32-44EC-82DC-935B-E0E5DD0AD39A</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<referedAttribute>8DEE1EA8-9167-E58F-1AB9-D1643CC0D2CB</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="id_permiso" id="D734A763-AFE1-44CC-77B7-B232EB9BC520">
+<createdBy>juan_</createdBy>
+<createdTime>2025-09-22 20:15:57 UTC</createdTime>
+<generatorID>9E89DB2A-16B0-1B0C-80CC-EDA224A1C5B4</generatorID>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<referedAttribute>66AC9C2C-677C-988D-959A-D21BB9B21CD8</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="F0BD7F5E-3EFC-3C1D-BE1E-29F1F370A8E3" name="PERMISO_ROL PK">
+<createdBy>juan_</createdBy>
+<createdTime>2025-09-22 20:15:48 UTC</createdTime>
+<ownerDesignName>modelo_gedefi</ownerDesignName>
+<engineerTo>
+<item key="F0824479-9823-B5FF-2ED0-BE92F25B9A98" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>59F2A68C-9162-E1DA-1D51-F1881E005B66</attributeRef>
+<attributeRef>D734A763-AFE1-44CC-77B7-B232EB9BC520</attributeRef>
+<attributeRef>27437701-9FB7-192C-FBA8-AEB5A79FE07A</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>
