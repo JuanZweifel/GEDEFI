@@ -1,8 +1,0 @@
-<?xml version = '1.0' encoding = 'UTF-8'?>
-<OSDM_Design class="oracle.dbtools.crest.model.design.Design" name="modelo_gedefi" id="61B2E5EF-B21F-31C3-06F2-02369BD70E47" version="3.5">
-<createdBy>LUIS</createdBy>
-<createdTime>2025-09-15 17:27:03 UTC</createdTime>
-<ownerDesignName>modelo_gedefi</ownerDesignName>
-<capitalNames>false</capitalNames>
-<designId>61B2E5EF-B21F-31C3-06F2-02369BD70E47</designId>
-</OSDM_Design>
