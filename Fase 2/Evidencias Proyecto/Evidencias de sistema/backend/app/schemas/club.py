@@ -8,7 +8,9 @@ from .orden_pago import OrdenPagoRead
 class ClubBase(BaseModel):
     nombre_club: str
     fecha_fundacion: date
-    mensualidad_activa: bool
+    fono_club: Optional[str] = None
+    direccion_club: str
+    email_club: str
 
 
 class ClubCreate(ClubBase):
@@ -24,10 +26,6 @@ class ClubUpdate(BaseModel):
     nombre_club: Optional[str] = None
     fecha_fundacion: Optional[date] = None
     mensualidad_activa: Optional[bool] = None
-
-
-class ClubWithContratos(ClubRead):
-    contratos: List[ContratoClubRead] = Field(default_factory=list)
 
 
 class ClubWithOrdenPago(ClubRead):

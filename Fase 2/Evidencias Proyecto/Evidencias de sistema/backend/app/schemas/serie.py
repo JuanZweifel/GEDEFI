@@ -6,8 +6,6 @@ from .ficha_jugador import FichaJugadorRead
 
 class SerieBase(BaseModel):
     nombre_serie: str
-    id_club: int
-    id_asociacion: int
 
 
 class SerieCreate(SerieBase):
