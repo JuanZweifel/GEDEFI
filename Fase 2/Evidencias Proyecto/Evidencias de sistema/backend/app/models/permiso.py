@@ -21,7 +21,6 @@ class Permiso(Base):
         onupdate=datetime.now(timezone.utc),
         nullable=False,
     )
-    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Relaciones
     permisos_roles: Mapped["PermisoRol"] = relationship(

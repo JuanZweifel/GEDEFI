@@ -6,7 +6,6 @@ from typing import Optional, List
 class PermisoBase(BaseModel):
     nombre_permiso: str
     descripcion_permiso: Optional[str] = None
-    activo: bool = True
 
 
 class PermisoCreate(PermisoBase):
@@ -16,7 +15,6 @@ class PermisoCreate(PermisoBase):
 class PermisoUpdate(BaseModel):
     nombre_permiso: Optional[str] = None
     descripcion_permiso: Optional[str] = None
-    activo: Optional[bool] = None
 
 
 class PermisoRead(PermisoBase):
