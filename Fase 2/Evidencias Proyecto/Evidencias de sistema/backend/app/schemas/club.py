@@ -1,7 +1,6 @@
 from datetime import date
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
-from .contrato_club import ContratoClubRead
 from .orden_pago import OrdenPagoRead
 
 
@@ -30,3 +29,8 @@ class ClubUpdate(BaseModel):
 
 class ClubWithOrdenPago(ClubRead):
     ordenes_pago: List[OrdenPagoRead] = Field(default_factory=list)
+
+class ClubList(BaseModel):
+    clubs: List[ClubRead] = Field(default_factory=list)
+
+

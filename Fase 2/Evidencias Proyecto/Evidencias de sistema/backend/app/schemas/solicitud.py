@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 class SolicitudBase(BaseModel):
@@ -27,4 +27,4 @@ class SolicitudRead(SolicitudBase):
         orm_mode = True
 
 class SolicitudList(BaseModel):
-    solicitudes: List[SolicitudRead]
+    solicitudes: List[SolicitudRead] = Field(default_factory=list)

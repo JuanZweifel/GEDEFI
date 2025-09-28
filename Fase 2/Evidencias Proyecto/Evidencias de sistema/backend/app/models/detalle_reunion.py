@@ -12,8 +12,8 @@ class DetalleReunion(Base):
     asistencia: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Claves foraneas
-    correo_usu: Mapped[str] = mapped_column(
-        String(320), ForeignKey("CUENTA_USUARIO.correo_usu"), primary_key=True
+    rut_usuario: Mapped[str] = mapped_column(
+        String(320), ForeignKey("USUARIO.rut_usuario"), primary_key=True
     )
     id_reunion: Mapped[int] = mapped_column(
         Integer, ForeignKey("REUNION.id_reunion"), primary_key=True
@@ -23,6 +23,6 @@ class DetalleReunion(Base):
 
     # Relaciones
     reunion: Mapped["Reunion"] = relationship("Reunion", back_populates="asistencias")
-    cuenta_usuario: Mapped["CuentaUsuario"] = relationship(
-        "CuentaUsuario", back_populates="asistencias"
+    usuario: Mapped["Usuario"] = relationship(
+        "Usuario", back_populates="asistencias"
     )

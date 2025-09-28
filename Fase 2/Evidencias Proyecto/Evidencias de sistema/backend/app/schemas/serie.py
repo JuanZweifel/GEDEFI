@@ -1,7 +1,6 @@
 from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
-from .ficha_jugador import FichaJugadorRead
 
 
 class SerieBase(BaseModel):
@@ -23,8 +22,13 @@ class SerieRead(SerieBase):
         from_attributes = True
 
 
-class SerieWithPlayers(SerieRead):
+'''class SerieWithPlayers(SerieRead):
     jugadores: List[FichaJugadorRead] = []  # Assuming JugadorRead is defined elsewhere
 
     class Config:
-        from_attributes = True
+        from_attributes = True'''
+
+class SerieList(BaseModel):
+    series: List[SerieRead] = Field(default_factory=list)
+
+

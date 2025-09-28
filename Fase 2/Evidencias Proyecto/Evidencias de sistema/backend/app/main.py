@@ -2,11 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import engine, Base
 from app.routes import (
-    asociacion,
     reunion,
-    contrato_club,
     ficha_jugador,
-    pais,
     asistencia_reunion,
     club,
     cuenta_usuario,

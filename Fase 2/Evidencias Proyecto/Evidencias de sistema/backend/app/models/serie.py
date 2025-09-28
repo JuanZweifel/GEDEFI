@@ -26,4 +26,3 @@ class Serie(Base):
         "Partido", back_populates="serie_visitante", foreign_keys='Partido.id_serie_visitante', cascade="all, delete-orphan")
     
     fichas_jugador: Mapped[list["FichaJugador"]] = relationship("FichaJugador", back_populates="serie", cascade="all, delete-orphan")
-

@@ -1,7 +1,7 @@
 from datetime import date
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
-from .asistencia_reunion import AsistenciaReunionRead
+
 
 
 class ReunionBase(BaseModel):
@@ -25,5 +25,9 @@ class ReunionUpdate(BaseModel):
     desc_reunion: Optional[str] = None
 
 
-class ReunionReadWithAsistencia(ReunionRead):
-    asistencias: List[AsistenciaReunionRead] = Field(default_factory=list)
+#class ReunionReadWithAsistencia(ReunionRead):
+#   asistencias: List[AsistenciaReunionRead] = Field(default_factory=list)
+
+class ReunionList(BaseModel):
+    reuniones: List[ReunionRead] = Field(default_factory=list)
+
