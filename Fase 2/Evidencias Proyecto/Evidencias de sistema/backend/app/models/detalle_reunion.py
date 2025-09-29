@@ -21,7 +21,9 @@ class DetalleReunion(Base):
     hora_salida: Mapped[date] = mapped_column(Date, nullable=True)
 
     # Relaciones
-    reunion: Mapped["Reunion"] = relationship("Reunion", back_populates="detalles_reunion")
+    reunion: Mapped["Reunion"] = relationship(
+        "Reunion", back_populates="detalles_reunion"
+    )
     usuario: Mapped["Usuario"] = relationship(
-        "Usuario", back_populates="asistencias"
+        "Usuario", back_populates="detalles_reunion"
     )

@@ -1,4 +1,4 @@
-from sqlalchemy import Date, String
+from sqlalchemy import Date, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
 from datetime import date
@@ -11,14 +11,25 @@ class DetalleClubJugador(Base):
 
     fecha_ini: Mapped[date] = mapped_column(Date, primary_key=True, nullable=False)
     fecha_fin: Mapped[date] = mapped_column(Date, nullable=True)
-    rut_jugador:Mapped[str] = mapped_column(String(10), ForeignKey("JUGADOR.rut_jugador"), primary_key=True, nullable=False, index=True)
-    #id_club:Mapped[int] = mapped_column(Integer, ForeignKey("CLUB.id_club"), primary_key=True, nullable=False, index=True)
+    rut_jugador: Mapped[str] = mapped_column(
+        String(10),
+        ForeignKey("JUGADOR.rut_jugador"),
+        primary_key=True,
+        nullable=False,
+        index=True,
+    )
+    id_club: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("CLUB.id_club"),
+        primary_key=True,
+        nullable=False,
+        index=True,
+    )
 
     # Relaciones
     jugador: Mapped["Jugador"] = relationship(
-        "Jugador", back_populates= "detalles_club_jugador"
+        "Jugador", back_populates="detalles_club_jugador"
     )
 
-    #club: Mapped["Club"] = relationship(
-        #"Club", back_populates= "detalle_club_jugador"
-    #)
+    club: Mapped["Club"] = relationship("Club", back_populates="detalles_club_jugador")
+

@@ -17,17 +17,32 @@ class OrdenPago(Base):
     numero_transaccion: Mapped[str] = mapped_column(String(50), nullable=True)
     descripcion: Mapped[str] = mapped_column(String(500), nullable=True)
     orden_activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    fecha_emision: Mapped[date] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    fecha_emision: Mapped[date] = mapped_column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
     fecha_vencimiento: Mapped[date] = mapped_column(DateTime, nullable=True)
     fecha_pago: Mapped[date] = mapped_column(DateTime, nullable=True)
     id_club: Mapped[int] = mapped_column(ForeignKey("CLUB.id_club"), nullable=True)
-    fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
-    usuario_emisor: Mapped[str] = mapped_column(String(10), nullable=False)
-    usuario_pago: Mapped[str] = mapped_column(String(10), nullable=True)
+    fecha_modificacion: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+        nullable=False,
+    )
+    usuario_emisor: Mapped[str] = mapped_column(
+        ForeignKey("USUARIO.rut_usuario"), nullable=False
+    )
+    usuario_pago: Mapped[str] = mapped_column(
+        ForeignKey("USUARIO.rut_usuario"), nullable=True
+    )
 
     # Relaciones
-    emisor: Mapped["Usuario"] = relationship("Usuario", foreign_keys=["Usuario.rut_usuario"])
+    emisor: Mapped["Usuario"] = relationship(
+        "Usuario", foreign_keys=[usuario_emisor], back_populates="ordenes_emitidas"
+    )
 
-    Pagador: Mapped["Usuario"] = relationship("Usuario", foreign_keys=["Usuario.rut_usuario"])
+    pagador: Mapped["Usuario"] = relationship(
+        "Usuario", foreign_keys=[usuario_pago], back_populates="ordenes_pagadas"
+    )
 
     club: Mapped["Club"] = relationship("Club", back_populates="ordenes_pago")

@@ -1,7 +1,8 @@
 # from .contrato_club import ContratoClub
 from .serie import Serie
 from .solicitud import Solicitud
-from .historial_serie import HistorialSerie
+
+# from .historial_serie import HistorialSerie
 from .rol import Rol
 from .archivo import Archivo
 from .entrenamiento import Entrenamiento
@@ -25,3 +26,4 @@ from .lesion import Lesion
 from .detalle_club_jugador import DetalleClubJugador
 from .detalle_reunion import DetalleReunion
 from .auditoria import Auditoria
+from .detalle_usuario_club import DetalleUsuarioClub

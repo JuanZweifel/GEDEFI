@@ -43,17 +43,37 @@ class Usuario(Base):
         "Auditoria", back_populates="usuario", cascade="all, delete-orphan"
     )
 
-    # detalles_reunion: Mapped[list["DetalleReunion"]] = relationship(
-    #     "DetalleReunion", back_populates="usuario", cascade="all, delete-orphan"
-    # )
-    # solicitudes: Mapped[list["Solicitud"]] = relationship(
-    #     "Solicitud", back_populates="usuario", cascade="all, delete-orphan"
-    # )
-    # detalles_usuario_club: Mapped[list["DetalleUsuarioClub"]] = relationship(
-    #     "DetalleUsuarioClub", back_populates="usuario", cascade="all, delete-orphan"
-    # )
-    # ordenes_pago: Mapped[list["OrdenPago"]] = relationship(
-    #     "OrdenPago", back_populates="usuario", cascade="all, delete-orphan"
-    # )
+    detalles_reunion: Mapped[list["DetalleReunion"]] = relationship(
+        "DetalleReunion", back_populates="usuario", cascade="all, delete-orphan"
+    )
+    solicitudes_realizadas: Mapped[list["Solicitud"]] = relationship(
+        "Solicitud",
+        back_populates="usuario_soli",
+        foreign_keys="[Solicitud.usuario_solicitud]",
+        cascade="all, delete-orphan",
+    )
+
+    solicitudes_respondidas: Mapped[list["Solicitud"]] = relationship(
+        "Solicitud",
+        back_populates="usuario_resp",
+        foreign_keys="[Solicitud.usuario_respuesta]",
+        cascade="all, delete-orphan",
+    )
+    detalles_usuario_club: Mapped[list["DetalleUsuarioClub"]] = relationship(
+        "DetalleUsuarioClub", back_populates="usuario", cascade="all, delete-orphan"
+    )
+    ordenes_emitidas: Mapped[list["OrdenPago"]] = relationship(
+        "OrdenPago",
+        back_populates="emisor",
+        foreign_keys="[OrdenPago.usuario_emisor]",
+        cascade="all, delete-orphan",
+    )
+
+    ordenes_pagadas: Mapped[list["OrdenPago"]] = relationship(
+        "OrdenPago",
+        back_populates="pagador",
+        foreign_keys="[OrdenPago.usuario_pago]",
+        cascade="all, delete-orphan",
+    )
 
     # TODO: Agregar relaciones con Historiales
