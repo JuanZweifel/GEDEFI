@@ -5,6 +5,13 @@ from .reunion import *
 from .orden_pago import *
 from .serie import *
 from .solicitud import *
+from .usuario import *
+from .rol import *
+from .archivo import *
+from .auditoria import *
+from .entrenamiento import *
+from .permiso_rol import *
+from .permiso import *
 
 
 # WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente
