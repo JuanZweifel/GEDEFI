@@ -1,0 +1,38 @@
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, List
+from datetime import date
+from .rendimiento_partido import RendimientoPartidoRead
+
+class FichaJugadorBase(BaseModel):
+    fecha_ini: date
+    fecha_fin: Optional[date] = None
+    talla_camiseta: str
+    talla_short: str
+    talla_media: str
+    talla_botin: str
+    estatura: int
+    Peso: int
+    imc: int
+    fecha_creacion: date
+    fecha_modificacion: date
+
+class FichaJugadorCreate(FichaJugadorBase):
+    rut_jugador: str
+    id_serie: int
+
+class FichaJugadorRead(FichaJugadorBase):
+    rut_jugador: str
+    id_serie: int
+    model_config = ConfigDict(from_attributes=True)
+
+class FichaJugadorUpdate(BaseModel):
+    fecha_ini: Optional[date] = None
+    fecha_fin: Optional[date] = None
+    talla_camiseta: Optional[str] = None
+    talla_short: Optional[str] = None
+    talla_media: Optional[str] = None
+    talla_botin: Optional[str] = None
+    estatura: Optional[int] = None
+    Peso: Optional[int] = None
+    imc: Optional[int] = None
+

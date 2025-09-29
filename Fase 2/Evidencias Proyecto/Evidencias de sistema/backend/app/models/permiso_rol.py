@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from app.db import Base
 
 
+
 class PermisoRol(Base):
     __tablename__ = "PERMISO_ROL"
 
@@ -22,5 +23,5 @@ class PermisoRol(Base):
     )
 
     # Relaciones
-    rol: Mapped["Rol"] = relationship("Rol", back_populates="permisos")
-    permiso: Mapped["Permiso"] = relationship("Permiso", back_populates="roles")
+    rol: Mapped["Rol"] = relationship("Rol", back_populates="permisos_roles")
+    permiso: Mapped["Permiso"] = relationship("Permiso", back_populates="permisos_roles")

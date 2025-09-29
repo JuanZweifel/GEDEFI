@@ -1,3 +1,11 @@
+from .cancha import *
+from .detalle_club_jugador import *
+from .ficha_jugador import *
+from .jugador import *
+from .lesion import *
+from .partido import *
+from .rendimiento_entrenamiento import *
+from .rendimiento_partido import *
 from .club import *
 from .detalle_reunion import *
 from .detalle_usuario_club import *
@@ -5,6 +13,13 @@ from .reunion import *
 from .orden_pago import *
 from .serie import *
 from .solicitud import *
+from .usuario import *
+from .rol import *
+from .archivo import *
+from .auditoria import *
+from .entrenamiento import *
+from .permiso_rol import *
+from .permiso import *
 
 
 # WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente

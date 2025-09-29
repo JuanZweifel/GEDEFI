@@ -22,6 +22,8 @@ class Entrenamiento(Base):
         onupdate=datetime.now(timezone.utc),
         nullable=False,
     )
+    rut_usuario: Mapped[str] = mapped_column(String(10), ForeignKey("USUARIO.rut_usuario"), nullable=False)
+    id_cancha:Mapped[int] = mapped_column(Integer, ForeignKey("CANCHA.id_cancha"), nullable=False)
 
     # Relaciones
     usuario: Mapped["Usuario"] = relationship(

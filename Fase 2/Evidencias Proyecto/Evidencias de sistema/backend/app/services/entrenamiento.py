@@ -47,15 +47,3 @@ def delete_entrenamiento(db: Session, id_entrenamiento: int) -> bool:
     db.delete(db_entrenamiento)
     db.commit()
     return True
-
-
-def disable_entrenamiento(
-    db: Session, id_entrenamiento: int
-) -> entrenamiento.Entrenamiento | None:
-    db_entrenamiento = get_entrenamiento(db, id_entrenamiento)
-    if not db_entrenamiento:
-        return None
-    db_entrenamiento.activo = False
-    db.commit()
-    db.refresh(db_entrenamiento)
-    return db_entrenamiento
