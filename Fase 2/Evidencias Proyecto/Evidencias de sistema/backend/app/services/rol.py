@@ -37,13 +37,3 @@ def delete_rol(db: Session, id_rol: int) -> bool:
     db.delete(db_rol)
     db.commit()
     return True
-
-
-def disable_rol(db: Session, id_rol: int) -> rol.Rol | None:
-    db_rol = get_rol(db, id_rol)
-    if not db_rol:
-        return None
-    db_rol.rol_activo = False
-    db.commit()
-    db.refresh(db_rol)
-    return db_rol

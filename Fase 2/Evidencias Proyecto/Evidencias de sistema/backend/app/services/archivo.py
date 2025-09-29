@@ -44,13 +44,3 @@ def delete_archivo(db: Session, id_archivo: int) -> bool:
     db.delete(db_archivo)
     db.commit()
     return True
-
-
-def disable_archivo(db: Session, id_archivo: int) -> archivo.Archivo | None:
-    db_archivo = get_archivo(db, id_archivo)
-    if not db_archivo:
-        return None
-    db_archivo.estado_archivo = False
-    db.commit()
-    db.refresh(db_archivo)
-    return db_archivo
