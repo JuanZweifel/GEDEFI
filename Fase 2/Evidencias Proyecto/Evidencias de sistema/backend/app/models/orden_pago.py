@@ -22,12 +22,12 @@ class OrdenPago(Base):
     fecha_pago: Mapped[date] = mapped_column(DateTime, nullable=True)
     id_club: Mapped[int] = mapped_column(ForeignKey("CLUB.id_club"), nullable=True)
     fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
-    #usuario_emisor: Mapped[str] = mapped_column(String(10), nullable=False)
-    #usuario_pago: Mapped[str] = mapped_column(String(10), nullable=True)
+    usuario_emisor: Mapped[str] = mapped_column(String(10), nullable=False)
+    usuario_pago: Mapped[str] = mapped_column(String(10), nullable=True)
 
     # Relaciones
-    #emisor: Mapped["Usuario"] = relationship("Usuario", foreign_keys=["Usuario.rut_usuario"])
+    emisor: Mapped["Usuario"] = relationship("Usuario", foreign_keys=["Usuario.rut_usuario"])
 
-    #Pagador: Mapped["Usuario"] = relationship("Usuario", foreign_keys=["Usuario.rut_usuario"])
+    Pagador: Mapped["Usuario"] = relationship("Usuario", foreign_keys=["Usuario.rut_usuario"])
 
     club: Mapped["Club"] = relationship("Club", back_populates="ordenes_pago")

@@ -2,14 +2,15 @@ from datetime import date
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from .orden_pago import OrdenPagoRead
+from .serie import SerieRead
 
 
 class ClubBase(BaseModel):
-    nombre_club: str
-    fecha_fundacion: date
-    fono_club: Optional[str] = None
-    direccion_club: str
-    email_club: str
+    nombre_club: str = Field(..., max_length=120, min_length=4, description="Nombre del club")
+    fecha_fundacion: date = Field(..., description="Fecha de fundación del club")
+    fono_club: Optional[str] = Field(None, max_length=12, description="Teléfono del club")
+    direccion_club: str = Field(..., max_length=500, min_length=10, description="Dirección del club")
+    email_club: str = Field(..., max_length=320, description="Email del club")
 
 
 class ClubCreate(ClubBase):
@@ -17,15 +18,20 @@ class ClubCreate(ClubBase):
 
 
 class ClubRead(ClubBase):
-    id_club: int
-    club_activo: bool
+    id_club: int = Field(..., description="ID del club")
+    club_activo: bool = Field(..., description="Indica si el club está activo")
+    fecha_creacion: date = Field(..., description="Fecha de creación del club")
+    fecha_modificacion: date = Field(..., description="Fecha de última modificación del club")
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class ClubUpdate(BaseModel):
-    nombre_club: Optional[str] = None
-    fecha_fundacion: Optional[date] = None
-    club_activo: Optional[bool] = None
+    nombre_club: Optional[str] = Field(None, max_length=120, min_length=4, description="Nombre del club")
+    fecha_fundacion: Optional[date] = Field(None, description="Fecha de fundación del club")
+    fono_club: Optional[str] = Field(None, max_length=12, description="Teléfono del club")
+    direccion_club: Optional[str] = Field(None, max_length=500, min_length=10, description="Dirección del club")
+    email_club: Optional[str] = Field(None, max_length=320, description="Email del club")
 
 
 class ClubWithOrdenPago(ClubRead):
@@ -33,5 +39,10 @@ class ClubWithOrdenPago(ClubRead):
 
 class ClubList(BaseModel):
     clubs: List[ClubRead] = Field(default_factory=list)
+
+class ClubWithSeries(ClubRead):
+    series: List[SerieRead] = Field(default_factory=list)
+
+
 
 

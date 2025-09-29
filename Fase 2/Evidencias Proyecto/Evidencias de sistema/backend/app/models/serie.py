@@ -18,10 +18,10 @@ class Serie(Base):
     # Relaciones
     club: Mapped["Club"] = relationship("Club", back_populates="series")
 
-    #partidos_local: Mapped[list["Partido"]] = relationship(
-    #    "Partido", back_populates="serie_local", foreign_keys='Partido.id_serie_local', cascade="all, delete-orphan")
+    partidos_local: Mapped[list["Partido"]] = relationship(
+        "Partido", back_populates="serie_local", foreign_keys='Partido.id_serie_local', cascade="all, delete-orphan")
     
-    #partidos_visitante: Mapped[list["Partido"]] = relationship(
-    #    "Partido", back_populates="serie_visitante", foreign_keys='Partido.id_serie_visitante', cascade="all, delete-orphan")
+    partidos_visitante: Mapped[list["Partido"]] = relationship(
+        "Partido", back_populates="serie_visitante", foreign_keys='Partido.id_serie_visitante', cascade="all, delete-orphan")
     
-    #fichas_jugador: Mapped[list["FichaJugador"]] = relationship("FichaJugador", back_populates="serie", cascade="all, delete-orphan")
+    fichas_jugador: Mapped[list["FichaJugador"]] = relationship("FichaJugador", back_populates="serie", cascade="all, delete-orphan")

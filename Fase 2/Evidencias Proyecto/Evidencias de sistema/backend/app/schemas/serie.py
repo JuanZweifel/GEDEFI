@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
-
+from .ficha_jugador import FichaJugadorRead
 
 class SerieBase(BaseModel):
-    nombre_serie: str
-    id_club: int
+    nombre_serie: str = Field(..., max_length=30, description="Nombre de la serie")
+    id_club: int = Field(..., description="ID del club asociado a la serie")
 
 
 class SerieCreate(SerieBase):
@@ -23,11 +23,11 @@ class SerieRead(SerieBase):
         from_attributes = True
 
 
-'''class SerieWithPlayers(SerieRead):
-    jugadores: List[FichaJugadorRead] = []  # Assuming JugadorRead is defined elsewhere
+class SerieWithPlayers(SerieRead):
+    jugadores: List[FichaJugadorRead] = Field(default_factory=list)
 
     class Config:
-        from_attributes = True'''
+        from_attributes = True
 
 class SerieList(BaseModel):
     series: List[SerieRead] = Field(default_factory=list)

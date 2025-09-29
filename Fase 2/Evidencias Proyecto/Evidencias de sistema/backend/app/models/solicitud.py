@@ -9,8 +9,8 @@ class Solicitud(Base):
     __tablename__ = "SOLICITUD"
     
     id_solicitud: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    #usuario_solicitud: Mapped[int] = mapped_column(ForeignKey("USUARIO.rut_usuario"), nullable=False)
-    #usuario_respuesta: Mapped[int] = mapped_column(ForeignKey("USUARIO.rut_usuario"), nullable=True)
+    usuario_solicitud: Mapped[int] = mapped_column(ForeignKey("USUARIO.rut_usuario"), nullable=False)
+    usuario_respuesta: Mapped[int] = mapped_column(ForeignKey("USUARIO.rut_usuario"), nullable=True)
     categoria: Mapped[int] = mapped_column(nullable=False)
     descripcion: Mapped[str] = mapped_column(String(500), nullable=True)
     estado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -20,5 +20,5 @@ class Solicitud(Base):
 
     # relaciones
 
-    #usuario_soli: Mapped["Usuario"] = relationship("Usuario", foreign_keys="Usuario.rut_usuario", back_populates="solicitudes_realizadas")
-    #usuario_resp: Mapped["Usuario"] = relationship("Usuario", foreign_keys="Usuario.rut_usuario", back_populates="solicitudes_respondidas")
+    usuario_soli: Mapped["Usuario"] = relationship("Usuario", foreign_keys="Usuario.rut_usuario", back_populates="solicitudes_realizadas")
+    usuario_resp: Mapped["Usuario"] = relationship("Usuario", foreign_keys="Usuario.rut_usuario", back_populates="solicitudes_respondidas")

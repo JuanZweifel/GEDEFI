@@ -8,37 +8,43 @@ router = APIRouter(prefix="/club", tags=["Club"])
 
 @router.post("/", response_model=schemas.ClubRead)
 def create_club(club: schemas.ClubCreate, db: Session = Depends(get_db)):
-    return services.create_club(db, club)
+    try:
+        return services.create_club(db, club)
+    except HTTPException as e:
+        raise e
 
 
 @router.get("/{id_club}", response_model=schemas.ClubRead)
 def get_club(id_club: int, db: Session = Depends(get_db)):
-    db_club = services.get_club(db, id_club)
-    if db_club is None:
-        raise HTTPException(status_code=404, detail="Club not found.")
-    return db_club
+    try:
+        db_club = services.get_club(db, id_club)
+        return db_club
+    except HTTPException as e:
+        raise e
 
 
 @router.get("/", response_model=list[schemas.ClubRead])
 def get_clubs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return services.get_clubs(db, skip=skip, limit=limit)
+    try:
+        return services.get_clubs(db, skip=skip, limit=limit)
+    except HTTPException as e:
+        raise e
 
 
 @router.put("/{id_club}", response_model=schemas.ClubRead)
 def update_club(id_club: int, club: schemas.ClubUpdate, db: Session = Depends(get_db)):
-    db_club = services.get_club(db, id_club)
-    if db_club is None:
-        raise HTTPException(status_code=404, detail="Club not found.")
-    return services.update_club(db, id_club, club)
+    try:
+        db_club = services.get_club(db, id_club)
+        if db_club is None:
+            raise HTTPException(status_code=404, detail="Club not found.")
+        return services.update_club(db, id_club, club)
+    except HTTPException as e:
+        raise e
 
 
 @router.delete("/{id_club}")
 def delete_club(id_club: int, db: Session = Depends(get_db)):
-    db_club = services.get_club(db, id_club)
-    if db_club is None:
-        raise HTTPException(status_code=404, detail="Club not found.")
-
-    if services.delete_club(db, id_club):
-        return {"detail": "Club deleted successfully."}
-    else:
-        raise HTTPException(status_code=500, detail="Error deleting club.")
+    try:
+        return services.delete_club(db, id_club)
+    except HTTPException as e:
+        raise e

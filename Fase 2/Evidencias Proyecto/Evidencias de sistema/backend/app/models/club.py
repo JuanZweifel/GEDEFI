@@ -34,9 +34,9 @@ class Club(Base):
         "DetalleUsuarioClub", back_populates="club", cascade="all, delete-orphan"
     )
 
-    #detalles_jugadores_club: Mapped[list["DetalleJugadorClub"]] = relationship(
-    #    "DetalleJugadorClub", back_populates="club", cascade="all, delete-orphan"
-    #)
+    detalles_jugadores_club: Mapped[list["DetalleJugadorClub"]] = relationship(
+        "DetalleJugadorClub", back_populates="club", cascade="all, delete-orphan"
+    )
 
     series: Mapped[list["Serie"]] = relationship(
         "Serie", back_populates="club", cascade="all, delete-orphan"
