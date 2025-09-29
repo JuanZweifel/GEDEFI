@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
-import {LandingPage} from './LandingPage.tsx'
+import {LandingPage} from './components/landing-page.tsx'
 import "./styles/globals.css";
 
 const sessionExample = false // Simulating a session check
