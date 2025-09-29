@@ -1,18 +1,8 @@
-from .reunion import *
-from .asociacion import *
-from .contrato_club import *
-from .serie import *
-from .estadistica_jugador import *
-
-# from .evaluacion_fisica import *
+from .cancha import *
+from .detalle_club_jugador import *
 from .ficha_jugador import *
-from .pais import *
-from .asistencia_reunion import *
-from .club import *
-from .cuenta_usuario import *
-from .historial_permiso import *
-from .orden_pago import *
-from .permiso import *
-from .usuario import *
-
-# WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente
+from .jugador import *
+from .lesion import *
+from .partido import *
+from .rendimiento_entrenamiento import *
+from .rendimiento_partido import *

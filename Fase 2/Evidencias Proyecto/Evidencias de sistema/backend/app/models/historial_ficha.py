@@ -22,12 +22,5 @@ class FichaJugador(Base):
     fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False, onupdate=datetime.now(timezone.utc))
     rut_jugador:Mapped[str] = mapped_column(String(10), ForeignKey("JUGADOR.rut_jugador"), primary_key=True, nullable=False, index=True)
     #id_serie:Mapped[int] = mapped_column(Integer, ForeignKey("SERIE.id_serie"), primary_key=True, nullable=False, index=True)
-
-    #Relaciones
-    jugador: Mapped["Jugador"] = relationship(
-        "Jugador", back_populates="fichas_jugador"
-    )
-
-    #rendimiento_partido: Mapped[list["RendimientoPartido"]] = relationship(
-        #"RendimientoPartido", back_populates="ficha_jugador"
-    #)
+    #modificado_por:Mapped[str] = mapped_column(String, ForeignKey("USUARIO.rut_usuario"), nullable=False)
+    fecha_creacion_hist:Mapped[date] = mapped_column(Date, nullable=False)

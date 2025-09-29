@@ -1,24 +1,32 @@
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Optional, List
 from datetime import date
-from pydantic import BaseModel
-
-
+from .partido import PartidoRead  
 
 class CanchaBase(BaseModel):
     nombre_cancha: str
-    direccion_cancha: str
-    disponible: bool
-
+    tipo_cancha: int
+    direccion: Optional[str] = None
+    disponibilidad: bool
+    cancha_activa: bool
+    fecha_creacion: date
+    fecha_modificacion: date
 
 class CanchaCreate(CanchaBase):
     pass
 
-
 class CanchaRead(CanchaBase):
     id_cancha: int
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_atributes = True
+class CanchaUpdate(BaseModel):
+    nombre_cancha: Optional[str] = None
+    tipo_cancha: Optional[int] = None
+    direccion: Optional[str] = None
+    disponibilidad: Optional[bool] = None
+    cancha_activa: Optional[bool] = None
+    fecha_creacion: Optional[date] = None
+    fecha_modificacion: Optional[date] = None
 
-
-class CanchaUpdate(CanchaBase):
-    pass
+class CanchaReadWithPartidos(CanchaRead):
+    partido: List[PartidoRead] = Field(default_factory=list)

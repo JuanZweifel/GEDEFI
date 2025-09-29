@@ -1,49 +1,38 @@
-from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
-from .estadistica_jugador import EstadisticaJugadorRead
-
-# TODO: Falta relacion con pais
+from datetime import date
+from .rendimiento_partido import RendimientoPartidoRead
 
 class FichaJugadorBase(BaseModel):
-    rut_jugador: str
-    primer_nombre: str
-    segundo_nombre: Optional[str] = None
-    primer_apellido: str
-    segundo_apellido: Optional[str] = None
-    enfermedades_cronicas: Optional[str] = None
-    fecha_nacimiento: date
-    nacionalidad: int
-    correo_electronico: str
-    pierna_habil: Optional[int] = None  # 1: derecha, 2: izquierda, 3: ambas
-    genero: bool  # True: masculino, False: femenino
-
+    fecha_ini: date
+    fecha_fin: Optional[date] = None
+    talla_camiseta: str
+    talla_short: str
+    talla_media: str
+    talla_botin: str
+    estatura: int
+    Peso: int
+    imc: int
+    fecha_creacion: date
+    fecha_modificacion: date
 
 class FichaJugadorCreate(FichaJugadorBase):
-    pass
-
+    rut_jugador: str
+    id_serie: int
 
 class FichaJugadorRead(FichaJugadorBase):
     rut_jugador: str
-
-    class Config:
-        from_attributes = True
-
+    id_serie: int
+    model_config = ConfigDict(from_attributes=True)
 
 class FichaJugadorUpdate(BaseModel):
-    primer_nombre: Optional[str] = None
-    segundo_nombre: Optional[str] = None
-    primer_apellido: Optional[str] = None
-    segundo_apellido: Optional[str] = None
-    enfermedades_cronicas: Optional[str] = None
-    fecha_nacimiento: Optional[date] = None
-    nacionalidad: Optional[int] = None
-    correo_electronico: Optional[str] = None
-    pierna_habil: Optional[int] = None  # 1: derecha, 2: izquierda, 3: ambas
-    genero: Optional[bool] = None  # True: masculino, False: femenino
+    fecha_ini: Optional[date] = None
+    fecha_fin: Optional[date] = None
+    talla_camiseta: Optional[str] = None
+    talla_short: Optional[str] = None
+    talla_media: Optional[str] = None
+    talla_botin: Optional[str] = None
+    estatura: Optional[int] = None
+    Peso: Optional[int] = None
+    imc: Optional[int] = None
 
-
-class FichaJugadorWithDetails(FichaJugadorRead):
-    estadisticas_jugadores: List[EstadisticaJugadorRead] = []
-    # evaluaciones_fisicas: List[EvaluacionFisicaRead] = []
-    # lesiones: List[LesionRead] = []
