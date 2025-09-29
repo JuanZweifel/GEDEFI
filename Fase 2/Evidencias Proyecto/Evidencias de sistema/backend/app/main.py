@@ -10,6 +10,11 @@ from app.routes import (
     #partido,
     #rendimiento_entrenamiento,
     #rendimiento_partido
+    club,
+    asistencia_reunion,
+    reunion,
+    serie,
+    orden_pago
 )
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
@@ -27,6 +32,12 @@ app.include_router(lesion.router)
 #app.include_router(rendimiento_entrenamiento.router)
 #app.include_router(rendimiento_partido.router)
 #app.include_router(ficha_jugador.router)
+app.include_router(reunion.router)
+app.include_router(asistencia_reunion.router)
+app.include_router(club.router)
+app.include_router(orden_pago.router)
+app.include_router(serie.router)
+
 
 # Configurar CORS para permitir el frontend
 origins = [
