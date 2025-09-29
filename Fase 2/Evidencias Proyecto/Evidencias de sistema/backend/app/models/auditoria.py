@@ -18,7 +18,7 @@ class Auditoria(Base):
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
     accion_realizada: Mapped[str] = mapped_column(String(10), nullable=False)
-    usuario: Mapped[int] = mapped_column(
+    rut_usuario: Mapped[int] = mapped_column(
         ForeignKey("USUARIO.rut_usuario"), nullable=False
     )
 
