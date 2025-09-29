@@ -6,17 +6,13 @@ from .rol import Rol
 from .archivo import Archivo
 from .entrenamiento import Entrenamiento
 from .permiso_rol import PermisoRol
-from .estadisticas_jugador import EstadisticasJugador
 from .ficha_jugador import FichaJugador
 from .reunion import Reunion
-from .historial_ingreso import Historial_ingreso
-from .historial_egreso import Historial_egreso
-from .castigo import Castigo
+
+# from .castigo import Castigo
 from .cancha import Cancha
-from .calendario import Calendario
-from .asistencia_reunion import AsistenciaReunion
-from .cuenta_usuario import CuentaUsuario
-from .historial_permiso import HistorialPermiso
+
+# from .historial_permiso import HistorialPermiso
 from .usuario import Usuario
 from .club import Club
 from .orden_pago import OrdenPago
@@ -29,4 +25,3 @@ from .lesion import Lesion
 from .detalle_club_jugador import DetalleClubJugador
 from .detalle_reunion import DetalleReunion
 from .auditoria import Auditoria
-
