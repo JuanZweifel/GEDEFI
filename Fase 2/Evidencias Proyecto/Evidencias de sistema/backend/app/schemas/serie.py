@@ -1,10 +1,10 @@
-from datetime import date
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
 class SerieBase(BaseModel):
     nombre_serie: str
+    id_club: int
 
 
 class SerieCreate(SerieBase):
@@ -17,6 +17,7 @@ class SerieUpdate(SerieBase):
 
 class SerieRead(SerieBase):
     id_serie: int
+    serie_activa: bool
 
     class Config:
         from_attributes = True

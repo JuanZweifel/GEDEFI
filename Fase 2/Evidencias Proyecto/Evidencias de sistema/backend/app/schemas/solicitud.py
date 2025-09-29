@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 
 class SolicitudBase(BaseModel):
-    usuario_solicitud: int
-    usuario_respuesta: Optional[int] = None
+    #usuario_solicitud: int
+    #usuario_respuesta: Optional[int] = None
     categoria: int
     descripcion: Optional[str] = None
     estado: bool = False
@@ -14,7 +14,7 @@ class SolicitudCreate(SolicitudBase):
     pass
 
 class SolicitudUpdate(BaseModel):
-    usuario_respuesta: Optional[int] = None
+    #usuario_respuesta: Optional[int] = None
     estado: Optional[bool] = None
     respuesta: Optional[str] = None
 

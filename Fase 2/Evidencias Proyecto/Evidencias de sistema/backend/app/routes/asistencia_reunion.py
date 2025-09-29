@@ -6,14 +6,14 @@ from app import services, schemas
 router = APIRouter(prefix="/asistencias-reunion", tags=["Asistencia Reunion"])
 
 
-@router.post("/", response_model=schemas.AsistenciaReunionRead)
+@router.post("/", response_model=schemas.DetalleReunionRead)
 def create_asistencia_reunion(
-    asistencia: schemas.AsistenciaReunionCreate, db: Session = Depends(get_db)
+    asistencia: schemas.DetalleReunionCreate, db: Session = Depends(get_db)
 ):
     return services.create_asistencia_reunion(db, asistencia)
 
 
-@router.get("/{id_reunion}/{correo_usu}", response_model=schemas.AsistenciaReunionRead)
+@router.get("/{id_reunion}/{correo_usu}", response_model=schemas.DetalleReunionRead)
 def get_asistencia_reunion(
     id_reunion: int, correo_usu: str, db: Session = Depends(get_db)
 ):
@@ -23,18 +23,18 @@ def get_asistencia_reunion(
     return db_asistencia
 
 
-@router.get("/", response_model=list[schemas.AsistenciaReunionRead])
+@router.get("/", response_model=list[schemas.DetalleReunionRead])
 def get_asistencias_reunion(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 ):
     return services.get_asistencias_reunion(db, skip=skip, limit=limit)
 
 
-@router.put("/{id_reunion}/{correo_usu}", response_model=schemas.AsistenciaReunionRead)
+@router.put("/{id_reunion}/{correo_usu}", response_model=schemas.DetalleReunionRead)
 def update_asistencia_reunion(
     id_reunion: int,
     correo_usu: str,
-    asistencia: schemas.AsistenciaReunionUpdate,
+    asistencia: schemas.DetalleReunionUpdate,
     db: Session = Depends(get_db),
 ):
     db_asistencia = services.get_asistencia_reunion(db, id_reunion, correo_usu)

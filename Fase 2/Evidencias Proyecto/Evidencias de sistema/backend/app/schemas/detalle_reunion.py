@@ -1,4 +1,3 @@
-from datetime import date
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
@@ -8,7 +7,7 @@ class ReunionBase(BaseModel):
     hora_salida: Optional[str] = None
 
 class DetalleReunionCreate(ReunionBase):
-    rut_usuario: int = Field(..., description="ID del usuario")
+    #rut_usuario: int = Field(..., description="ID del usuario")
     reunion_id: int = Field(..., description="ID de la reunión")
 
 class DetalleReunionUpdate(BaseModel):
@@ -18,7 +17,7 @@ class DetalleReunionUpdate(BaseModel):
 
 class DetalleReunionRead(ReunionBase):
     id_detalle_reunion: int
-    rut_usuario: int = Field(..., description="ID del usuario")
+    #rut_usuario: int = Field(..., description="ID del usuario")
     reunion_id: int = Field(..., description="ID de la reunión")
 
     model_config = ConfigDict(from_attributes=True)

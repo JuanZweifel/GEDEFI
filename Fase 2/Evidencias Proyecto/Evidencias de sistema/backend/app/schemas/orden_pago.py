@@ -16,8 +16,8 @@ class OrdenPagoBase(BaseModel):
     fecha_pago: Optional[datetime] = None
     id_club: Optional[int] = None
     fecha_modificacion: Optional[datetime] = None
-    usuario_emisor: str = Field(..., max_length=10)
-    usuario_pago: Optional[str] = Field(None, max_length=10)
+    #usuario_emisor: str = Field(..., max_length=10)
+    #usuario_pago: Optional[str] = Field(None, max_length=10)
 
 
 class OrdenPagoCreate(OrdenPagoBase):
@@ -40,8 +40,8 @@ class OrdenPagoUpdate(BaseModel):
     fecha_vencimiento: Optional[datetime] = None
     fecha_pago: Optional[datetime] = None
     id_club: Optional[int] = None
-    usuario_emisor: Optional[str] = Field(None, max_length=10)
-    usuario_pago: Optional[str] = Field(None, max_length=10)
+    #usuario_emisor: Optional[str] = Field(None, max_length=10)
+    #usuario_pago: Optional[str] = Field(None, max_length=10)
 
 class OrdenPagoList(BaseModel):
     ordenes_pago: list[OrdenPagoRead]

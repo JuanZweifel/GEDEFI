@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
 class DetalleUsuarioClubBase(BaseModel):
-    usuario_id: int = Field(..., description="ID del usuario")
+    #usuario_id: int = Field(..., description="ID del usuario")
     club_id: int = Field(..., description="ID del club")
 
 class DetalleUsuarioClubCreate(DetalleUsuarioClubBase):

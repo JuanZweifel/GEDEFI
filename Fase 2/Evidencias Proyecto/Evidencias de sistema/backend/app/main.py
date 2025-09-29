@@ -2,15 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import engine, Base
 from app.routes import (
-    reunion,
-    ficha_jugador,
-    asistencia_reunion,
     club,
-    cuenta_usuario,
-    historial_permiso,
-    orden_pago,
-    permiso,
-    usuario,
+    asistencia_reunion,
+    reunion,
+    serie,
+    orden_pago
 )
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
@@ -21,17 +17,11 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="API GEDEFI", version="1.0")
 
 app.include_router(reunion.router)
-app.include_router(asociacion.router)
-app.include_router(contrato_club.router)
-app.include_router(pais.router)
-app.include_router(ficha_jugador.router)
 app.include_router(asistencia_reunion.router)
 app.include_router(club.router)
-app.include_router(cuenta_usuario.router)
-app.include_router(historial_permiso.router)
 app.include_router(orden_pago.router)
-app.include_router(permiso.router)
-app.include_router(usuario.router)
+app.include_router(serie.router)
+
 
 # Configurar CORS para permitir el frontend
 origins = [

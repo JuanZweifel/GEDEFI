@@ -12,9 +12,9 @@ class DetalleReunion(Base):
     asistencia: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Claves foraneas
-    rut_usuario: Mapped[str] = mapped_column(
-        String(320), ForeignKey("USUARIO.rut_usuario"), primary_key=True
-    )
+    #rut_usuario: Mapped[str] = mapped_column(
+    #    String(320), ForeignKey("USUARIO.rut_usuario"), primary_key=True
+    #)
     id_reunion: Mapped[int] = mapped_column(
         Integer, ForeignKey("REUNION.id_reunion"), primary_key=True
     )
@@ -22,7 +22,7 @@ class DetalleReunion(Base):
     hora_salida: Mapped[date] = mapped_column(Date, nullable=True)
 
     # Relaciones
-    reunion: Mapped["Reunion"] = relationship("Reunion", back_populates="asistencias")
-    usuario: Mapped["Usuario"] = relationship(
-        "Usuario", back_populates="asistencias"
-    )
+    reunion: Mapped["Reunion"] = relationship("Reunion", back_populates="detalles_reunion")
+    #usuario: Mapped["Usuario"] = relationship(
+    #    "Usuario", back_populates="asistencias"
+    #)

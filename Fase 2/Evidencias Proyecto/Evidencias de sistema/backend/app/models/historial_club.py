@@ -9,7 +9,7 @@ from app.db import Base
 class HistorialClub(Base):
     __tablename__ = "HISTORIAL_CLUB"
 
-    id_club: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    id_club: Mapped[int] = mapped_column(Integer, nullable=False, index=True, primary_key=True)
     nombre_club: Mapped[str] = mapped_column(String(250), nullable=False, unique=True)
     fecha_fundacion: Mapped[date] = mapped_column(Date, nullable=False)
     fono_club: Mapped[str] = mapped_column(String(12), nullable=True)
@@ -19,7 +19,7 @@ class HistorialClub(Base):
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     fecha_creacion_his: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now(timezone.utc))
-    usuario_modificacion: Mapped[int] = mapped_column(ForeignKey("USUARIO.rut_usuario"), nullable=False, index=True)
+    #usuario_modificacion: Mapped[int] = mapped_column(ForeignKey("USUARIO.rut_usuario"), nullable=False, index=True)
 
     # Relaciones
-    usuario_mod: Mapped["Usuario"] = relationship("Usuario", back_populates="historial_clubs")
+    #usuario_mod: Mapped["Usuario"] = relationship("Usuario", back_populates="historial_clubs")

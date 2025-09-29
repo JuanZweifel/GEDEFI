@@ -16,7 +16,7 @@ class HistorialSerie(Base):
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     fecha_creacion_his: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now(timezone.utc))
-    usuario_modificacion: Mapped[int] = mapped_column(ForeignKey("USUARIO.rut_usuario"), nullable=False, index=True)
+    #usuario_modificacion: Mapped[int] = mapped_column(ForeignKey("USUARIO.rut_usuario"), nullable=False, index=True)
 
     # Relaciones
-    usuario_mod: Mapped["Usuario"] = relationship("Usuario", back_populates="historial_clubs")
+    #usuario_mod: Mapped["Usuario"] = relationship("Usuario", back_populates="historial_clubs")

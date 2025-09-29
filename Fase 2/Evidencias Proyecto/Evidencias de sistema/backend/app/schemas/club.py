@@ -18,13 +18,14 @@ class ClubCreate(ClubBase):
 
 class ClubRead(ClubBase):
     id_club: int
+    club_activo: bool
     model_config = ConfigDict(from_attributes=True)
 
 
 class ClubUpdate(BaseModel):
     nombre_club: Optional[str] = None
     fecha_fundacion: Optional[date] = None
-    mensualidad_activa: Optional[bool] = None
+    club_activo: Optional[bool] = None
 
 
 class ClubWithOrdenPago(ClubRead):

@@ -1,18 +1,18 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from app.models import AsistenciaReunion
-from app.schemas import AsistenciaReunionCreate, AsistenciaReunionUpdate
+from app.models import DetalleReunion
+from app.schemas import DetalleReunionCreate, DetalleReunionUpdate
 
 
 def get_asistencia_reunion(
     db: Session, id_reunion: int, correo_usu: str
-) -> AsistenciaReunion | None:
+) -> DetalleReunion | None:
     return (
-        db.query(AsistenciaReunion)
+        db.query(DetalleReunion)
         .filter(
             and_(
-                AsistenciaReunion.id_reunion == id_reunion,
-                AsistenciaReunion.correo_usu == correo_usu,
+                DetalleReunion.id_reunion == id_reunion,
+                DetalleReunion.correo_usu == correo_usu,
             )
         )
         .first()
@@ -20,13 +20,13 @@ def get_asistencia_reunion(
 
 
 def get_asistencias_reunion(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(AsistenciaReunion).offset(skip).limit(limit).all()
+    return db.query(DetalleReunion).offset(skip).limit(limit).all()
 
 
 def create_asistencia_reunion(
-    db: Session, asistencia_reunion: AsistenciaReunionCreate
-) -> AsistenciaReunion:
-    db_asistencia_reunion = AsistenciaReunion(**asistencia_reunion.dict())
+    db: Session, asistencia_reunion: DetalleReunionCreate
+) -> DetalleReunion:
+    db_asistencia_reunion = DetalleReunion(**asistencia_reunion.dict())
     db.add(db_asistencia_reunion)
     db.commit()
     db.refresh(db_asistencia_reunion)
@@ -37,8 +37,8 @@ def update_asistencia_reunion(
     db: Session,
     id_reunion: int,
     correo_usu: str,
-    asistencia_reunion_update: AsistenciaReunionUpdate,
-) -> AsistenciaReunion | None:
+    asistencia_reunion_update: DetalleReunionUpdate,
+) -> DetalleReunion | None:
     db_asistencia_reunion = get_asistencia_reunion(db, id_reunion, correo_usu)
     if not db_asistencia_reunion:
         return None
