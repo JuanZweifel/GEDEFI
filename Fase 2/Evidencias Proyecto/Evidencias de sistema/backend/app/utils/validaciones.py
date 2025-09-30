@@ -1,5 +1,5 @@
 # TODO: Se dejaran las validaciones que se reutilizan en cada uno de los servicios o logica de negocio para optimizacion de codigo
-
+from datetime import date, datetime
 import re
 
 # ---------------------------------- VALIDACION DE RUT CHILENO ----------------------------------
@@ -45,7 +45,7 @@ def validar_rut(rut: str) -> bool:
 
 import re
 
-def validar_nombre(nombre: str) -> str | bool:
+def validar_nombre(nombre: str) -> str:
     try:
         """
         Valida y corrige un nombre propio:
@@ -75,3 +75,65 @@ def validar_nombre(nombre: str) -> str | bool:
 # print(validar_nombre("MARÍA josé"))   # "María José"
 # print(validar_nombre("Carlos123"))    # False
 # print(validar_nombre("Ana-Luisa"))    # False
+
+
+def validar_email(value: str) -> str:
+    """
+    Valida que el email tenga un formato correcto.
+    """
+    value = value.strip()
+    # Regex básico para email
+    pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    if not re.fullmatch(pattern, value):
+        raise ValueError("El email ingresado no es válido")
+    return value
+
+def validar_fecha_pasada(value: date | str) -> date:
+    """
+    Valida que la fecha sea válida y no esté en el futuro.
+    """
+    # Si viene como string, convertir a date
+    if isinstance(value, str):
+        try:
+            value = datetime.strptime(value, "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError("La fecha ingresada no es válida")
+
+    if value > date.today():
+        raise ValueError("La fecha no puede ser mayor a la fecha actual")
+    return value
+
+# PRUEBAS DE EMAIL Y FECHA
+#try:
+#    email = validar_email("usuario@example.com")
+#    print("Email válido:", email)
+#except ValueError as e:
+#    print("Error email:", e)
+
+# --- Email inválido ---
+#try:
+#    email = validar_email("usuario@@example.com")
+#    print("Email válido:", email)
+#except ValueError as e:
+#    print("Error email:", e)
+
+# --- Fecha válida ---
+#try:
+#    fecha = validar_fecha_pasada("2023-05-20")
+#    print("Fecha válida:", fecha)
+#except ValueError as e:
+#    print("Error fecha:", e)
+
+# --- Fecha inválida (futura) ---
+#try:
+#    fecha = validar_fecha_pasada("2999-01-01")
+#    print("Fecha válida:", fecha)
+#except ValueError as e:
+#    print("Error fecha:", e)
+
+# --- Fecha inválida (formato incorrecto) ---
+#try:
+#    fecha = validar_fecha_pasada("20-05-2023")
+#    print("Fecha válida:", fecha)
+#except ValueError as e:
+#    print("Error fecha:", e)
