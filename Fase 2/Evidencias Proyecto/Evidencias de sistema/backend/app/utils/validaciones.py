@@ -52,6 +52,10 @@ def validar_nombre(nombre: str) -> str:
         - No permite números ni caracteres especiales.
         - Devuelve el nombre corregido si es válido, o False si no.
         """
+
+        # validar que no este vacio
+        if nombre is None or nombre.strip() == "":
+            raise ValueError("El nombre no puede estar vacío.")
         # Eliminar espacios en los extremos
         nombre = nombre.strip()
 
@@ -79,8 +83,8 @@ def validar_nombre(nombre: str) -> str:
 def validar_fecha(value: date | str, menor: bool = True) -> date:
     """
     Valida que la fecha sea válida y, según el parámetro 'menor':
-    - menor=True: la fecha no puede ser mayor a hoy.
-    - menor=False: la fecha no puede ser menor a hoy.
+    - menor=True: la fecha puede ser mayor o igual a hoy.
+    - menor=False: la fecha puede ser menor o igual a hoy.
     
     También convierte strings en formato 'YYYY-MM-DD' a date.
     """
@@ -93,9 +97,9 @@ def validar_fecha(value: date | str, menor: bool = True) -> date:
 
     hoy = date.today()
     
-    if menor and value > hoy:
+    if menor and value >= hoy:
         raise ValueError("La fecha no puede ser mayor a la fecha actual")
-    elif not menor and value < hoy:
+    elif not menor and value <= hoy:
         raise ValueError("La fecha no puede ser menor a la fecha actual")
     
     return value
