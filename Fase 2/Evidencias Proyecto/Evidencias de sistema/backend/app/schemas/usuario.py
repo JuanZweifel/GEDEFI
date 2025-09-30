@@ -4,6 +4,8 @@ from typing import Optional, List
 
 
 class UsuarioBase(BaseModel):
+
+    rut_usuario: str
     email_usuario: EmailStr
     nombre_usuario: str
     apellido_usuario: str
