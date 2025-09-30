@@ -43,8 +43,6 @@ def validar_rut(rut: str) -> str:
 
 # ----------------------- VALIDACIONES DE NOMBRES Y APELLIDOS -----------------------
 
-import re
-
 def validar_nombre(nombre: str) -> str:
     try:
         """
@@ -76,17 +74,7 @@ def validar_nombre(nombre: str) -> str:
 # print(validar_nombre("Carlos123"))    # False
 # print(validar_nombre("Ana-Luisa"))    # False
 
-# ----------------------- VALIDACIONES DE EMAIL Y FECHA -----------------------
-def validar_email(value: str) -> str:
-    """
-    Valida que el email tenga un formato correcto.
-    """
-    value = value.strip()
-    # Regex básico para email
-    pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-    if not re.fullmatch(pattern, value):
-        raise ValueError("El email ingresado no es válido")
-    return value
+# ----------------------- VALIDACIONES DE FECHA -----------------------
 
 def validar_fecha(value: date | str, menor: bool = True) -> date:
     """

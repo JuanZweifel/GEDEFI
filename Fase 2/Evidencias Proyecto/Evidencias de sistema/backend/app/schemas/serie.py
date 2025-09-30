@@ -1,10 +1,16 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from .ficha_jugador import FichaJugadorRead
+from ..utils.validaciones import validar_nombre
 
 class SerieBase(BaseModel):
     nombre_serie: str = Field(..., max_length=30, description="Nombre de la serie")
     id_club: int = Field(..., description="ID del club asociado a la serie")
+
+    @field_validator("nombre_serie", mode="before")
+    @classmethod
+    def validar_nombre_serie(cls, v) -> str:
+        return validar_nombre(v)
 
 
 class SerieCreate(SerieBase):

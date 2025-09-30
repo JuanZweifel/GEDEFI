@@ -1,6 +1,7 @@
 from datetime import date
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
+from ..utils.validaciones import validar_rut
 
 class SolicitudBase(BaseModel):
     usuario_solicitud: int = Field(..., description="ID del usuario que realiza la solicitud")
@@ -9,6 +10,13 @@ class SolicitudBase(BaseModel):
     descripcion: Optional[str] = Field(None, max_length=500, description="Descripción de la solicitud")
     estado: bool = Field(False, description="Estado de la solicitud, True si está resuelta")
     respuesta: Optional[str] = Field(None, max_length=500, description="Respuesta a la solicitud")
+
+    @field_validator("usuario_solicitud", "usuario_respuesta")
+    @classmethod
+    def validar_rut_solicitud(cls, v):
+        if v is not None:
+            return validar_rut(v)
+        return v
 
 class SolicitudCreate(SolicitudBase):
     pass

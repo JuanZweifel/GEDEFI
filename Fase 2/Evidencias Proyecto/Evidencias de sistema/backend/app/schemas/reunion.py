@@ -1,8 +1,8 @@
 from datetime import date
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, List
 from .detalle_reunion import DetalleReunionRead
-
+from ..utils.validaciones import validar_fecha
 
 class ReunionBase(BaseModel):
     tipo_reunion: int = Field(..., ge=0, le=4, description="Tipo de reunión")
@@ -10,6 +10,11 @@ class ReunionBase(BaseModel):
     desc_reunion: Optional[str] = Field(
         None, max_length=500, description="Descripción de la reunión"
     )
+
+    @field_validator("fecha_reunion")
+    @classmethod
+    def validar_fecha_reunion(cls, v) -> date:
+        return validar_fecha(v, False)
 
 
 class ReunionCreate(ReunionBase):

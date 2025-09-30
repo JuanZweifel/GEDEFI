@@ -1,10 +1,16 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, List
-
+from ..utils.validaciones import validar_hora
 class ReunionBase(BaseModel):
     asistencia: bool
     hora_llegada: Optional[str] = None
     hora_salida: Optional[str] = None
+
+    @field_validator('hora_llegada', 'hora_salida')
+    def validar_horas(cls, v):
+        if v is not None:
+            validar_hora(v)
+        return v
 
 class DetalleReunionCreate(ReunionBase):
     #rut_usuario: int = Field(..., description="ID del usuario")
