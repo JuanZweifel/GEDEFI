@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+from ..utils.validaciones import validar_nombre, validar_fecha
 
 class LesionBase(BaseModel):
     nombre_lesion: str
@@ -9,6 +10,22 @@ class LesionBase(BaseModel):
     tiempo_recuperacion: Optional[int] = None
     fecha_lesion: Optional[date] = None
     fecha_fin_lesion: Optional[date] = None
+
+    @field_validator("nombre_lesion")
+    @classmethod
+    def validar_nombre_lesion(cls, v) -> str:
+        return validar_nombre(v)
+
+    @field_validator("fecha_lesion")
+    @classmethod
+    def validar_fecha_lesion(cls, v) -> date:
+        return validar_fecha(v, True)
+
+    @field_validator("fecha_fin_lesion")
+    @classmethod
+    def validar_fecha_fin_lesion(cls, v) -> date:
+        return validar_fecha(v, False)
+
 
 class LesionCreate(LesionBase):
     rut_jugador: str

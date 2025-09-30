@@ -1,7 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import date
-from .rendimiento_partido import RendimientoPartidoRead
 
 class FichaJugadorBase(BaseModel):
     fecha_ini: date
@@ -13,8 +12,7 @@ class FichaJugadorBase(BaseModel):
     estatura: int
     Peso: int
     imc: int
-    fecha_creacion: date
-    fecha_modificacion: date
+    
 
 class FichaJugadorCreate(FichaJugadorBase):
     rut_jugador: str
@@ -23,6 +21,8 @@ class FichaJugadorCreate(FichaJugadorBase):
 class FichaJugadorRead(FichaJugadorBase):
     rut_jugador: str
     id_serie: int
+    fecha_creacion: date
+    fecha_modificacion: date
     model_config = ConfigDict(from_attributes=True)
 
 class FichaJugadorUpdate(BaseModel):

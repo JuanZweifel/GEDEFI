@@ -1,10 +1,11 @@
 from datetime import date, datetime
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, List
 from .lesion import LesionRead
 from .detalle_club_jugador import DetalleClubJugadorRead
 from .ficha_jugador import FichaJugadorRead
 from .rendimiento_entrenamiento import RendimientoEntrenamientoRead
+from ..utils.validaciones import validar_rut, validar_nombre, validar_fecha, validar_celular_chile
 
 class JugadorBase(BaseModel):
     rut_jugador: str
@@ -15,8 +16,31 @@ class JugadorBase(BaseModel):
     genero: bool
     fecha_nacimiento: date
     enfermedades_cronicas: Optional[str] = None
-    fono_jugador: Optional[int] = None
+    fono_jugador: Optional[str] = None
     jugador_activo: bool
+
+    # Validaciones
+
+            # Validaciones
+    @field_validator("rut_jugador")
+    @classmethod
+    def validar_rut_jugador(cls, v) -> str:
+        return validar_rut(v)
+
+    @field_validator("primer_nombre", "segundo_nombre", "primer_apellido", "segundo_apellido", mode="before")
+    @classmethod
+    def validar_nombre_jugador(cls, v) -> str:
+        return validar_nombre(v)
+
+    @field_validator("fecha_nacimiento")
+    @classmethod
+    def validar_fecha_nacimiento(cls, v) -> date:
+        return validar_fecha(v, True)
+
+    @field_validator("fono_jugador")
+    @classmethod
+    def validar_fono_jugador(cls, v) -> str:
+        return validar_celular_chile(v)
 
 class JugadorCreate(JugadorBase):
     pass

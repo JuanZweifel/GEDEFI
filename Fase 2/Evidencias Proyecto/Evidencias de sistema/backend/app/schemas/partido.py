@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, List
 from datetime import date
+from ..utils.validaciones import validar_fecha
 
 
 class PartidoBase(BaseModel):
@@ -12,11 +13,19 @@ class PartidoBase(BaseModel):
     serie_local: int
     serie_visita: int
 
+        # Validaciones
+    @field_validator("fecha_partido")
+    @classmethod
+    def validar_fecha_partido(cls, v) -> date:
+        return validar_fecha(v, False)
+
 class PartidoCreate(PartidoBase):
     pass
 
 class PartidoRead(PartidoBase):
     id_partido: int
+    fecha_creacion: date
+    fecha_modificacion: date
     model_config = ConfigDict(from_attributes=True)
 
 class PartidoUpdate(BaseModel):

@@ -1,7 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, List
 from datetime import date
 from .partido import PartidoRead  
+from ..utils.validaciones import validar_nombre
 
 class CanchaBase(BaseModel):
     nombre_cancha: str
@@ -9,14 +10,20 @@ class CanchaBase(BaseModel):
     direccion: Optional[str] = None
     disponibilidad: bool
     cancha_activa: bool
-    fecha_creacion: date
-    fecha_modificacion: date
+
+    # Validaciones
+    @field_validator("nombre_cancha", mode="before")
+    @classmethod
+    def validar_nombre_cancha(cls, v) -> str:
+        return validar_nombre(v)
 
 class CanchaCreate(CanchaBase):
     pass
 
 class CanchaRead(CanchaBase):
     id_cancha: int
+    fecha_creacion: date
+    fecha_modificacion: date
     model_config = ConfigDict(from_attributes=True)
 
 class CanchaUpdate(BaseModel):
