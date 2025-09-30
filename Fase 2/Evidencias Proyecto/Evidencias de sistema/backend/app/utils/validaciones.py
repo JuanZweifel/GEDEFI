@@ -3,7 +3,7 @@ from datetime import date, datetime
 import re
 
 # ---------------------------------- VALIDACION DE RUT CHILENO ----------------------------------
-def validar_rut(rut: str) -> bool:
+def validar_rut(rut: str) -> str:
     """
     Valida un RUT chileno en formato 12345678-9 o 12345678-K
     """
@@ -28,7 +28,7 @@ def validar_rut(rut: str) -> bool:
             dv_calculado = str(resto)
 
         if dv_calculado == dv:
-            return True
+            return rut
         else:
             raise ValueError("El RUN no es válido.")
     except Exception as e :
