@@ -9,7 +9,7 @@ from datetime import date
 client = TestClient(app)
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def setup_database():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
@@ -28,13 +28,14 @@ def db_session():
 
 # -------------------- CLUB --------------------
 
+
 def test_create_club():
     payload = {
         "nombre_club": "Club Test",
         "fecha_fundacion": "2000-01-01",
         "fono_club": "123456789",
         "direccion_club": "Calle Falsa 123",
-        "email_club": "test@club.com"
+        "email_club": "test@club.com",
     }
     response = client.post("/clubs/", json=payload)
     assert response.status_code == 200
@@ -48,7 +49,7 @@ def test_get_club(db_session):
         fecha_fundacion=date(2000, 1, 1),
         fono_club="123456789",
         direccion_club="Calle Falsa 123",
-        email_club="existente@club.com"
+        email_club="existente@club.com",
     )
     db_session.add(club)
     db_session.commit()
@@ -68,6 +69,7 @@ def test_get_club_no_existe():
 
 # -------------------- ORDEN PAGO --------------------
 
+
 def test_create_orden_pago(db_session):
     # Primero necesitamos un club para FK
     club = Club(
@@ -75,7 +77,7 @@ def test_create_orden_pago(db_session):
         fecha_fundacion=date(2000, 1, 1),
         fono_club="123456789",
         direccion_club="Calle Falsa 123",
-        email_club="pago@club.com"
+        email_club="pago@club.com",
     )
     db_session.add(club)
     db_session.commit()
@@ -89,7 +91,7 @@ def test_create_orden_pago(db_session):
         "numero_transaccion": "TX123",
         "descripcion": "Pago test",
         "id_club": club.id_club,
-        "usuario_emisor": "USR001"
+        "usuario_emisor": "USR001",
     }
     response = client.post("/ordenes_pago/", json=payload)
     assert response.status_code == 200
@@ -104,6 +106,7 @@ def test_get_orden_pago_no_existe():
 
 
 # -------------------- REUNION --------------------
+
 
 def test_create_reunion():
     payload = {
