@@ -11,7 +11,10 @@ import { MeetingsModule } from './components/meetings-module';
 import { ClubManagement } from './components/club-management';
 import { EnhancedFinanceModule, AnalyticsModule, FingerprintModule, UserPermissionsModule } from './components/enhanced-modules';
 import { PenaltiesModule, CalendarModule, SoccerFieldsModule } from './components/additional-modules';
-import { UserRoleModule, ClubSeriesModule, PlayerRecordsModule, AuditModule } from './components/database-modules';
+import { AuditModule } from './components/interfaces/auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA Y SEPARAR EN UN POSIBLE MODULO DIFERENTE
+import { PlayerRecordsModule } from './components/interfaces/player-records.tsx'
+import { UserRoleModule } from './components/interfaces/user-role.tsx'
+import { ClubSeriesModule } from './components/interfaces/club-serie.tsx'
 import { MatchesTrainingModule } from './components/matches-training-module';
 import { EnhancedFieldsModule } from './components/enhanced-fields-module';
 import { 
