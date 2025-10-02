@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import Usuario
 from app.schemas import UsuarioCreate, UsuarioUpdate
+from app.security import get_password_hash
 
 
 def get_usuario(db: Session, rut_usu: str) -> Usuario | None:
@@ -12,7 +13,12 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
-    db_usuario = Usuario(**usuario.dict())
+    print("Password raw:", usuario.pass_usuario)
+    print("Length:", len(usuario.pass_usuario))
+    hashed_password = get_password_hash(usuario.pass_usuario)
+    db_usuario = Usuario(
+        **usuario.dict(exclude={"pass_usuario"}), pass_usuario=hashed_password
+    )
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)

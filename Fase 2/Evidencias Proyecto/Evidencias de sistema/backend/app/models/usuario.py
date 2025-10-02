@@ -9,7 +9,7 @@ from datetime import datetime, date
 class Usuario(Base):
     __tablename__ = "USUARIO"
 
-    rut_usuario: Mapped[str] = mapped_column(String(10), primary_key=True, index=True)
+    rut_usuario: Mapped[str] = mapped_column(String(10), primary_key=True)
     email_usuario: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     pass_usuario: Mapped[str] = mapped_column(String(300), nullable=False)
     nombre_usuario: Mapped[str] = mapped_column(String(50), nullable=False)
