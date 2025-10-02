@@ -22,7 +22,7 @@ def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
             raise HTTPException(status_code=400, detail="Debe asociar un club a un usuario NO administrativo.")
         db_detalle = DetalleUsuarioClub(rut_usuario=usuario.rut_usuario, id_club=usuario.id_club)
     db_usuario = Usuario(
-        **usuario.dict(exclude={"admin", "id_club"}exclude={"pass_usuario"}), pass_usuario=hashed_password
+        **usuario.dict(exclude={"pass_usuario", "admin", "id_club"}), pass_usuario=hashed_password
     )
     db_usuario.detalles_usuario_club.append(db_detalle) if not usuario.admin else None
     db.add(db_usuario)
