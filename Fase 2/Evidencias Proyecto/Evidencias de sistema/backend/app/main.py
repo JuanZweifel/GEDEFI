@@ -22,6 +22,7 @@ from app.routes import (
     entrenamiento,
     permiso_rol,
     permiso,
+    auth,
 )
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
@@ -51,6 +52,7 @@ app.include_router(reunion.router)
 app.include_router(asistencia_reunion.router)
 app.include_router(club.router)
 app.include_router(serie.router)
+app.include_router(auth.router)
 
 
 # Configurar CORS para permitir el frontend

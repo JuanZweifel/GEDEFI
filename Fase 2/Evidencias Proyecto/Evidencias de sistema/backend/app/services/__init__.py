@@ -16,6 +16,7 @@ from .auditoria import *
 from .entrenamiento import *
 from .permiso_rol import *
 from .permiso import *
+from .auth import *
 from .serie import *
 from .detalle_club_jugador import *
 
