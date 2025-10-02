@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -8,12 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { 
-  Plus, Edit, Trash2, Eye, Users, Building, Trophy, Activity, 
+import {
+  Plus, Edit, Trash2, Eye, Users, Building, Trophy, Activity,
   Calendar, MapPin, DollarSign, Shield, Search, Filter, ChevronRight,
   History, FileText, AlertCircle, CheckCircle, Clock, Target, User,
-  Upload, X, Download
+  Upload, X, Download, Loader
 } from 'lucide-react';
+
+import { getClubs } from '../services/clubServices';
 
 // Enhanced User & Roles Module (USUARIO, ROL, HISTORIAL_USUARIO)
 export const UserRoleModule: React.FC = () => {
@@ -21,12 +23,12 @@ export const UserRoleModule: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const users = [
-    { 
+    {
       id: 1, rut: "12345678-9", nombre: "Juan", apellido1: "Pérez", apellido2: "González",
       email: "juan.perez@asociacion.cl", telefono: "+56987654321", id_rol: 1, rol_nombre: "Administrador",
       activo: true, fecha_creacion: "2024-01-15", huella_registrada: true
     },
-    { 
+    {
       id: 2, rut: "98765432-1", nombre: "María", apellido1: "González", apellido2: "Silva",
       email: "maria.gonzalez@asociacion.cl", telefono: "+56987654322", id_rol: 2, rol_nombre: "Manager Club",
       activo: true, fecha_creacion: "2024-02-20", huella_registrada: false
@@ -191,31 +193,88 @@ export const UserRoleModule: React.FC = () => {
   );
 };
 
+type directiva = {
+  rut_usuario: string;
+  email_usuario: string;
+  nombre_usuario: string;
+  apellido_usuario: string;
+  fecha_nacimiento: string;
+  huella_pulgar: string;
+  huella_indice: string;
+  usuario_activo: boolean;
+  id_rol: number;
+  fecha_creacion: string;
+  fecha_modificacion: string;
+}
+type Club = {
+  id_club: number;
+  nombre_club: string;
+  fecha_fundacion: string;
+  fono_club: string;
+  direccion_club: string;
+  email_club: string;
+  club_activo: boolean
+  fecha_creacion: string;
+  fecha_modificacion: string;
+  series: number
+  jugadores: number;
+  directiva: [directiva];
+}
+
 // Enhanced Clubs & Series Module (CLUB, SERIE, DETALLE_CLUB_JUGADOR, FICHA_JUGADOR)
 export const ClubSeriesModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('clubs');
   const [selectedClub, setSelectedClub] = useState<any>(null);
+  const [clubList, setClubList] = useState<Club[]>([]);
+  const [isEditClubOpen, setIsEditClubOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState<any>(null);
+  const [isCreateClub, setIsCreateClub] = useState(false);
+  const [estadoClub, setEstadoClub] = useState("inactivo");
 
-  const clubs = [
-    {
-      id: 1, nombre: "FC Barcelona Santiago", fecha_fundacion: "1995-03-15", mensualidad_activa: true,
-      id_asociacion: 1, activo: true, directiva: "Juan Pérez (Presidente), María Silva (Secretaria)",
-      series_registradas: 3, jugadores_totales: 65
-    },
-    {
-      id: 2, nombre: "Real Madrid Chile", fecha_fundacion: "1998-07-22", mensualidad_activa: true,
-      id_asociacion: 1, activo: true, directiva: "Carlos Rojas (Presidente), Ana González (Tesorera)",
-      series_registradas: 2, jugadores_totales: 48
+  useEffect(() => {
+    const fetchClubs = async () => {
+      try {
+        const data = await getClubs<Club[]>();
+        setClubList([...data]);
+        console.log(data)
+      } catch (error) {
+        console.log(error)
+      }
     }
-  ];
+    fetchClubs();
+  }, []);
+
+  useEffect(() => {
+    if (selectedClub) {
+      setEstadoClub(selectedClub.club_activo ? "activo" : "inactivo");
+    }
+  }, [selectedClub])
+
+  const handleClickEditClub = (club: Club) => {
+    setSelectedClub(club);
+    setIsEditClubOpen(true);
+  }
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); // espera forzada para loading
+  const handleSaveButtonClick = async () => {
+    setIsLoading(true);
+    try {
+      await sleep(3000);  // tu función que llama al service
+    } finally {
+      setIsLoading(false);
+      alert("Club modificado exitosamente");
+      setIsEditClubOpen(false);
+    }
+  }
 
   const series = [
-    { 
+    {
       id: 1, nombre: "Serie A Masculina", id_club: 1, club_nombre: "FC Barcelona Santiago",
       categoria: "Adultos", activo: true, fecha_inicio: "2024-03-01", jugadores_inscritos: 22
     },
     {
-      id: 2, nombre: "Serie Juvenil", id_club: 1, club_nombre: "FC Barcelona Santiago", 
+      id: 2, nombre: "Serie Juvenil", id_club: 1, club_nombre: "FC Barcelona Santiago",
       categoria: "Sub-18", activo: true, fecha_inicio: "2024-03-01", jugadores_inscritos: 18
     }
   ];
@@ -229,16 +288,109 @@ export const ClubSeriesModule: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2>Gestión de Clubes y Series</h2>
-        <div className="flex space-x-2">
-          <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Club
-          </Button>
-          <Button variant="outline" style={{ borderColor: '#0000db', color: '#0000db' }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Serie
-          </Button>
-        </div>
+        {activeTab === 'clubs' &&
+          <div className="flex space-x-2">
+            <Dialog open={isCreateClub} onOpenChange={setIsCreateClub}>
+              <DialogTrigger asChild>
+                <Button style={{ backgroundColor: '#0000db' }} className="text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Registrar nuevo club
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Registrar Nueva Cancha</DialogTitle>
+                </DialogHeader>
+                <form className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block mb-2">Nombre de la Cancha</label>
+                      <Input placeholder="Ej: Estadio Municipal" />
+                    </div>
+                    <div>
+                      <label className="block mb-2">Capacidad</label>
+                      <Input type="number" placeholder="Número de espectadores" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block mb-2">Dirección Completa</label>
+                      <Input placeholder="Dirección completa de la cancha" />
+                    </div>
+                    <div>
+                      <label className="block mb-2">Tipo de Superficie</label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="natural">Césped Natural</SelectItem>
+                          <SelectItem value="sintetico">Césped Sintético</SelectItem>
+                          <SelectItem value="tierra">Tierra</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block mb-2">Fecha de Construcción</label>
+                      <Input type="date" />
+                    </div>
+                    <div>
+                      <label className="block mb-2">Costo de Arriendo (CLP)</label>
+                      <Input type="number" placeholder="Costo por evento" />
+                    </div>
+                    <div>
+                      <label className="block mb-2">Estado Actual</label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="excelente">Excelente</SelectItem>
+                          <SelectItem value="bueno">Bueno</SelectItem>
+                          <SelectItem value="regular">Regular</SelectItem>
+                          <SelectItem value="malo">Malo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block mb-2">Instalaciones Disponibles</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {["Vestuarios", "Iluminación", "Tribunas", "Estacionamiento", "Cafetería", "Enfermería", "Sala VIP", "Tienda", "Sala de Prensa"].map((facility) => (
+                        <div key={facility} className="flex items-center space-x-2">
+                          <input type="checkbox" id={facility} />
+                          <label htmlFor={facility} className="text-sm">{facility}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block mb-2">Observaciones</label>
+                    <Textarea placeholder="Información adicional sobre la cancha" />
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setIsCreateClub(false)}>
+                      Cancelar
+                    </Button>
+                    <Button style={{ backgroundColor: '#0000db' }} className="text-white">
+                      Registrar Cancha
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        }
+        {activeTab === 'series' &&
+          <div className="flex space-x-2">
+            <Button style={{ backgroundColor: '#0000db' }} className="text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva serie
+            </Button>
+          </div>
+        }
+
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -250,13 +402,13 @@ export const ClubSeriesModule: React.FC = () => {
 
         <TabsContent value="clubs" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clubs.map((club) => (
-              <Card key={club.id}>
+            {clubList.map((club) => (
+              <Card key={club.id_club}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">{club.nombre}</CardTitle>
-                    <Badge className={club.activo ? 'bg-green-500' : 'bg-gray-500'}>
-                      {club.activo ? 'Activo' : 'Inactivo'}
+                    <CardTitle className="text-lg">{club.nombre_club}</CardTitle>
+                    <Badge className={club.club_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                      {club.club_activo ? 'Activo' : 'Inactivo'}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -266,18 +418,29 @@ export const ClubSeriesModule: React.FC = () => {
                       <span className="font-medium">Fundación:</span>
                       <p>{club.fecha_fundacion}</p>
                     </div>
+
                     <div className="text-sm">
-                      <span className="font-medium">Directiva:</span>
-                      <p className="text-gray-600">{club.directiva}</p>
+                      <span className="font-medium">Dirección:</span>
+                      <p className="text-gray-600">{club.direccion_club}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium">Correo electronico:</span>
+                        <p>{club.email_club}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Telefono:</span>
+                        <p>{club.fono_club}</p>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="font-medium">Series:</span>
-                        <p>{club.series_registradas}</p>
+                        <p>{club.series}</p>
                       </div>
                       <div>
                         <span className="font-medium">Jugadores:</span>
-                        <p>{club.jugadores_totales}</p>
+                        <p>{club.jugadores}</p>
                       </div>
                     </div>
                     <div className="flex space-x-2 pt-2">
@@ -285,10 +448,85 @@ export const ClubSeriesModule: React.FC = () => {
                         <Eye className="w-4 h-4 mr-1" />
                         Ver Detalles
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Edit className="w-4 h-4 mr-1" />
-                        Editar
-                      </Button>
+                      <Dialog open={isEditClubOpen} onOpenChange={setIsEditClubOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => handleClickEditClub(club)}>
+                            <Edit className="w-4 h-4 mr-1" />
+                            Editar club
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl">
+                          <DialogHeader>
+                            <DialogTitle>Registrar Nuevo club</DialogTitle>
+                          </DialogHeader>
+                          {selectedClub && (
+                            <form className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block mb-2">Nombre del club</label>
+                                  <Input defaultValue={selectedClub?.nombre_club} />
+                                </div>
+                                <div>
+                                  <label className="block mb-2">Fecha fundación:</label>
+                                  <Input type="date" defaultValue={
+                                    selectedClub?.fecha_fundacion ?
+                                      selectedClub.fecha_fundacion
+                                      : ''
+                                  } />
+                                </div>
+                                <div className="col-span-2">
+                                  <label className="block mb-2">Dirección: </label>
+                                  <Input defaultValue={selectedClub?.direccion_club} />
+                                </div>
+                                <div>
+                                  <label className="block mb-2">Telefono club:</label>
+                                  <Input defaultValue={selectedClub?.fono_club} />
+                                </div>
+                                <div>
+                                  <label className="block mb-2">Correo electronico:</label>
+                                  <Input defaultValue={selectedClub?.email_club} />
+                                </div>
+                                <div className="col-span-2">
+                                  <label className="block mb-2">Estado Actual</label>
+                                  <Select onValueChange={setEstadoClub} value={estadoClub}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="activo">Activo</SelectItem>
+                                      <SelectItem value="inactivo">Inactivo</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setIsEditClubOpen(false)}
+                                  disabled={isLoading === true}
+                                >
+                                  Cancelar
+                                </Button>
+
+                                <Button
+                                  style={{ backgroundColor: '#0000db' }}
+                                  className="text-white flex items-center justify-center gap-2"
+                                  onClick={handleSaveButtonClick}
+                                  disabled={isLoading === true}
+                                >
+                                  {isLoading ? (
+                                    <>
+                                      Guardando...
+                                    </>
+                                  ) : (
+                                    "Guardar Cambios"
+                                  )}
+                                </Button>
+                              </div>
+                            </form>
+                          )}
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
                 </CardContent>
@@ -380,6 +618,80 @@ export const ClubSeriesModule: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Detalles club: {selectedClub?.nombre_club}</DialogTitle>
+          </DialogHeader>
+          {selectedClub && (
+            <form className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-2">Nombre del club</label>
+                  <Input defaultValue={selectedClub?.nombre_club} />
+                </div>
+                <div>
+                  <label className="block mb-2">Fecha fundación:</label>
+                  <Input type="date" defaultValue={
+                    selectedClub?.fecha_fundacion ?
+                      selectedClub.fecha_fundacion
+                      : ''
+                  } />
+                </div>
+                <div className="col-span-2">
+                  <label className="block mb-2">Dirección: </label>
+                  <Input defaultValue={selectedClub?.direccion_club} />
+                </div>
+                <div>
+                  <label className="block mb-2">Telefono club:</label>
+                  <Input defaultValue={selectedClub?.fono_club} />
+                </div>
+                <div>
+                  <label className="block mb-2">Correo electronico:</label>
+                  <Input defaultValue={selectedClub?.email_club} />
+                </div>
+                <div className="col-span-2">
+                  <label className="block mb-2">Estado Actual</label>
+                  <Select defaultValue={selectedClub.estado_actual ? "activo" : "inactivo"}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="activo">Activo</SelectItem>
+                      <SelectItem value="inactivo">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditFieldOpen(false)}
+                  disabled={isLoading === true}
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  style={{ backgroundColor: '#0000db' }}
+                  className="text-white flex items-center justify-center gap-2"
+                  onClick={handleSaveButtonClick}
+                  disabled={isLoading === true}
+                >
+                  {isLoading ? (
+                    <>
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar Cambios"
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -395,7 +707,7 @@ export const PlayerRecordsModule: React.FC = () => {
 
   const players = [
     {
-      rut: "12345678-9", primer_nombre: "Carlos", segundo_nombre: "Alberto", 
+      rut: "12345678-9", primer_nombre: "Carlos", segundo_nombre: "Alberto",
       primer_apellido: "Rodríguez", segundo_apellido: "Silva", email: "carlos.rodriguez@email.cl",
       fecha_nacimiento: "1995-03-15", pierna_habil: "Derecha", peso: 75, estatura: 180,
       imc: 23.1, talla_camiseta: "M", talla_short: "M", talla_botin: 42,
@@ -403,7 +715,7 @@ export const PlayerRecordsModule: React.FC = () => {
     },
     {
       rut: "98765432-1", primer_nombre: "María", segundo_nombre: "Fernanda",
-      primer_apellido: "González", segundo_apellido: "López", email: "maria.gonzalez@email.cl", 
+      primer_apellido: "González", segundo_apellido: "López", email: "maria.gonzalez@email.cl",
       fecha_nacimiento: "1997-07-22", pierna_habil: "Izquierda", peso: 62, estatura: 165,
       imc: 22.8, talla_camiseta: "S", talla_short: "S", talla_botin: 38,
       condiciones_cronicas: "Asma leve", activo: true
@@ -417,7 +729,7 @@ export const PlayerRecordsModule: React.FC = () => {
       fecha_lesion: "2024-08-15", semanas_recuperacion: 3, activo: true
     },
     {
-      id: 2, rut_jugador: "98765432-1", jugador_nombre: "María González", 
+      id: 2, rut_jugador: "98765432-1", jugador_nombre: "María González",
       tipo_lesion: "Desgarro muscular", descripcion: "Lesión en cuádriceps derecho",
       fecha_lesion: "2024-07-10", semanas_recuperacion: 6, activo: false
     }
@@ -450,7 +762,7 @@ export const PlayerRecordsModule: React.FC = () => {
       },
       {
         id: Date.now() + 2,
-        rut: "22222222-2", 
+        rut: "22222222-2",
         nombre: "Ana Sofía López",
         email: "ana.lopez@email.cl",
         status: "success",
@@ -461,7 +773,7 @@ export const PlayerRecordsModule: React.FC = () => {
         id: Date.now() + 3,
         rut: "12345678-9",
         nombre: "Carlos Rodríguez Silva",
-        email: "carlos.rodriguez@email.cl", 
+        email: "carlos.rodriguez@email.cl",
         status: "error",
         fecha: new Date().toLocaleString(),
         error: "El jugador ya existe en la base de datos"
@@ -471,7 +783,7 @@ export const PlayerRecordsModule: React.FC = () => {
         rut: "33333333-3",
         nombre: "Luis Fernando Torres",
         email: "",
-        status: "error", 
+        status: "error",
         fecha: new Date().toLocaleString(),
         error: "Email requerido"
       },
@@ -488,10 +800,10 @@ export const PlayerRecordsModule: React.FC = () => {
 
     // Add results to upload history
     setUploadHistory(prev => [...mockUploadResults, ...prev]);
-    
+
     // Show history modal
     setIsUploadHistoryOpen(true);
-    
+
     // Clear the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -517,7 +829,7 @@ export const PlayerRecordsModule: React.FC = () => {
       <div className="flex justify-between items-center">
         <h2>Gestión de Jugadores y Registros Médicos</h2>
         <div className="flex space-x-2">
-          <Button 
+          <Button
             variant="outline"
             onClick={openFileDialog}
             style={{ borderColor: '#0000db', color: '#0000db' }}
@@ -526,7 +838,7 @@ export const PlayerRecordsModule: React.FC = () => {
             Upload Excel
           </Button>
           {uploadHistory.length > 0 && (
-            <Button 
+            <Button
               variant="outline"
               onClick={() => setIsUploadHistoryOpen(true)}
               style={{ borderColor: '#FF8C00', color: '#FF8C00' }}
@@ -557,7 +869,7 @@ export const PlayerRecordsModule: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Historial de Cargas Excel</DialogTitle>
           </DialogHeader>
-          
+
           <div className="flex-1 overflow-hidden flex flex-col space-y-4">
             {/* Summary Cards */}
             <div className="grid grid-cols-3 gap-4">
@@ -572,7 +884,7 @@ export const PlayerRecordsModule: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -584,7 +896,7 @@ export const PlayerRecordsModule: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -613,9 +925,9 @@ export const PlayerRecordsModule: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setUploadHistory([])}
               >
@@ -641,8 +953,8 @@ export const PlayerRecordsModule: React.FC = () => {
                   {filteredHistory.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        {uploadHistory.length === 0 ? 
-                          "No hay registros en el historial" : 
+                        {uploadHistory.length === 0 ?
+                          "No hay registros en el historial" :
                           "No hay registros que coincidan con el filtro seleccionado"
                         }
                       </TableCell>
@@ -681,9 +993,9 @@ export const PlayerRecordsModule: React.FC = () => {
               </Table>
             </div>
           </div>
-          
+
           <div className="flex justify-end pt-4">
-            <Button 
+            <Button
               onClick={() => setIsUploadHistoryOpen(false)}
               style={{ backgroundColor: '#0000db' }}
               className="text-white"
@@ -847,7 +1159,7 @@ export const PlayerRecordsModule: React.FC = () => {
                     Buscar Fichas
                   </Button>
                 </div>
-                
+
                 <div className="text-center py-8 text-gray-500">
                   <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Seleccione un club y serie para ver las fichas de jugadores</p>
@@ -901,7 +1213,7 @@ export const AuditModule: React.FC = () => {
   const auditLogs = [
     {
       id: 1, fecha_hora: "2024-09-21 14:30:15", id_usuario: 1, usuario_nombre: "Juan Pérez",
-      modulo: "USUARIO", accion: "CREATE", tabla_afectada: "USUARIO", 
+      modulo: "USUARIO", accion: "CREATE", tabla_afectada: "USUARIO",
       id_registro: "3", descripcion: "Creación de nuevo usuario", ip_address: "192.168.1.100"
     },
     {
