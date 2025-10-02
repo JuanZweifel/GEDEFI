@@ -4,7 +4,6 @@ from typing import Optional, List
 from app.utils.validaciones import (
     validar_rut,
     validar_nombre,
-    validar_email,
     validar_fecha,
 )
 

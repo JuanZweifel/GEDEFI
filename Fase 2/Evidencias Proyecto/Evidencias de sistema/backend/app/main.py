@@ -55,7 +55,7 @@ app.include_router(serie.router)
 
 # Configurar CORS para permitir el frontend
 origins = [
-    "http://localhost:8080",  # Puerto del frontend (Desarrollo)
+    "http://localhost:3000",  # Puerto del frontend (Desarrollo)
     # "https://mi-dominio.com"    # Url en produccion
 ]
 
