@@ -42,6 +42,8 @@ class UsuarioBase(BaseModel):
 
 
 class UsuarioCreate(UsuarioBase):
+    admin: bool = Field(..., description="Indica si el usuario es administrador")
+    id_club: Optional[int] = Field(0, ge=0, description="ID del club asociado si no es admin")
     pass_usuario: str = Field(..., min_length=8, description="Contraseña del usuario")
 
 

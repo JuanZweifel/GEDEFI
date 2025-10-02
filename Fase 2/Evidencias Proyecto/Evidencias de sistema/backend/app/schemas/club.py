@@ -1,9 +1,12 @@
-from datetime import date
+from datetime import date, datetime
 from pydantic import BaseModel, Field, ConfigDict, field_validator, EmailStr
 from typing import Optional, List
 from .orden_pago import OrdenPagoRead
 from .serie import SerieRead
 from ..utils.validaciones import *
+from .usuario import UsuarioRead
+from .serie import SerieRead
+from .jugador import JugadorRead
 
 
 class ClubBase(BaseModel):
@@ -39,8 +42,8 @@ class ClubCreate(ClubBase):
 class ClubRead(ClubBase):
     id_club: int = Field(..., description="ID del club")
     club_activo: bool = Field(..., description="Indica si el club está activo")
-    fecha_creacion: date = Field(..., description="Fecha de creación del club")
-    fecha_modificacion: date = Field(..., description="Fecha de última modificación del club")
+    fecha_creacion: datetime = Field(..., description="Fecha de creación del club")
+    fecha_modificacion: datetime = Field(..., description="Fecha de última modificación del club")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -62,6 +65,8 @@ class ClubList(BaseModel):
 class ClubWithSeries(ClubRead):
     series: List[SerieRead] = Field(default_factory=list)
 
-
-
+class ClubWithDetails(ClubRead):
+    directiva: List[UsuarioRead] = Field(default_factory=list)
+    series: int
+    jugadores: int
 

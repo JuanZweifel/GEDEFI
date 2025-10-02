@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
-from app.models import Usuario
+from app.models import Usuario, DetalleUsuarioClub
 from app.schemas import UsuarioCreate, UsuarioUpdate
+from fastapi import HTTPException
 
 
 def get_usuario(db: Session, rut_usu: str) -> Usuario | None:
-    return db.query(Usuario).filter(Usuario.rut_usu == rut_usu).first()
+    return db.query(Usuario).filter(Usuario.rut_usuario == rut_usu).first()
 
 
 def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
@@ -12,7 +13,12 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
-    db_usuario = Usuario(**usuario.dict())
+    if(not usuario.admin):
+        if(usuario.id_club == 0):
+            raise HTTPException(status_code=400, detail="Debe asociar un club a un usuario NO administrativo.")
+        db_detalle = DetalleUsuarioClub(rut_usuario=usuario.rut_usuario, id_club=usuario.id_club)
+    db_usuario = Usuario(**usuario.dict(exclude={"admin", "id_club"}))
+    db_usuario.detalles_usuario_club.append(db_detalle) if not usuario.admin else None
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)

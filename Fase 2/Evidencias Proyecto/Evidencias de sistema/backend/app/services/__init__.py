@@ -16,5 +16,7 @@ from .auditoria import *
 from .entrenamiento import *
 from .permiso_rol import *
 from .permiso import *
+from .serie import *
+from .detalle_club_jugador import *
 
 # WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente

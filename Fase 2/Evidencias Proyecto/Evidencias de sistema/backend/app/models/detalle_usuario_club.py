@@ -12,7 +12,7 @@ class DetalleUsuarioClub(Base):
     rut_usuario: Mapped[str] = mapped_column(
         String, ForeignKey("USUARIO.rut_usuario"), nullable=False, primary_key=True
     )
-    club_id: Mapped[int] = mapped_column(
+    id_club: Mapped[int] = mapped_column(
         Integer, ForeignKey("CLUB.id_club"), nullable=False, primary_key=True
     )
     fecha_ini: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)

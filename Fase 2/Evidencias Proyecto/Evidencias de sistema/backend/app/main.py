@@ -26,8 +26,8 @@ from app.routes import (
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
-Base.metadata.drop_all(bind=engine)
-Base.metadata.create_all(bind=engine)
+#Base.metadata.drop_all(bind=engine)
+#Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="API GEDEFI", version="1.0")
 

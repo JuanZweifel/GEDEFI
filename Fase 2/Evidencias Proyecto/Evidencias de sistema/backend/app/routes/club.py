@@ -22,11 +22,10 @@ def get_club(id_club: int, db: Session = Depends(get_db)):
     except HTTPException as e:
         raise e
 
-
-@router.get("/", response_model=list[schemas.ClubRead])
-def get_clubs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+@router.get("/", response_model=list[schemas.ClubWithDetails])
+def get_club_with_details(db: Session = Depends(get_db)):
     try:
-        return services.get_clubs(db, skip=skip, limit=limit)
+        return services.get_club_with_details(db)
     except HTTPException as e:
         raise e
 
@@ -48,3 +47,5 @@ def delete_club(id_club: int, db: Session = Depends(get_db)):
         return services.delete_club(db, id_club)
     except HTTPException as e:
         raise e
+
+

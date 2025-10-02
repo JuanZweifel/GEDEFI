@@ -1,7 +1,22 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func, distinct
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
-from app.models import Club
-from app.schemas import ClubCreate, ClubUpdate
+from app.models import (
+    Club,
+    Usuario,
+    Jugador,
+    Serie,
+    DetalleClubJugador,
+    DetalleUsuarioClub,
+)
+from app.schemas import (
+    ClubCreate,
+    ClubUpdate,
+    ClubWithDetails,
+    UsuarioRead,
+    SerieRead,
+    JugadorRead,
+)
 from fastapi import HTTPException
 
 
@@ -28,11 +43,12 @@ def create_club(db: Session, club: ClubCreate) -> Club:
         return db_club
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Ya existe un club con este nombre.") from e
+        raise HTTPException(
+            status_code=400, detail="Ya existe un club con este nombre."
+        ) from e
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
-    
 
 
 def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> Club | None:
@@ -47,7 +63,9 @@ def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> Club | No
         return db_club
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Ya existe un club con este nombre.") from e
+        raise HTTPException(
+            status_code=400, detail="Ya existe un club con este nombre."
+        ) from e
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
@@ -62,3 +80,46 @@ def delete_club(db: Session, id_club: int) -> dict:
     except (SQLAlchemyError, HTTPException) as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
+
+
+def get_club_with_details(db: Session) -> list[Club] | None:
+    try:
+        db_clubs = db.query(Club).all()
+
+        club_with_details = []
+
+        for club in db_clubs:
+            directiva = (
+                db.query(Usuario)
+                .join(
+                    DetalleUsuarioClub,
+                    Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
+                )
+                .filter(DetalleUsuarioClub.id_club == club.id_club)
+                .all()
+            )
+
+            series = db.query(Serie).filter(Serie.id_club == club.id_club).count()
+
+            jugadores = (
+                db.query(func.count(distinct(Jugador.rut_jugador)))
+                .join(
+                    DetalleClubJugador,
+                    Jugador.rut_jugador == DetalleClubJugador.rut_jugador,
+                )
+                .filter(DetalleClubJugador.id_club == club.id_club)
+                .scalar()
+            )
+
+            club_details = ClubWithDetails(
+                **club.__dict__,
+                directiva=[UsuarioRead.model_validate(u, from_attributes=True) for u in directiva],
+                series=series,
+                jugadores=jugadores,
+            ) 
+            club_with_details.append(club_details)
+        return club_with_details
+    except NoResultFound as e:
+        raise HTTPException(status_code=404, detail="Club no encontrado") from e
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
