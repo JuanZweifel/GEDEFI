@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from './components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Button } from './components/ui/button';
@@ -17,18 +17,21 @@ import { UserRoleModule } from './components/interfaces/user-role.tsx'
 import { ClubSeriesModule } from './components/interfaces/club-serie.tsx'
 import { MatchesTrainingModule } from './components/matches-training-module';
 import { EnhancedFieldsModule } from './components/enhanced-fields-module';
-import { 
-  Home, 
-  Users, 
-  Settings, 
-  Trophy, 
-  UserPlus, 
-  Calendar, 
-  DollarSign, 
-  BarChart3, 
-  FileText, 
-  Fingerprint, 
-  AlertTriangle, 
+import { useAuth } from './contexts/authContext.tsx';
+import { Login } from './components/interfaces/login.tsx'
+import { ResetPassword } from './components/interfaces/reset-password'
+import {
+  Home,
+  Users,
+  Settings,
+  Trophy,
+  UserPlus,
+  Calendar,
+  DollarSign,
+  BarChart3,
+  FileText,
+  Fingerprint,
+  AlertTriangle,
   MapPin,
   Shield,
   Menu,
@@ -37,6 +40,7 @@ import {
   Activity,
   Archive
 } from 'lucide-react';
+
 
 // Mock user data with roles
 const mockUser = {
@@ -48,7 +52,6 @@ const mockUser = {
 
 // Application state
 interface AppState {
-  isLoggedIn: boolean;
   showPlayerDetails: boolean;
   showClubDetails: boolean;
 }
@@ -66,7 +69,7 @@ const Dashboard = () => (
           <p className="text-xs text-blue-100">+2 este mes</p>
         </CardContent>
       </Card>
-      
+
       <Card className="bg-gradient-to-br from-[#FF8C00] to-[#FFA500] text-white">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Jugadores (JUGADOR)</CardTitle>
@@ -76,7 +79,7 @@ const Dashboard = () => (
           <p className="text-xs text-orange-100">+15 esta semana</p>
         </CardContent>
       </Card>
-      
+
       <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Partidos (PARTIDO)</CardTitle>
@@ -86,7 +89,7 @@ const Dashboard = () => (
           <p className="text-xs text-green-100">Próxima semana</p>
         </CardContent>
       </Card>
-      
+
       <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Órdenes Pago (ORDEN_PAGO)</CardTitle>
@@ -172,7 +175,7 @@ const Dashboard = () => (
 const Scoreboard = () => (
   <div className="space-y-6">
     <h2>Marcadores de Series</h2>
-    
+
     <Card>
       <CardHeader>
         <CardTitle>Serie A - Jornada 15</CardTitle>
@@ -200,7 +203,7 @@ const Scoreboard = () => (
                   <p className="font-medium">{partido.visitante}</p>
                 </div>
               </div>
-              <Badge 
+              <Badge
                 variant={partido.estado === "En Vivo" ? "default" : "secondary"}
                 style={partido.estado === "En Vivo" ? { backgroundColor: '#FF8C00' } : {}}
               >
@@ -222,15 +225,46 @@ const Scoreboard = () => (
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>({
-    isLoggedIn: false,
     showPlayerDetails: false,
     showClubDetails: false
   });
+  const [showLanding, setShowLanding] = useState(true);
   const [activeModule, setActiveModule] = useState('dashboard');
+  const [resetToken, setResetToken] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    setAppState(prev => ({ ...prev, isLoggedIn: true }));
-  };
+  const { token, rol, nombre, club, logout } = useAuth();
+
+  useEffect(() => {
+    // Check URL for reset token
+    const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get('token');
+    if (tokenParam) {
+      setResetToken(tokenParam);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    window.location.reload();
+  }
+
+  if (resetToken) {
+    return <ResetPassword token={resetToken} />;
+  }
+
+
+  if (showLanding && !token) {
+    return <LandingPage onLogin={() => setShowLanding(false)} />;
+  }
+
+  if (!token) {
+    return (
+      <Login
+        onSuccess={() => setShowLanding(false)}
+        onCancel={() => setShowLanding(true)}
+      />
+    );
+  }
 
   const handleShowPlayerDetails = () => {
     setAppState(prev => ({ ...prev, showPlayerDetails: true }));
@@ -248,10 +282,6 @@ export default function App() {
     setAppState(prev => ({ ...prev, showClubDetails: false }));
   };
 
-  // Show landing page if not logged in
-  if (!appState.isLoggedIn) {
-    return <LandingPage onLogin={handleLogin} />;
-  }
 
   // Show player details if requested
   if (appState.showPlayerDetails) {
@@ -262,7 +292,7 @@ export default function App() {
   if (appState.showClubDetails) {
     return <ClubManagement onBack={handleBackFromClubDetails} />;
   }
-  
+
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
     { id: 'users-roles', label: 'Usuarios y Roles', icon: Users, component: UserRoleModule, permission: 'users' },
@@ -281,7 +311,7 @@ export default function App() {
     { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' }
   ];
 
-  const filteredModules = modules.filter(module => 
+  const filteredModules = modules.filter(module =>
     !module.permission || mockUser.permissions.includes(module.permission) || module.permission === 'calendar'
   );
 
@@ -302,7 +332,7 @@ export default function App() {
               </div>
             </div>
           </SidebarHeader>
-          
+
           <SidebarContent>
             <SidebarMenu>
               {filteredModules.map((module) => {
@@ -340,18 +370,21 @@ export default function App() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <Badge variant="outline" style={{ borderColor: '#0000db', color: '#0000db' }}>
                   {mockUser.role === 'admin' ? 'Administrador' : 'Usuario'}
                 </Badge>
                 <div className="text-right">
-                  <p className="font-medium">{mockUser.name}</p>
-                  <p className="text-xs text-muted-foreground">{mockUser.club}</p>
+                  <p className="font-medium">{nombre}</p>
+                  <p className="text-xs text-muted-foreground">{club}</p>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
                   {mockUser.name.split(' ').map(n => n[0]).join('')}
                 </div>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
               </div>
             </div>
           </header>

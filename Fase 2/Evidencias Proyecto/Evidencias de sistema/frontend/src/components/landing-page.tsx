@@ -22,9 +22,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 <p className="text-blue-100">Portal Oficial</p>
               </div>
             </div>
-            <Button 
+            <Button
+              className="bg-[#FF8C00] hover:bg-[#FF7700] text-white flex items-center"
               onClick={onLogin}
-              className="bg-[#FF8C00] hover:bg-[#FF7700] text-white"
             >
               <LogIn className="w-4 h-4 mr-2" />
               Iniciar Sesión
@@ -42,7 +42,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Standings */}
           <div className="lg:col-span-2">
             <Card>
@@ -61,10 +61,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     { pos: 4, team: "Colo-Colo", pts: 32, pj: 16, pg: 9, pe: 5, pp: 2, gf: 30, gc: 20 },
                     { pos: 5, team: "Universidad Católica", pts: 28, pj: 16, pg: 8, pe: 4, pp: 4, gf: 25, gc: 22 }
                   ].map((team, i) => (
-                    <div key={i} className={`grid grid-cols-8 gap-2 p-3 rounded-lg text-sm ${
-                      i < 3 ? 'bg-green-50 border border-green-200' : 
+                    <div key={i} className={`grid grid-cols-8 gap-2 p-3 rounded-lg text-sm ${i < 3 ? 'bg-green-50 border border-green-200' :
                       i === 4 ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
-                    }`}>
+                      }`}>
                       <div className="font-bold text-center">{team.pos}</div>
                       <div className="col-span-3 font-medium">{team.team}</div>
                       <div className="text-center">{team.pts}</div>
@@ -74,7 +73,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="grid grid-cols-8 gap-2 p-2 border-t mt-4 text-xs font-medium text-gray-600">
                   <div className="text-center">Pos</div>
                   <div className="col-span-3">Equipo</div>
@@ -99,24 +98,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
               <CardContent>
                 <div className="space-y-4">
                   {[
-                    { 
-                      date: "15 Sep", 
-                      time: "15:00", 
-                      local: "FC Barcelona", 
+                    {
+                      date: "15 Sep",
+                      time: "15:00",
+                      local: "FC Barcelona",
                       visitante: "Real Madrid",
                       stadium: "Estadio Nacional"
                     },
-                    { 
-                      date: "16 Sep", 
-                      time: "17:00", 
-                      local: "Universidad Chile", 
+                    {
+                      date: "16 Sep",
+                      time: "17:00",
+                      local: "Universidad Chile",
                       visitante: "Colo-Colo",
                       stadium: "Santa Laura"
                     },
-                    { 
-                      date: "17 Sep", 
-                      time: "19:00", 
-                      local: "Católica", 
+                    {
+                      date: "17 Sep",
+                      time: "19:00",
+                      local: "Católica",
                       visitante: "La Serena",
                       stadium: "San Carlos"
                     }
