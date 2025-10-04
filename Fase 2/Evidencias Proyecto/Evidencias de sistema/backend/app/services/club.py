@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct
+from sqlalchemy import func, distinct, asc, desc
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from app.models import (
     Club,
@@ -29,7 +29,9 @@ def get_club(db: Session, id_club: int) -> Club | None:
 
 def get_clubs(db: Session, skip: int = 0, limit: int = 100):
     try:
-        return db.query(Club).offset(skip).limit(limit).all()
+        return db.query(Club).offset(skip).limit(limit).order_by(desc(Club.club_activo), asc(Club.nombre_club).offset(skip)
+            .limit(limit).all())
+            
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
@@ -64,7 +66,7 @@ def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> Club | No
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
-            status_code=400, detail="Ya existe un club con este nombre."
+            status_code=400, detail="Ya existe un club con este nombre." #REVISAR POR EL EMAIL
         ) from e
     except SQLAlchemyError as e:
         db.rollback()

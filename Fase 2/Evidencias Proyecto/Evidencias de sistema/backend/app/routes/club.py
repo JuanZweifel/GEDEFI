@@ -6,6 +6,7 @@ from app import services, schemas
 router = APIRouter(prefix="/club", tags=["Club"])
 
 
+
 @router.post("/", response_model=schemas.ClubRead)
 def create_club(club: schemas.ClubCreate, db: Session = Depends(get_db)):
     try:
@@ -33,6 +34,7 @@ def get_club_with_details(db: Session = Depends(get_db)):
 @router.put("/{id_club}", response_model=schemas.ClubRead)
 def update_club(id_club: int, club: schemas.ClubUpdate, db: Session = Depends(get_db)):
     try:
+        print(club, id_club)
         db_club = services.get_club(db, id_club)
         if db_club is None:
             raise HTTPException(status_code=404, detail="Club not found.")

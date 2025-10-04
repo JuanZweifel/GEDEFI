@@ -21,9 +21,13 @@ class ClubBase(BaseModel):
     def validar_nombre_club(cls, v) -> str:
         return validar_nombre(v)
     
-    @field_validator("fecha_fundacion")
-    @classmethod
-    def validar_fecha_fundacion(cls, v) -> date:
+    def validar_fecha_fundacion(cls, v):
+        if isinstance(v, str):
+            # convierte el string "YYYY-MM-DD" a date
+            v = date.fromisoformat(v)
+        elif isinstance(v, datetime):
+            # si viene un datetime, tomar solo la fecha
+            v = v.date()
         return validar_fecha(v)
     
     @field_validator("fono_club")
@@ -54,6 +58,7 @@ class ClubUpdate(BaseModel):
     fono_club: Optional[str] = Field(None, max_length=12, description="Teléfono del club")
     direccion_club: Optional[str] = Field(None, max_length=500, min_length=10, description="Dirección del club")
     email_club: Optional[str] = Field(None, max_length=320, description="Email del club")
+    club_activo: Optional[bool] = Field(None, description="Club activo")
 
 
 class ClubWithOrdenPago(ClubRead):
