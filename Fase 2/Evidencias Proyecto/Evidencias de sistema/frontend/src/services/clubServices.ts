@@ -1,4 +1,4 @@
-const URL_BASE = "http://localhost:8000/club"
+const URL_BASE = "http://localhost:8000/clubs"
 
 
 async function handleResponse<T>(response: Response): Promise<T> {
