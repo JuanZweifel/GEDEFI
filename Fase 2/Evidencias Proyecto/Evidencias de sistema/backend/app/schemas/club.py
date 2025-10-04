@@ -67,9 +67,6 @@ class ClubWithOrdenPago(ClubRead):
 class ClubList(BaseModel):
     clubs: List[ClubRead] = Field(default_factory=list)
 
-class ClubWithSeries(ClubRead):
-    series: List[SerieRead] = Field(default_factory=list)
-
 class ClubWithDetails(ClubRead):
     directiva: List[UsuarioRead] = Field(default_factory=list)
     series: int

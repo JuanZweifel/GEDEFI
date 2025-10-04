@@ -23,6 +23,27 @@ def get_club(id_club: int, db: Session = Depends(get_db)):
     except HTTPException as e:
         raise e
 
+@router.get("/{id_club}/series", response_model=schemas.SerieList)
+def get_series_club(id_club: int, db: Session = Depends(get_db)):
+    try:
+        return services.get_series_club(db, id_club=id_club)
+    except HTTPException as e:
+        raise e
+
+@router.get("/{id_club}/jugadores", response_model=schemas.JugadorList)
+def get_players_club(id_club: int, db: Session = Depends(get_db)):
+    try:
+        return services.get_players_club(db, id_club=id_club)
+    except HTTPException as e:
+        raise e
+
+@router.get("/{id_club}/usuarios", response_model=schemas.UsuarioList)
+def get_users_club(id_club: int, db: Session = Depends(get_db)):
+    try:
+        return services.get_users_club(db, id_club=id_club)
+    except HTTPException as e:
+        raise e
+
 @router.get("/", response_model=list[schemas.ClubWithDetails])
 def get_club_with_details(db: Session = Depends(get_db)):
     try:
@@ -34,7 +55,6 @@ def get_club_with_details(db: Session = Depends(get_db)):
 @router.put("/{id_club}", response_model=schemas.ClubRead)
 def update_club(id_club: int, club: schemas.ClubUpdate, db: Session = Depends(get_db)):
     try:
-        print(club, id_club)
         db_club = services.get_club(db, id_club)
         if db_club is None:
             raise HTTPException(status_code=404, detail="Club not found.")
