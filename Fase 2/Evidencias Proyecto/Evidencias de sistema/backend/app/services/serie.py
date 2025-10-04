@@ -2,6 +2,10 @@ from sqlalchemy.orm import Session
 from app.models import Serie
 from app.schemas import SerieCreate, SerieRead
 from sqlalchemy import and_
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
+from .club import get_club
+
+from fastapi import HTTPException
 
 
 def get_serie(db: Session, id_serie: int) -> Serie | None:
@@ -27,3 +31,4 @@ def delete_serie(db: Session, id_serie: int) -> bool:
     db.delete(db_serie)
     db.commit()
     return True
+

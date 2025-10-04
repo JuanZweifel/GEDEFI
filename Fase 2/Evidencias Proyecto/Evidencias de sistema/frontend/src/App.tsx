@@ -40,6 +40,7 @@ import {
   Activity,
   Archive
 } from 'lucide-react';
+import { Toaster } from './components/ui/sonner.tsx';
 
 
 // Mock user data with roles
@@ -393,6 +394,7 @@ export default function App() {
             <ActiveComponent />
           </main>
         </div>
+        <Toaster/>
       </div>
     </SidebarProvider>
   );

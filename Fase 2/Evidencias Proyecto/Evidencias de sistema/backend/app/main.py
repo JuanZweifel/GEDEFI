@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import engine, Base
 from app.routes import (
@@ -31,6 +33,15 @@ from app.routes import (
 #Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="API GEDEFI", version="1.0")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print("Error de validación:", exc.errors())
+    print("Body recibido:", await request.body())
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()}
+    )
 
 app.include_router(permiso.router)
 app.include_router(permiso_rol.router)

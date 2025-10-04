@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from pydantic import BaseModel, Field, EmailStr, field_validator
+from pydantic import BaseModel, Field, EmailStr, field_validator, ConfigDict
 from typing import Optional, List
 from app.utils.validaciones import (
     validar_rut,
@@ -69,3 +69,5 @@ class UsuarioRead(UsuarioBase):
 
 class UsuarioList(BaseModel):
     usuarios: List[UsuarioRead] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)

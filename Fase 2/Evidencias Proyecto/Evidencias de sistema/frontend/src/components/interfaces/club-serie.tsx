@@ -4,15 +4,19 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { DialogHandle } from '../dialog-component.tsx';
 import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
-    Plus, Edit, Eye, Users
+    Plus, Edit, Eye, Users,
+    Club,
+    Trash2
 } from 'lucide-react';
 
-import { getClubs } from '../../services/clubServices.ts';
+import { toast } from 'sonner';
+
+
+import { getClubs, createClub, updateClub, deleteClub } from '../../services/clubServices.ts';
+import { AlertDialogHandle } from '../alert-dialog-component.tsx';
 
 // Enhanced User & Roles Module (USUARIO, ROL, HISTORIAL_USUARIO)
 
@@ -44,53 +48,203 @@ type Club = {
     directiva: [directiva];
 }
 
+type ClubApi = {
+
+    id_club?: number
+    club_activo?: boolean;
+    nombre_club: string;
+    fecha_fundacion: string;
+    fono_club: string;
+    direccion_club: string;
+    email_club: string;
+
+}
+
+type ClubFormProps = {
+    club?: Club | null
+    isEdit: boolean
+    refreshClub: () => Promise<void>
+    onSuccess: () => void // para cerrar el dialog
+}
+
+export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps) {
+    const [nombreClub, setNombreClub] = useState(club?.nombre_club ?? "")
+    const [fechaFundacion, setFechaFundacion] = useState(club?.fecha_fundacion ?? "")
+    const [direccionClub, setDireccionClub] = useState(club?.direccion_club ?? "")
+    const [fonoClub, setFonoClub] = useState(club?.fono_club ?? "")
+    const [emailClub, setEmailClub] = useState(club?.email_club ?? "")
+    const [clubActivo, setClubActivo] = useState(club?.club_activo ?? true)
+    const [isLoading, setIsLoading] = useState(false)
+    console.log(club)
+
+    useEffect(() => {
+        if (isEdit && club) {
+            setNombreClub(club.nombre_club ?? "")
+            setFechaFundacion(club.fecha_fundacion ?? "")
+            setDireccionClub(club.direccion_club ?? "")
+            setFonoClub(club.fono_club ?? "")
+            setEmailClub(club.email_club ?? "")
+            setClubActivo(club.club_activo ?? true)
+        }
+    }, [club, isEdit])
+
+    const handleSubmit = async () => {
+        setIsLoading(true)
+        try {
+            const clubObject: ClubApi = {
+                nombre_club: nombreClub,
+                fecha_fundacion: fechaFundacion,
+                fono_club: fonoClub,
+                direccion_club: direccionClub,
+                email_club: emailClub,
+                ...(isEdit ? { club_activo: clubActivo } : {}),
+            }
+
+            if (isEdit && club?.id_club) {
+                await updateClub<any>(clubObject, club.id_club)
+                toast.success("¡Club modificado correctamente!")
+            } else {
+                await createClub<any>(clubObject)
+                toast.success("¡Club registrado correctamente!")
+            }
+
+            refreshClub()
+            onSuccess() // 👈 aquí cierras el diálogo
+        } catch (error) {
+            toast.error(String(error))
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    return (
+        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="block mb-2">Nombre del club:</label>
+                    <Input
+                        placeholder="Ej: Estadio Municipal"
+                        value={nombreClub}
+                        onChange={(e) => setNombreClub(e.target.value)}
+                        required
+                        maxLength={120}
+                        minLength={4}
+                        pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$"
+                    />
+                </div>
+                <div>
+                    <label className="block mb-2">Fecha fundación:</label>
+                    <Input
+                        type="date"
+                        value={fechaFundacion}
+                        onChange={(e) => setFechaFundacion(e.target.value)}
+                        required
+                        max={new Date().toISOString().split("T")[0]}
+                    />
+                </div>
+                <div className="col-span-2">
+                    <label className="block mb-2">Dirección completa</label>
+                    <Input
+                        placeholder="Dirección del club"
+                        value={direccionClub}
+                        onChange={(e) => setDireccionClub(e.target.value)}
+                        required
+                        minLength={10}
+                        maxLength={500}
+                    />
+                </div>
+                <div>
+                    <label className="block mb-2">Teléfono:</label>
+                    <Input
+                        placeholder="Ej: 987654321"
+                        value={fonoClub}
+                        onChange={(e) => setFonoClub(e.target.value)}
+                        required
+                        pattern="^[0-9]{9}$"
+                    />
+                </div>
+                <div>
+                    <label className="block mb-2">Correo electrónico:</label>
+                    <Input
+                        type="email"
+                        placeholder="club@example.com"
+                        value={emailClub}
+                        onChange={(e) => setEmailClub(e.target.value)}
+                        required
+                    />
+                </div>
+                {isEdit && (
+                    <div className="col-span-2 flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="club-activo"
+                            checked={clubActivo}
+                            onChange={(e) => setClubActivo(e.target.checked)}
+                            className="w-4 h-4 rounded border"
+                        />
+                        <label htmlFor="club-activo" className="text-sm">
+                            Club activo
+                        </label>
+                    </div>
+                )}
+                <div className="flex justify-end space-x-2 col-span-2">
+                    <Button
+                        variant="outline"
+                        type="button"
+                        disabled={isLoading}
+                        onClick={onSuccess} // 👈 cancelar = cerrar
+                    >
+                        Cancelar
+                    </Button>
+                    <AlertDialogHandle
+                        title={isEdit ? `Modificar club ${nombreClub}?` : `Registrar club ${nombreClub}?`}
+                        description={
+                            isEdit
+                                ? `¿Estás seguro de querer guardar la modificación?`
+                                : `¿Estás seguro de querer registrar al club ${nombreClub}?`
+                        }
+                        confirmLabel={isEdit ? "Modificar" : "Registrar"}
+                        cancelLabel="Cancelar"
+                        onConfirm={handleSubmit}
+                    >
+                        <Button style={{ backgroundColor: "#0000db" }} className="text-white">
+                            {!isLoading && !isEdit && <Plus className="w-4 h-4 mr-2" />}
+                            {isLoading ? "Guardando..." : "Guardar"}
+                        </Button>
+                    </AlertDialogHandle>
+                </div>
+            </div>
+        </form>
+    )
+}
+
 // Enhanced Clubs & Series Module (CLUB, SERIE, DETALLE_CLUB_JUGADOR, FICHA_JUGADOR)
 export const ClubSeriesModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
-    const [selectedClub, setSelectedClub] = useState<any>(null);
-    const [clubList, setClubList] = useState<Club[]>([]);
-    const [isEditClubOpen, setIsEditClubOpen] = useState(false);
-    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState<any>(null);
-    const [isCreateClub, setIsCreateClub] = useState(false);
-    const [estadoClub, setEstadoClub] = useState("inactivo");
+    const [clubList, setClubList] = useState<Club[]>([])
+    //const [isEdit, setIsEdit] = useState(false)
 
-    useEffect(() => {
-        const fetchClubs = async () => {
-            try {
-                const data = await getClubs<Club[]>();
-                setClubList([...data]);
-                console.log(data)
-            } catch (error) {
-                console.log(error)
-            }
-        }
-        fetchClubs();
-    }, []);
-
-    useEffect(() => {
-        if (selectedClub) {
-            setEstadoClub(selectedClub.club_activo ? "activo" : "inactivo");
-        }
-    }, [selectedClub])
-
-    const handleClickEditClub = (club: Club) => {
-        setSelectedClub(club);
-        setIsEditClubOpen(true);
+    const fetchClubs = async () => {
+        const data = await getClubs<Club[]>();
+        console.log(data)
+        setClubList(data);
     }
 
-    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); // espera forzada para loading
-    const handleSaveButtonClick = async () => {
-        setIsLoading(true);
+    useEffect(() => {
+        fetchClubs(); // carga inicial
+    }, [])
+
+    const handleDelete = async (id_club: number) => {
         try {
-            await sleep(3000);  // tu función que llama al service
-        } finally {
-            setIsLoading(false);
-            alert("Club modificado exitosamente");
-            setIsEditClubOpen(false);
+            const response = await deleteClub<{ detail: string }>(id_club)
+            console.log(response)
+            toast.success(response.detail)
+            fetchClubs();
+        } catch (error) {
+            toast.error(String(error))
         }
-    }
 
+    }
     const series = [
         {
             id: 1, nombre: "Serie A Masculina", id_club: 1, club_nombre: "FC Barcelona Santiago",
@@ -111,109 +265,22 @@ export const ClubSeriesModule: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2>Gestión de Clubes y Series</h2>
-                {activeTab === 'clubs' &&
-                    <div className="flex space-x-2">
-                        <Dialog open={isCreateClub} onOpenChange={setIsCreateClub}>
-                            <DialogTrigger asChild>
-                                <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Registrar nuevo club
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                                <DialogHeader>
-                                    <DialogTitle>Registrar Nueva Cancha</DialogTitle>
-                                </DialogHeader>
-                                <form className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block mb-2">Nombre de la Cancha</label>
-                                            <Input placeholder="Ej: Estadio Municipal" />
-                                        </div>
-                                        <div>
-                                            <label className="block mb-2">Capacidad</label>
-                                            <Input type="number" placeholder="Número de espectadores" />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <label className="block mb-2">Dirección Completa</label>
-                                            <Input placeholder="Dirección completa de la cancha" />
-                                        </div>
-                                        <div>
-                                            <label className="block mb-2">Tipo de Superficie</label>
-                                            <Select>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione tipo" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="natural">Césped Natural</SelectItem>
-                                                    <SelectItem value="sintetico">Césped Sintético</SelectItem>
-                                                    <SelectItem value="tierra">Tierra</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <label className="block mb-2">Fecha de Construcción</label>
-                                            <Input type="date" />
-                                        </div>
-                                        <div>
-                                            <label className="block mb-2">Costo de Arriendo (CLP)</label>
-                                            <Input type="number" placeholder="Costo por evento" />
-                                        </div>
-                                        <div>
-                                            <label className="block mb-2">Estado Actual</label>
-                                            <Select>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione estado" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="excelente">Excelente</SelectItem>
-                                                    <SelectItem value="bueno">Bueno</SelectItem>
-                                                    <SelectItem value="regular">Regular</SelectItem>
-                                                    <SelectItem value="malo">Malo</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block mb-2">Instalaciones Disponibles</label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {["Vestuarios", "Iluminación", "Tribunas", "Estacionamiento", "Cafetería", "Enfermería", "Sala VIP", "Tienda", "Sala de Prensa"].map((facility) => (
-                                                <div key={facility} className="flex items-center space-x-2">
-                                                    <input type="checkbox" id={facility} />
-                                                    <label htmlFor={facility} className="text-sm">{facility}</label>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block mb-2">Observaciones</label>
-                                        <Textarea placeholder="Información adicional sobre la cancha" />
-                                    </div>
-
-                                    <div className="flex justify-end space-x-2">
-                                        <Button variant="outline" onClick={() => setIsCreateClub(false)}>
-                                            Cancelar
-                                        </Button>
-                                        <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-                                            Registrar Cancha
-                                        </Button>
-                                    </div>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                }
-                {activeTab === 'series' &&
-                    <div className="flex space-x-2">
-                        <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Nueva serie
+                <DialogHandle<Club>
+                    title="Crear nuevo club"
+                    trigger={
+                        <Button style={{ backgroundColor: "#0000db" }} className="text-white">
+                            <Plus className="w-4 h-4 mr-2" /> Nuevo Club
                         </Button>
-                    </div>
-                }
-
+                    }
+                >
+                    {(close) => (
+                        <ClubForm
+                            isEdit={false}
+                            refreshClub={fetchClubs}
+                            onSuccess={close}
+                        />
+                    )}
+                </DialogHandle>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -237,24 +304,19 @@ export const ClubSeriesModule: React.FC = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-3">
-                                        <div className="text-sm">
-                                            <span className="font-medium">Fundación:</span>
-                                            <p>{club.fecha_fundacion}</p>
-                                        </div>
-
-                                        <div className="text-sm">
-                                            <span className="font-medium">Dirección:</span>
-                                            <p className="text-gray-600">{club.direccion_club}</p>
-                                        </div>
                                         <div className="grid grid-cols-2 gap-4 text-sm">
                                             <div>
-                                                <span className="font-medium">Correo electronico:</span>
-                                                <p>{club.email_club}</p>
+                                                <span className="font-medium">Fecha fundacion:</span>
+                                                <p>{club.fecha_fundacion}</p>
                                             </div>
                                             <div>
                                                 <span className="font-medium">Telefono:</span>
                                                 <p>{club.fono_club}</p>
                                             </div>
+                                        </div>
+                                        <div className="text-sm">
+                                            <span className="font-medium">Correo Electronico:</span>
+                                            <p>{club.email_club}</p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4 text-sm">
                                             <div>
@@ -271,85 +333,37 @@ export const ClubSeriesModule: React.FC = () => {
                                                 <Eye className="w-4 h-4 mr-1" />
                                                 Ver Detalles
                                             </Button>
-                                            <Dialog open={isEditClubOpen} onOpenChange={setIsEditClubOpen}>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleClickEditClub(club)}>
-                                                        <Edit className="w-4 h-4 mr-1" />
-                                                        Editar club
+                                            <DialogHandle<Club>
+                                                title={`Modificar club ${club.nombre_club}`}
+                                                trigger={
+                                                    <Button variant="outline" size="sm">
+                                                        <Edit className="w-4 h-4 mr-1" /> Editar
                                                     </Button>
-                                                </DialogTrigger>
-                                                <DialogContent className="max-w-3xl">
-                                                    <DialogHeader>
-                                                        <DialogTitle>Registrar Nuevo club</DialogTitle>
-                                                    </DialogHeader>
-                                                    {selectedClub && (
-                                                        <form className="space-y-4">
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                <div>
-                                                                    <label className="block mb-2">Nombre del club</label>
-                                                                    <Input defaultValue={selectedClub?.nombre_club} />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="block mb-2">Fecha fundación:</label>
-                                                                    <Input type="date" defaultValue={
-                                                                        selectedClub?.fecha_fundacion ?
-                                                                            selectedClub.fecha_fundacion
-                                                                            : ''
-                                                                    } />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <label className="block mb-2">Dirección: </label>
-                                                                    <Input defaultValue={selectedClub?.direccion_club} />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="block mb-2">Telefono club:</label>
-                                                                    <Input defaultValue={selectedClub?.fono_club} />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="block mb-2">Correo electronico:</label>
-                                                                    <Input defaultValue={selectedClub?.email_club} />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <label className="block mb-2">Estado Actual</label>
-                                                                    <Select onValueChange={setEstadoClub} value={estadoClub}>
-                                                                        <SelectTrigger>
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="activo">Activo</SelectItem>
-                                                                            <SelectItem value="inactivo">Inactivo</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-end space-x-2">
-                                                                <Button
-                                                                    variant="outline"
-                                                                    onClick={() => setIsEditClubOpen(false)}
-                                                                    disabled={isLoading === true}
-                                                                >
-                                                                    Cancelar
-                                                                </Button>
-
-                                                                <Button
-                                                                    style={{ backgroundColor: '#0000db' }}
-                                                                    className="text-white flex items-center justify-center gap-2"
-                                                                    onClick={handleSaveButtonClick}
-                                                                    disabled={isLoading === true}
-                                                                >
-                                                                    {isLoading ? (
-                                                                        <>
-                                                                            Guardando...
-                                                                        </>
-                                                                    ) : (
-                                                                        "Guardar Cambios"
-                                                                    )}
-                                                                </Button>
-                                                            </div>
-                                                        </form>
-                                                    )}
-                                                </DialogContent>
-                                            </Dialog>
+                                                }
+                                            >
+                                                {(close) => (
+                                                    <ClubForm
+                                                        club={club}
+                                                        isEdit={true}
+                                                        refreshClub={fetchClubs}
+                                                        onSuccess={close}
+                                                    />
+                                                )}
+                                            </DialogHandle>
+                                        </div>
+                                        <div className="flex space-x-2 pt-2">
+                                            <AlertDialogHandle
+                                                title={`Eliminacion de club ${club.nombre_club}`}
+                                                description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}`}
+                                                confirmLabel='Eliminar'
+                                                cancelLabel='Cancelar'
+                                                onConfirm={() => handleDelete(club.id_club)}
+                                            >
+                                                <Button variant="destructive" size="sm" className="flex-1">
+                                                    <Trash2 className="w-4 h-4 mr-1" />
+                                                    Eliminar
+                                                </Button>
+                                            </AlertDialogHandle>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -441,80 +455,6 @@ export const ClubSeriesModule: React.FC = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
-
-            <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                <DialogContent className="max-w-3xl">
-                    <DialogHeader>
-                        <DialogTitle>Detalles club: {selectedClub?.nombre_club}</DialogTitle>
-                    </DialogHeader>
-                    {selectedClub && (
-                        <form className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block mb-2">Nombre del club</label>
-                                    <Input defaultValue={selectedClub?.nombre_club} />
-                                </div>
-                                <div>
-                                    <label className="block mb-2">Fecha fundación:</label>
-                                    <Input type="date" defaultValue={
-                                        selectedClub?.fecha_fundacion ?
-                                            selectedClub.fecha_fundacion
-                                            : ''
-                                    } />
-                                </div>
-                                <div className="col-span-2">
-                                    <label className="block mb-2">Dirección: </label>
-                                    <Input defaultValue={selectedClub?.direccion_club} />
-                                </div>
-                                <div>
-                                    <label className="block mb-2">Telefono club:</label>
-                                    <Input defaultValue={selectedClub?.fono_club} />
-                                </div>
-                                <div>
-                                    <label className="block mb-2">Correo electronico:</label>
-                                    <Input defaultValue={selectedClub?.email_club} />
-                                </div>
-                                <div className="col-span-2">
-                                    <label className="block mb-2">Estado Actual</label>
-                                    <Select defaultValue={selectedClub.estado_actual ? "activo" : "inactivo"}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="activo">Activo</SelectItem>
-                                            <SelectItem value="inactivo">Inactivo</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="flex justify-end space-x-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setIsEditFieldOpen(false)}
-                                    disabled={isLoading === true}
-                                >
-                                    Cancelar
-                                </Button>
-
-                                <Button
-                                    style={{ backgroundColor: '#0000db' }}
-                                    className="text-white flex items-center justify-center gap-2"
-                                    onClick={handleSaveButtonClick}
-                                    disabled={isLoading === true}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            Guardando...
-                                        </>
-                                    ) : (
-                                        "Guardar Cambios"
-                                    )}
-                                </Button>
-                            </div>
-                        </form>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     );
 };
