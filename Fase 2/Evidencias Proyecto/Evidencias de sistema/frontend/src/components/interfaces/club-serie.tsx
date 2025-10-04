@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { DialogHandle } from '../dialog-component.tsx';
 import { Input } from '../ui/input';
 import {
     Plus, Edit, Eye, Users,
@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 
 
 import { getClubs, createClub, updateClub, deleteClub } from '../../services/clubServices.ts';
-import { AlertDialogHandle } from '../alert-dialog.tsx';
+import { AlertDialogHandle } from '../alert-dialog-component.tsx';
 
 // Enhanced User & Roles Module (USUARIO, ROL, HISTORIAL_USUARIO)
 
@@ -60,42 +60,35 @@ type ClubApi = {
 
 }
 
-type DialogFormClub = {
-    club?: Club | null;
-    isEdit: boolean;
-    refreshClub: () => Promise<void>;
+type ClubFormProps = {
+    club?: Club | null
+    isEdit: boolean
+    refreshClub: () => Promise<void>
+    onSuccess: () => void // para cerrar el dialog
 }
 
-export const DialogFormClub: React.FC<DialogFormClub> = ({ club, isEdit, refreshClub }) => {
-    const [formOpen, setFormOpen] = useState(false)
-    const [nombreClub, setNombreClub] = useState("")
-    const [fechaFundacion, setFechaFundacion] = useState("")
-    const [direccionClub, setDireccionClub] = useState("")
-    const [fonoClub, setFonoClub] = useState("")
-    const [emailClub, setEmailClub] = useState("")
+export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps) {
+    const [nombreClub, setNombreClub] = useState(club?.nombre_club ?? "")
+    const [fechaFundacion, setFechaFundacion] = useState(club?.fecha_fundacion ?? "")
+    const [direccionClub, setDireccionClub] = useState(club?.direccion_club ?? "")
+    const [fonoClub, setFonoClub] = useState(club?.fono_club ?? "")
+    const [emailClub, setEmailClub] = useState(club?.email_club ?? "")
+    const [clubActivo, setClubActivo] = useState(club?.club_activo ?? true)
     const [isLoading, setIsLoading] = useState(false)
-    const [clubActivo, setClubActivo] = useState(true)
+    console.log(club)
 
     useEffect(() => {
         if (isEdit && club) {
-            setNombreClub(club.nombre_club ?? "");
-            setFechaFundacion(club.fecha_fundacion ?? "");
-            setDireccionClub(club.direccion_club ?? "");
-            setFonoClub(club.fono_club ?? "");
-            setEmailClub(club.email_club ?? "");
-        } else {
-            // reset en caso de "Nuevo Club"
-            setNombreClub("");
-            setFechaFundacion("");
-            setDireccionClub("");
-            setFonoClub("");
-            setEmailClub("");
+            setNombreClub(club.nombre_club ?? "")
+            setFechaFundacion(club.fecha_fundacion ?? "")
+            setDireccionClub(club.direccion_club ?? "")
+            setFonoClub(club.fono_club ?? "")
+            setEmailClub(club.email_club ?? "")
+            setClubActivo(club.club_activo ?? true)
         }
-    }, [isEdit, club, formOpen]);
+    }, [club, isEdit])
 
-    const formRef = React.useRef<HTMLFormElement>(null);
-
-    const handleSubmit = async (isEdit: boolean) => {
+    const handleSubmit = async () => {
         setIsLoading(true)
         try {
             const clubObject: ClubApi = {
@@ -104,140 +97,124 @@ export const DialogFormClub: React.FC<DialogFormClub> = ({ club, isEdit, refresh
                 fono_club: fonoClub,
                 direccion_club: direccionClub,
                 email_club: emailClub,
-                ...(isEdit ? { club_activo: clubActivo } : {})
+                ...(isEdit ? { club_activo: clubActivo } : {}),
             }
+
             if (isEdit && club?.id_club) {
-                console.log()
-                const response = await updateClub<any>(clubObject, club?.id_club)
-                console.log(response)
-                if (response) {
-                    toast.success("¡Club modificado correctamente")
-                    setFormOpen(false)
-                    setIsLoading(false)
-                    refreshClub();
-                }
+                await updateClub<any>(clubObject, club.id_club)
+                toast.success("¡Club modificado correctamente!")
             } else {
-                const response = await createClub<any>(clubObject)
-                console.log(response)
-                if (response) {
-                    toast.success("¡Club registrado correctamente!")
-                    setFormOpen(false)
-                    setIsLoading(false)
-                    refreshClub();
-                }
+                await createClub<any>(clubObject)
+                toast.success("¡Club registrado correctamente!")
             }
+
+            refreshClub()
+            onSuccess() // 👈 aquí cierras el diálogo
         } catch (error) {
             toast.error(String(error))
+        } finally {
+            setIsLoading(false)
         }
     }
+
     return (
-        <>
-
-            <Dialog open={formOpen} onOpenChange={setFormOpen}>
-                <DialogTrigger asChild>
-                    {isEdit ? (
-                        <Button variant="outline" size="sm" className="flex-1">
-                            <Edit className="w-4 h-4 mr-1" />
-                            Editar
+        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="block mb-2">Nombre del club:</label>
+                    <Input
+                        placeholder="Ej: Estadio Municipal"
+                        value={nombreClub}
+                        onChange={(e) => setNombreClub(e.target.value)}
+                        required
+                        maxLength={120}
+                        minLength={4}
+                        pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$"
+                    />
+                </div>
+                <div>
+                    <label className="block mb-2">Fecha fundación:</label>
+                    <Input
+                        type="date"
+                        value={fechaFundacion}
+                        onChange={(e) => setFechaFundacion(e.target.value)}
+                        required
+                        max={new Date().toISOString().split("T")[0]}
+                    />
+                </div>
+                <div className="col-span-2">
+                    <label className="block mb-2">Dirección completa</label>
+                    <Input
+                        placeholder="Dirección del club"
+                        value={direccionClub}
+                        onChange={(e) => setDireccionClub(e.target.value)}
+                        required
+                        minLength={10}
+                        maxLength={500}
+                    />
+                </div>
+                <div>
+                    <label className="block mb-2">Teléfono:</label>
+                    <Input
+                        placeholder="Ej: 987654321"
+                        value={fonoClub}
+                        onChange={(e) => setFonoClub(e.target.value)}
+                        required
+                        pattern="^[0-9]{9}$"
+                    />
+                </div>
+                <div>
+                    <label className="block mb-2">Correo electrónico:</label>
+                    <Input
+                        type="email"
+                        placeholder="club@example.com"
+                        value={emailClub}
+                        onChange={(e) => setEmailClub(e.target.value)}
+                        required
+                    />
+                </div>
+                {isEdit && (
+                    <div className="col-span-2 flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="club-activo"
+                            checked={clubActivo}
+                            onChange={(e) => setClubActivo(e.target.checked)}
+                            className="w-4 h-4 rounded border"
+                        />
+                        <label htmlFor="club-activo" className="text-sm">
+                            Club activo
+                        </label>
+                    </div>
+                )}
+                <div className="flex justify-end space-x-2 col-span-2">
+                    <Button
+                        variant="outline"
+                        type="button"
+                        disabled={isLoading}
+                        onClick={onSuccess} // 👈 cancelar = cerrar
+                    >
+                        Cancelar
+                    </Button>
+                    <AlertDialogHandle
+                        title={isEdit ? `Modificar club ${nombreClub}?` : `Registrar club ${nombreClub}?`}
+                        description={
+                            isEdit
+                                ? `¿Estás seguro de querer guardar la modificación?`
+                                : `¿Estás seguro de querer registrar al club ${nombreClub}?`
+                        }
+                        confirmLabel={isEdit ? "Modificar" : "Registrar"}
+                        cancelLabel="Cancelar"
+                        onConfirm={handleSubmit}
+                    >
+                        <Button style={{ backgroundColor: "#0000db" }} className="text-white">
+                            {!isLoading && !isEdit && <Plus className="w-4 h-4 mr-2" />}
+                            {isLoading ? "Guardando..." : "Guardar"}
                         </Button>
-                    ) : (
-                        <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Nuevo Club
-                        </Button>
-                    )}
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl">
-                    <DialogHeader>
-                        <DialogTitle>{isEdit ? "Modificar club" : "Crear nuevo club"}</DialogTitle>
-                    </DialogHeader>
-                    <form className="space-y-4" ref={formRef}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block mb-2">Nombre del club:</label>
-                                <Input placeholder="Ej: Estadio Municipal"
-                                    value={nombreClub} onChange={(e) => setNombreClub(e.target.value)}
-                                    required
-                                    maxLength={120}
-                                    minLength={4}
-                                    pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$"
-                                />
-                            </div>
-                            <div>
-                                <label className="block mb-2">Fecha fundacion:</label>
-                                <Input type="date" placeholder={new Date().toISOString()}
-                                    value={fechaFundacion}
-                                    onChange={(e) => setFechaFundacion(e.target.value)}
-                                    required
-                                    max={new Date().toISOString().split("T")[0]}
-                                />
-                            </div>
-
-                            <div className="col-span-2">
-                                <label className="block mb-2">Dirección Completa</label>
-                                <Input placeholder="Dirección del club"
-                                    value={direccionClub}
-                                    onChange={(e) => setDireccionClub(e.target.value)}
-                                    required
-                                    minLength={10}
-                                    maxLength={500}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block mb-2">Telefono:</label>
-                                <Input placeholder="Ej: 9 8765 4321"
-                                    value={fonoClub}
-                                    onChange={(e) => setFonoClub(e.target.value)}
-                                    required
-                                    pattern="^[0-9]{9}$"
-                                />
-                            </div>
-                            <div>
-                                <label className="block mb-2">Correo electronico:</label>
-                                <Input type="email" placeholder="club@example.com"
-                                    value={emailClub}
-                                    onChange={(e) => setEmailClub(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            { isEdit && 
-                                <div className="col-span-2 flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    id="club-activo"
-                                    checked={club?.club_activo}
-                                    onChange={(e) => { console.log(e.target.checked); setClubActivo(e.target.checked)}}
-                                    className="w-4 h-4 rounded border"
-                                />
-                                <label htmlFor="club-activo" className="text-sm">
-                                    Club activo
-                                </label>
-                            </div>
-                            }
-                            <div className="flex justify-end space-x-2 col-span-2">
-                                <Button variant="outline" type='button' disabled={isLoading} onClick={() => setFormOpen(false)}>
-                                    Cancelar
-                                </Button>
-                                <AlertDialogHandle
-                                            title={isEdit ? `Modificar club ${nombreClub}?` :`Registrar club ${nombreClub}?`}
-                                            description={isEdit ? `¿Estas seguro de querer modificar al club ${nombreClub}?` :
-                                            `¿Estas seguro de querer registrar al club ${nombreClub}?`}
-                                            confirmLabel={isEdit ? 'Modificar' : 'Registrar'}
-                                            cancelLabel='Cancelar'
-                                            onConfirm={() => handleSubmit(isEdit)}
-                                            >
-                                                <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-                                                    {!isLoading && isEdit === false && <Plus className="w-4 h-4 mr-2" />}
-                                                    {isLoading ? "Guardando" : "Guardar"}
-                                                </Button>
-                                            </AlertDialogHandle>
-                            </div>
-                        </div>
-                    </form>
-                </DialogContent>
-            </Dialog>
-        </>
+                    </AlertDialogHandle>
+                </div>
+            </div>
+        </form>
     )
 }
 
@@ -245,6 +222,7 @@ export const DialogFormClub: React.FC<DialogFormClub> = ({ club, isEdit, refresh
 export const ClubSeriesModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
     const [clubList, setClubList] = useState<Club[]>([])
+    //const [isEdit, setIsEdit] = useState(false)
 
     const fetchClubs = async () => {
         const data = await getClubs<Club[]>();
@@ -256,7 +234,7 @@ export const ClubSeriesModule: React.FC = () => {
         fetchClubs(); // carga inicial
     }, [])
 
-    const handleDelete = async (id_club:number) => {
+    const handleDelete = async (id_club: number) => {
         try {
             const response = await deleteClub<{ detail: string }>(id_club)
             console.log(response)
@@ -265,7 +243,7 @@ export const ClubSeriesModule: React.FC = () => {
         } catch (error) {
             toast.error(String(error))
         }
-        
+
     }
     const series = [
         {
@@ -287,7 +265,22 @@ export const ClubSeriesModule: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2>Gestión de Clubes y Series</h2>
-                <DialogFormClub isEdit={false} refreshClub={fetchClubs} />
+                <DialogHandle<Club>
+                    title="Crear nuevo club"
+                    trigger={
+                        <Button style={{ backgroundColor: "#0000db" }} className="text-white">
+                            <Plus className="w-4 h-4 mr-2" /> Nuevo Club
+                        </Button>
+                    }
+                >
+                    {(close) => (
+                        <ClubForm
+                            isEdit={false}
+                            refreshClub={fetchClubs}
+                            onSuccess={close}
+                        />
+                    )}
+                </DialogHandle>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -340,15 +333,31 @@ export const ClubSeriesModule: React.FC = () => {
                                                 <Eye className="w-4 h-4 mr-1" />
                                                 Ver Detalles
                                             </Button>
-                                            <DialogFormClub club={club} isEdit={true} refreshClub={fetchClubs} />
+                                            <DialogHandle<Club>
+                                                title={`Modificar club ${club.nombre_club}`}
+                                                trigger={
+                                                    <Button variant="outline" size="sm">
+                                                        <Edit className="w-4 h-4 mr-1" /> Editar
+                                                    </Button>
+                                                }
+                                            >
+                                                {(close) => (
+                                                    <ClubForm
+                                                        club={club}
+                                                        isEdit={true}
+                                                        refreshClub={fetchClubs}
+                                                        onSuccess={close}
+                                                    />
+                                                )}
+                                            </DialogHandle>
                                         </div>
                                         <div className="flex space-x-2 pt-2">
                                             <AlertDialogHandle
-                                            title={`Eliminacion de club ${club.nombre_club}`}
-                                            description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}`}
-                                            confirmLabel='Eliminar'
-                                            cancelLabel='Cancelar'
-                                            onConfirm={() => handleDelete(club.id_club)}
+                                                title={`Eliminacion de club ${club.nombre_club}`}
+                                                description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}`}
+                                                confirmLabel='Eliminar'
+                                                cancelLabel='Cancelar'
+                                                onConfirm={() => handleDelete(club.id_club)}
                                             >
                                                 <Button variant="destructive" size="sm" className="flex-1">
                                                     <Trash2 className="w-4 h-4 mr-1" />
