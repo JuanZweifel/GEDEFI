@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date,datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from ..utils.validaciones import validar_nombre, validar_fecha
@@ -33,8 +33,8 @@ class LesionCreate(LesionBase):
 class LesionRead(LesionBase):
     id_lesion: int
     rut_jugador: str
-    fecha_creacion: Optional[date] = None
-    fecha_modificacion: Optional[date] = None
+    fecha_creacion: Optional[datetime] = None
+    fecha_modificacion: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 class LesionUpdate(BaseModel):
