@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import engine, Base
+from app import limpieza_excel_jugadores
 from app.routes import (
     ficha_jugador,
     cancha,
@@ -53,6 +54,7 @@ app.include_router(asistencia_reunion.router)
 app.include_router(club.router)
 app.include_router(serie.router)
 app.include_router(auth.router)
+app.include_router(limpieza_excel_jugadores.router)
 
 
 # Configurar CORS para permitir el frontend
