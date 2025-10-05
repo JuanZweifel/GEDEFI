@@ -28,7 +28,7 @@ export function DialogHandle<T>({
             <DialogTrigger asChild>
                 {trigger}
             </DialogTrigger>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="w-auto max-h-[80vh] overflow-auto">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
