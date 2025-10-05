@@ -37,10 +37,10 @@ class JugadorBase(BaseModel):
     def validar_fecha_nacimiento(cls, v) -> date:
         return validar_fecha(v, True)
 
-    @field_validator("fono_jugador")
-    @classmethod
-    def validar_fono_jugador(cls, v) -> str:
-        return validar_celular_chile(v)
+    #@field_validator("fono_jugador")
+    #@classmethod
+    #def validar_fono_jugador(cls, v) -> str:
+    #    return validar_celular_chile(v)
 
 class JugadorCreate(JugadorBase):
     pass
