@@ -81,13 +81,25 @@ export async function getLesiones<T>(): Promise<T> {
 
 
 export async function putLesion<T>(id_lesion: number, lesion: Record<string, any>): Promise<T> {
-    
+
     const response = await fetch(URL_MODIFICAR_LESION(id_lesion), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(lesion),
     });
     return handleResponse<T>(response);
+}
+
+
+export async function deleteJugador(rut_jugador: string) {
+    const response = await fetch(`${URL_BASE}${rut_jugador}`, {
+        method: "DELETE",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Error al eliminar jugador");
+    }
 }
 
 

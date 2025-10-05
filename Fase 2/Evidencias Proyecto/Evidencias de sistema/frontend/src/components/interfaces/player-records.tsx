@@ -12,7 +12,7 @@ import {
     History, FileText, AlertCircle, CheckCircle,
     Upload, X
 } from 'lucide-react';
-import { getJugadores, uploadExcel, putJugador, postJugador, postLesion, getLesiones, putLesion } from '../../services/jugadoresService';
+import { getJugadores, uploadExcel, putJugador, postJugador, postLesion, getLesiones, putLesion, deleteJugador } from '../../services/jugadoresService';
 
 
 type DialogFormJugadorProps = {
@@ -36,6 +36,11 @@ type DialogViewLesionProps = {
 type DialogEditLesionProps = {
     lesion: Lesion;
     refreshLesiones: () => Promise<void>;
+};
+
+type ButtonDeleteJugadorProps = {
+    rutJugador: string;
+    refreshJugadores: () => Promise<void>;
 };
 
 type Lesion = {
@@ -591,8 +596,40 @@ const SelectField = ({ label, value, onChange, options }: any) => (
 );
 // Aqui termina la logica de agregar jugador
 
+// Aqui comienza la logica de eliminar un jugador
+export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({ rutJugador, refreshJugadores }) => {
+    const [isLoading, setIsLoading] = useState(false);
 
+    const handleDelete = async () => {
+        const confirmDelete = confirm("⚠️ ¿Estás seguro que deseas eliminar este jugador?");
+        if (!confirmDelete) return;
 
+        try {
+            setIsLoading(true);
+            await deleteJugador(rutJugador); // Llamada a tu servicio backend
+            await refreshJugadores(); // Actualiza la lista
+            alert("✅ Jugador eliminado correctamente");
+        } catch (error) {
+            console.error("❌ Error al eliminar jugador:", error);
+            alert("❌ No se pudo eliminar el jugador");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Button
+            variant="outline"
+            size="sm"
+            className="text-red-600 border-red-600 hover:bg-red-100"
+            onClick={handleDelete}
+            disabled={isLoading}
+        >
+            <Trash2 className="w-4 h-4" />
+        </Button>
+    );
+};
+// Aqui termina la logica de eliminar un jugador
 
 // Aqui comienza la logica de visualizar jugador
 export const DialogViewJugador: React.FC<DialogFormJugadorProps> = ({
@@ -1355,6 +1392,7 @@ export const PlayerRecordsModule: React.FC = () => {
                                                     <div className="flex space-x-1">
                                                         <DialogFormJugador jugador={player} refreshJugadores={fetchJugadores} />
                                                         <DialogViewJugador jugador={player} refreshJugadores={fetchJugadores} />
+                                                        <ButtonDeleteJugador rutJugador={player.rut_jugador} refreshJugadores={fetchJugadores} />
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -1424,6 +1462,9 @@ export const PlayerRecordsModule: React.FC = () => {
                                                 <div className="flex space-x-1">
                                                     <DialogEditLesion lesion={injury} refreshLesiones={fetchLesiones} />
                                                     <DialogViewLesion lesion={injury} refreshLesiones={fetchLesiones} />
+                                                    <Button variant="destructive" size="sm">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
