@@ -76,4 +76,7 @@ class Usuario(Base):
         cascade="all, delete-orphan",
     )
 
+    tokens_recuperacion: Mapped[list["RecuperacionContrasena"]] = relationship(
+        "RecuperacionContrasena", back_populates="usuario"
+    )
     # TODO: Agregar relaciones con Historiales

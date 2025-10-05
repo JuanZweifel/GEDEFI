@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
 
-router = APIRouter(prefix="/club", tags=["Club"])
+router = APIRouter(prefix="/clubs", tags=["Club"])
+
 
 
 @router.post("/", response_model=schemas.ClubRead)
@@ -19,6 +20,27 @@ def get_club(id_club: int, db: Session = Depends(get_db)):
     try:
         db_club = services.get_club(db, id_club)
         return db_club
+    except HTTPException as e:
+        raise e
+
+@router.get("/{id_club}/series", response_model=schemas.SerieList)
+def get_series_club(id_club: int, db: Session = Depends(get_db)):
+    try:
+        return services.get_series_club(db, id_club=id_club)
+    except HTTPException as e:
+        raise e
+
+@router.get("/{id_club}/jugadores", response_model=schemas.JugadorList)
+def get_players_club(id_club: int, db: Session = Depends(get_db)):
+    try:
+        return services.get_players_club(db, id_club=id_club)
+    except HTTPException as e:
+        raise e
+
+@router.get("/{id_club}/usuarios", response_model=schemas.UsuarioList)
+def get_users_club(id_club: int, db: Session = Depends(get_db)):
+    try:
+        return services.get_users_club(db, id_club=id_club)
     except HTTPException as e:
         raise e
 

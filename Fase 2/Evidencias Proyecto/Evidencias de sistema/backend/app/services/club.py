@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct
+from sqlalchemy import func, distinct, asc, desc
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from app.models import (
     Club,
@@ -15,21 +15,31 @@ from app.schemas import (
     ClubWithDetails,
     UsuarioRead,
     SerieRead,
+    UsuarioRead,
     JugadorRead,
+    SerieList,
+    UsuarioList,
+    JugadorList
 )
 from fastapi import HTTPException
 
 
 def get_club(db: Session, id_club: int) -> Club | None:
-    try:
-        return db.query(Club).filter(Club.id_club == id_club).first()
-    except NoResultFound as e:
-        raise HTTPException(status_code=404, detail="Club no encontrado") from e
+    return db.query(Club).filter(Club.id_club == id_club).first()
 
 
 def get_clubs(db: Session, skip: int = 0, limit: int = 100):
     try:
-        return db.query(Club).offset(skip).limit(limit).all()
+        return (
+            db.query(Club)
+            .offset(skip)
+            .limit(limit)
+            .order_by(
+                desc(Club.club_activo),
+                asc(Club.nombre_club).offset(skip).limit(limit).all(),
+            )
+        )
+
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
@@ -64,7 +74,8 @@ def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> Club | No
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
-            status_code=400, detail="Ya existe un club con este nombre."
+            status_code=400,
+            detail="Ya existe un club con este nombre.",  # REVISAR POR EL EMAIL
         ) from e
     except SQLAlchemyError as e:
         db.rollback()
@@ -113,13 +124,77 @@ def get_club_with_details(db: Session) -> list[Club] | None:
 
             club_details = ClubWithDetails(
                 **club.__dict__,
-                directiva=[UsuarioRead.model_validate(u, from_attributes=True) for u in directiva],
+                directiva=[
+                    UsuarioRead.model_validate(u, from_attributes=True)
+                    for u in directiva
+                ],
                 series=series,
                 jugadores=jugadores,
-            ) 
+            )
             club_with_details.append(club_details)
         return club_with_details
     except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Club no encontrado") from e
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+def get_series_club(db: Session, id_club: int) -> SerieList:
+    try:
+        db_club = get_club(db, id_club=id_club)
+        if db_club is None:
+            raise HTTPException(
+                status_code=404,
+                detail={"details": f"No se encontro club asociado al id {id_club}"},
+            )
+        series_club = db.query(Serie).filter(Serie.id_club == db_club.id_club).all()
+        series_pydantic = [SerieRead.model_validate(s) for s in series_club]
+        return SerieList(series=series_pydantic)
+    except HTTPException as e:
+        raise e
+
+
+def get_users_club(db: Session, id_club) -> UsuarioList:
+    try:
+        db_club = get_club(db, id_club=id_club)
+        if db_club is None:
+            raise HTTPException(
+                status_code=404,
+                detail={"details": f"No se encontro club asociado al id {id_club}"},
+            )
+        usuarios_club = (
+            db.query(Usuario)
+            .join(
+                DetalleUsuarioClub,
+                Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
+            )
+            .filter(DetalleUsuarioClub.id_club == db_club.id_club)
+            .all()
+        )
+        usuarios_pydantic = [UsuarioRead.model_validate(u, from_attributes=True) for u in usuarios_club]
+        return UsuarioList(usuarios=usuarios_pydantic)
+    except HTTPException as e:
+        raise e
+
+
+def get_players_club(db: Session, id_club) -> JugadorList:
+    try:
+        db_club = get_club(db, id_club=id_club)
+        if db_club is None:
+            raise HTTPException(
+                status_code=404,
+                detail={"details": f"No se encontro club asociado al id {id_club}"},
+            )
+        jugadores_club = (
+            db.query(Jugador)
+            .join(
+                DetalleClubJugador,
+                Jugador.rut_jugador == DetalleClubJugador.rut_jugador,
+            )
+            .filter(DetalleClubJugador.id_club == db_club.id_club)
+            .all()
+        )
+        jugadores_pydantic = [JugadorRead.model_validate(j) for j in jugadores_club]
+        return JugadorList(jugadores=jugadores_pydantic)
+    except HTTPException as e:
+        raise e

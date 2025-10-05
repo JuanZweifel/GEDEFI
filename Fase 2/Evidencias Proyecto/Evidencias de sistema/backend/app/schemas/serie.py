@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional, List
 from .ficha_jugador import FichaJugadorRead
 from ..utils.validaciones import validar_nombre
@@ -37,5 +37,7 @@ class SerieWithPlayers(SerieRead):
 
 class SerieList(BaseModel):
     series: List[SerieRead] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
 
 

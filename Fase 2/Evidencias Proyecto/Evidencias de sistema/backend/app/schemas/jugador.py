@@ -67,3 +67,8 @@ class JugadorReadWithRelations(JugadorRead):
     detalle_club_jugador: List[DetalleClubJugadorRead] = Field(default_factory=list)
     ficha_jugador: List[FichaJugadorRead] = Field(default_factory=list)
     rendimiento_entrenamiento: List[RendimientoEntrenamientoRead] = Field(default_factory=list)
+
+class JugadorList(BaseModel):
+    jugadores: list[JugadorRead] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
