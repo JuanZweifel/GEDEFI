@@ -14,9 +14,9 @@ class Jugador(Base):
     segundo_apellido: Mapped[str] = mapped_column(String(30), nullable=True)
     genero: Mapped[bool] = mapped_column(Boolean, nullable=False)
     fecha_nacimiento: Mapped[date] = mapped_column(Date, nullable=False)
-    enfermedades_cronicas: Mapped[str] = mapped_column(String(500), nullable=True)
+    enfermedades_cronicas: Mapped[str] = mapped_column(String(500), nullable=True, default="Sin enfermedades crónicas")
     fono_jugador: Mapped[str] = mapped_column(String, nullable=True)
-    jugador_activo:Mapped[bool] = mapped_column(Boolean, nullable=False)
+    jugador_activo:Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False, onupdate=datetime.now(timezone.utc))
 
