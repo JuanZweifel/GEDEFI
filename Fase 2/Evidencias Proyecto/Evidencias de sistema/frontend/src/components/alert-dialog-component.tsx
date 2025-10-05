@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {
     AlertDialog,
-    AlertDialogTrigger,
     AlertDialogContent,
     AlertDialogHeader,
     AlertDialogTitle,
@@ -16,30 +15,29 @@ type AlertDialogHandleProps = {
     description?: string;
     confirmLabel?: string;
     cancelLabel?: string;
-    children: React.ReactNode;
+    open: boolean;
+    onOpenChange: (open: boolean) => void
     onConfirm: () => void | Promise<void>; // lo que se ejecuta al aceptar
 }
 export const AlertDialogHandle: React.FC<AlertDialogHandleProps> = ({
     title,
     description,
-    confirmLabel,
-    cancelLabel,
-    children,
+    confirmLabel = "Confirmar",
+    cancelLabel = "Cancelar",
+    open,
+    onOpenChange,
     onConfirm,
 }) => {
     return (
-        <AlertDialog>
-            <AlertDialogTrigger asChild>
-                {children}
-            </AlertDialogTrigger>
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>
                         <AlertDialogDescription>{description}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
-                    <AlertDialogAction onClick={onConfirm}>
+                    <AlertDialogCancel onClick={() => onOpenChange(false)}>{cancelLabel}</AlertDialogCancel>
+                    <AlertDialogAction onClick={async(e) => {e.preventDefault(); await onConfirm(); console.log(open)}}>
                         {confirmLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>

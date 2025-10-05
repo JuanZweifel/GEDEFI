@@ -37,7 +37,7 @@ type ClubFormProps = {
     club?: ClubType | null
     isEdit: boolean
     refreshClub: () => Promise<void>
-    onSuccess: () => void // para cerrar el dialog
+    onSuccess: () => void
 }
 
 export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps) {
@@ -48,6 +48,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
     const [emailClub, setEmailClub] = useState(club?.email_club ?? "")
     const [clubActivo, setClubActivo] = useState(club?.club_activo ?? true)
     const [isLoading, setIsLoading] = useState(false)
+    const [open, setOpen] = useState(false)
 
     useEffect(() => {
         if (isEdit && club) {
@@ -60,6 +61,15 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
         }
     }, [club, isEdit])
 
+    const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        const form = e.currentTarget;
+
+        if (form.reportValidity()) {
+            setOpen(true) //disparamos el alert
+        }
+    }
     const handleSubmit = async () => {
         setIsLoading(true)
         try {
@@ -82,6 +92,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
 
             refreshClub()
             onSuccess()
+            setOpen(false)
         } catch (error) {
             toast.error(String(error))
         } finally {
@@ -90,7 +101,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
     }
 
     return (
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
+        <form className="space-y-4" onSubmit={(e) => { handleAlert(e) }}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <Label className="block mb-2">Nombre del club:</Label>
@@ -164,9 +175,13 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                         variant="outline"
                         type="button"
                         disabled={isLoading}
-                        onClick={onSuccess} // 👈 cancelar = cerrar
+                        onClick={() => onSuccess()} // 👈 cancelar = cerrar
                     >
                         Cancelar
+                    </Button>
+                    <Button type="submit" style={{ backgroundColor: "#0000db" }} className="text-white">
+                        {!isLoading && !isEdit && <Plus className="w-4 h-4 mr-2" />}
+                        {isLoading ? "Guardando..." : "Guardar"}
                     </Button>
                     <AlertDialogHandle
                         title={isEdit ? `Modificar club ${nombreClub}?` : `Registrar club ${nombreClub}?`}
@@ -178,12 +193,9 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                         confirmLabel={isEdit ? "Modificar" : "Registrar"}
                         cancelLabel="Cancelar"
                         onConfirm={handleSubmit}
-                    >
-                        <Button style={{ backgroundColor: "#0000db" }} className="text-white">
-                            {!isLoading && !isEdit && <Plus className="w-4 h-4 mr-2" />}
-                            {isLoading ? "Guardando..." : "Guardar"}
-                        </Button>
-                    </AlertDialogHandle>
+                        open={open}
+                        onOpenChange={setOpen}
+                    />
                 </div>
             </div>
         </form>
@@ -359,7 +371,8 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
 export const ClubSeriesModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
     const [clubList, setClubList] = useState<ClubType[]>([])
-    //const [isEdit, setIsEdit] = useState(false)
+    const [open, setOpen] = useState(false)
+    const [openSelected, setOpenSelected] = useState<number | null>(null)
 
     const fetchClubs = async () => {
         const data = await getClubs<ClubType[]>();
@@ -375,6 +388,7 @@ export const ClubSeriesModule: React.FC = () => {
             const response = await deleteClub<{ detail: string }>(id_club)
             toast.success(response.detail)
             fetchClubs();
+            setOpen(false)
         } catch (error) {
             toast.error(String(error))
         }
@@ -483,58 +497,62 @@ export const ClubSeriesModule: React.FC = () => {
                                             </DialogHandle>
                                         </div>
                                         <div className="flex space-x-2 pt-2">
+                                            <Button onClick={() => setOpenSelected(club.id_club)} variant="destructive" size="sm" className="flex-1">
+                                                <Trash2 className="w-4 h-4 mr-1" />
+                                                Eliminar
+                                            </Button>
                                             <AlertDialogHandle
                                                 title={`Eliminacion de club ${club.nombre_club}`}
                                                 description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}`}
                                                 confirmLabel='Eliminar'
                                                 cancelLabel='Cancelar'
                                                 onConfirm={() => handleDelete(club.id_club)}
+                                                open={openSelected === club.id_club}
+                                                onOpenChange={(Open) => {
+                                                    if (!Open) setOpenSelected(null); // cerrar el dialog
+                                                }}
                                             >
-                                                <Button variant="destructive" size="sm" className="flex-1">
-                                                    <Trash2 className="w-4 h-4 mr-1" />
-                                                    Eliminar
-                                                </Button>
-                                            </AlertDialogHandle>
-                                        </div>
+                                        </AlertDialogHandle>
                                     </div>
-                                </CardContent>
+                                </div>
+                            </CardContent>
                             </Card>
                         ))}
-                    </div>
-                </TabsContent>
+                </div>
+            </TabsContent>
 
-                <TabsContent value="history" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Historial de Clubes y Series</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Fecha</TableHead>
-                                        <TableHead>Acción</TableHead>
-                                        <TableHead>Club</TableHead>
-                                        <TableHead>Detalle</TableHead>
+            <TabsContent value="history" className="space-y-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Historial de Clubes y Series</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Fecha</TableHead>
+                                    <TableHead>Acción</TableHead>
+                                    <TableHead>Club</TableHead>
+                                    <TableHead>Detalle</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {clubHistory.map((item, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell>{item.fecha}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">{item.accion}</Badge>
+                                        </TableCell>
+                                        <TableCell>{item.club}</TableCell>
+                                        <TableCell>{item.detalle}</TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {clubHistory.map((item, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell>{item.fecha}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{item.accion}</Badge>
-                                            </TableCell>
-                                            <TableCell>{item.club}</TableCell>
-                                            <TableCell>{item.detalle}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </div>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
+        </div >
     );
 };
