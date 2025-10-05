@@ -374,7 +374,7 @@ export default function App() {
 
               <div className="flex items-center space-x-4">
                 <Badge variant="outline" style={{ borderColor: '#0000db', color: '#0000db' }}>
-                  {mockUser.role === 'admin' ? 'Administrador' : 'Usuario'}
+                  {rol ? rol : 'N/A'}
                 </Badge>
                 <div className="text-right">
                   <p className="font-medium">{nombre}</p>
@@ -394,7 +394,7 @@ export default function App() {
             <ActiveComponent />
           </main>
         </div>
-        <Toaster/>
+        <Toaster />
       </div>
     </SidebarProvider>
   );

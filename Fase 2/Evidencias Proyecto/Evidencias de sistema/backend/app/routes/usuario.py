@@ -12,7 +12,7 @@ def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)
 
 
 @router.get("/{rut_usuario}", response_model=schemas.UsuarioRead)
-def get_usuario(rut_usuario: int, db: Session = Depends(get_db)):
+def get_usuario(rut_usuario: str, db: Session = Depends(get_db)):
     db_usuario = services.get_usuario(db, rut_usuario)
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario not found")
@@ -36,8 +36,8 @@ def update_usuario(
 
 
 @router.delete("/{rut_usuario}", response_model=dict)
-def delete_usuario(rut_usuario: int, db: Session = Depends(get_db)):
+def delete_usuario(rut_usuario: str, db: Session = Depends(get_db)):
     success = services.delete_usuario(db, rut_usuario)
     if not success:
         raise HTTPException(status_code=404, detail="Usuario not found")
-    return {"detail": "Usuario deleted successfully"}
+    return {"detail": "Usuario Eliminado correctamente"}

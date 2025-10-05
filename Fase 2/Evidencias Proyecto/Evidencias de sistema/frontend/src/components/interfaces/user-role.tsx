@@ -6,11 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { DialogHandle } from "../dialog-component.tsx";
 import { Input } from "../ui/input";
-import { Plus, Edit, Eye, Shield } from "lucide-react";
+import { Plus, Edit, Eye, Shield, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { getUsers, createUser, updateUser } from "../../services/usuarioService.ts";
-import { getRoles, createRole, updateRole } from "../../services/rolService.ts";
+import { getUsers, createUser, updateUser, deleteUser } from "../../services/usuarioService.ts";
+import { getRoles, createRole, updateRole, deleteRole } from "../../services/rolService.ts";
 import { AlertDialogHandle } from "../alert-dialog-component.tsx";
 
 type User = {
@@ -29,11 +29,14 @@ type User = {
 type UserFormProps = {
     user?: User;
     isEdit: boolean;
+    roles: Role[];
+    refreshRoles: () => Promise<void>;
     refreshUsers: () => Promise<void>;
     onSuccess: () => void;
 };
 
-export function UserForm({ user, isEdit, refreshUsers, onSuccess }: UserFormProps) {
+export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSuccess }: UserFormProps) {
+    const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
     const [form, setForm] = useState<User>(
         user || {
             rut_usuario: "",
@@ -42,7 +45,7 @@ export function UserForm({ user, isEdit, refreshUsers, onSuccess }: UserFormProp
             apellido_usuario: "",
             fecha_nacimiento: "",
             usuario_activo: true,
-            id_rol: 1,
+            id_rol: 0,
             admin: false,
             id_club: undefined,
             pass_usuario: "",
@@ -50,9 +53,20 @@ export function UserForm({ user, isEdit, refreshUsers, onSuccess }: UserFormProp
     );
     const [isLoading, setIsLoading] = useState(false);
 
+    const ensureRoles = async () => {
+        if (!roles || roles.length === 0) {
+            const data = await refreshRoles();
+            if (data) setAvailableRoles(data);
+            else setAvailableRoles([]);
+        } else {
+            setAvailableRoles(roles);
+        }
+    };
+
     useEffect(() => {
+        ensureRoles();
         if (isEdit && user) setForm(user);
-    }, [user, isEdit]);
+    }, [user, isEdit, roles]);
 
     const handleSubmit = async () => {
         setIsLoading(true);
@@ -64,7 +78,7 @@ export function UserForm({ user, isEdit, refreshUsers, onSuccess }: UserFormProp
                 await createUser(form);
                 toast.success("Usuario registrado correctamente!");
             }
-            refreshUsers();
+            await refreshUsers();
             onSuccess();
         } catch (error) {
             toast.error(String(error));
@@ -82,7 +96,6 @@ export function UserForm({ user, isEdit, refreshUsers, onSuccess }: UserFormProp
             }}
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* RUT only editable when creating */}
                 {!isEdit && (
                     <InputField
                         label="RUT"
@@ -119,14 +132,23 @@ export function UserForm({ user, isEdit, refreshUsers, onSuccess }: UserFormProp
                     value={form.pass_usuario}
                     onChange={(val) => setForm({ ...form, pass_usuario: val })}
                 />
-                <InputField
-                    label="Rol"
-                    type="number"
-                    value={form.id_rol}
-                    onChange={(val) => setForm({ ...form, id_rol: Number(val) })}
-                />
 
-                {/* ID Club optional only for creation */}
+                <div>
+                    <label className="block text-sm font-medium mb-1">Rol</label>
+                    <select
+                        value={form.id_rol || ""}
+                        onChange={(e) => setForm({ ...form, id_rol: Number(e.target.value) })}
+                        className="w-full border rounded p-2"
+                    >
+                        <option value="">Seleccione un rol</option>
+                        {availableRoles.map((r) => (
+                            <option key={r.id_rol} value={r.id_rol}>
+                                {r.nombre_rol}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
                 {!isEdit && (
                     <InputField
                         label="ID Club (opcional)"
@@ -137,7 +159,6 @@ export function UserForm({ user, isEdit, refreshUsers, onSuccess }: UserFormProp
                 )}
             </div>
 
-            {/* Only show admin if needed, usuario_activo editable only on edit */}
             <div className="flex space-x-4">
                 {!isEdit && (
                     <label>
@@ -166,11 +187,7 @@ export function UserForm({ user, isEdit, refreshUsers, onSuccess }: UserFormProp
                     Cancelar
                 </Button>
                 <AlertDialogHandle
-                    title={
-                        isEdit
-                            ? `Modificar usuario ${form.nombre_usuario}?`
-                            : `Registrar usuario ${form.nombre_usuario}?`
-                    }
+                    title={isEdit ? `Modificar usuario ${form.nombre_usuario}?` : `Registrar usuario ${form.nombre_usuario}?`}
                     description={isEdit ? "¿Desea guardar los cambios?" : "¿Desea registrar al usuario?"}
                     confirmLabel={isEdit ? "Modificar" : "Registrar"}
                     cancelLabel="Cancelar"
@@ -297,6 +314,30 @@ export const UserRoleModule: React.FC = () => {
     const [roles, setRoles] = useState<Role[]>([]);
     const [error, setError] = useState<string | null>(null);
 
+    const handleUserDelete = async (rut_usuario: string) => {
+        try {
+            const response = await deleteUser(rut_usuario);
+            console.log(response)
+            toast.success(response.detail)
+            fetchUsers();
+        } catch (error) {
+            toast.error(String(error))
+        }
+
+    }
+
+    const handleRoleDelete = async (rut_usuario: string) => {
+        try {
+            const response = await deleteRole(rut_usuario);
+            console.log(response)
+            toast.success(response.detail)
+            fetchRoles();
+        } catch (error) {
+            toast.error(String(error))
+        }
+
+    }
+
     const fetchUsers = async () => {
         try {
             const data = await getUsers();
@@ -315,7 +356,7 @@ export const UserRoleModule: React.FC = () => {
         }
     };
 
-    useEffect(() => { fetchUsers(); }, []);
+    useEffect(() => { fetchUsers(); fetchRoles() }, []);
     useEffect(() => { if (activeTab === "roles") fetchRoles(); }, [activeTab]);
 
     return (
@@ -334,7 +375,7 @@ export const UserRoleModule: React.FC = () => {
                     >
                         {(close) =>
                             activeTab === "users" ? (
-                                <UserForm isEdit={false} refreshUsers={fetchUsers} onSuccess={close} />
+                                <UserForm isEdit={false} refreshUsers={fetchUsers} onSuccess={close} roles={roles} refreshRoles={fetchRoles} />
                             ) : (
                                 <RoleForm isEdit={false} refreshRoles={fetchRoles} onSuccess={close} />
                             )
@@ -373,7 +414,11 @@ export const UserRoleModule: React.FC = () => {
                                                 <TableCell>{user.rut_usuario}</TableCell>
                                                 <TableCell>{user.nombre_usuario} {user.apellido_usuario}</TableCell>
                                                 <TableCell>{user.email_usuario}</TableCell>
-                                                <TableCell><Badge variant="outline">{user.id_rol}</Badge></TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline">
+                                                        {roles.find(r => r.id_rol === user.id_rol)?.nombre_rol || "N/A"}
+                                                    </Badge>
+                                                </TableCell>
                                                 <TableCell>
                                                     <Badge className={user.usuario_activo ? "bg-green-500" : "bg-red-500"}>
                                                         {user.usuario_activo ? "Activo" : "Inactivo"}
@@ -387,10 +432,21 @@ export const UserRoleModule: React.FC = () => {
                                                             initialData={user}
                                                         >
                                                             {(close, initialData) => (
-                                                                <UserForm isEdit={true} user={initialData} refreshUsers={fetchUsers} onSuccess={close} />
+                                                                <UserForm isEdit={true} user={initialData} refreshUsers={fetchUsers} onSuccess={close} roles={roles} refreshRoles={fetchRoles} />
                                                             )}
                                                         </DialogHandle>
                                                         <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
+                                                        <AlertDialogHandle
+                                                            title={`Eliminacion de usuario ${user.nombre_usuario}`}
+                                                            description={`¿Estas seguro de querer eliminar al usuario ${user.nombre_usuario}`}
+                                                            confirmLabel='Eliminar'
+                                                            cancelLabel='Cancelar'
+                                                            onConfirm={() => handleUserDelete(user.rut_usuario)}
+                                                        >
+                                                            <Button variant="destructive" size="sm">
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </AlertDialogHandle>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -420,7 +476,7 @@ export const UserRoleModule: React.FC = () => {
                                         </CardHeader>
                                         <CardContent>
                                             <p className="text-sm text-gray-600 mb-4">{role.desc_rol}</p>
-                                            <div className="flex space-x-2">
+                                            <div className="flex flex-wrap gap-2">
                                                 <DialogHandle<Role>
                                                     title={`Editar rol ${role.nombre_rol}`}
                                                     trigger={
@@ -439,9 +495,22 @@ export const UserRoleModule: React.FC = () => {
                                                         />
                                                     )}
                                                 </DialogHandle>
+
                                                 <Button variant="outline" size="sm">
                                                     <Shield className="w-4 h-4 mr-1" /> Permisos
                                                 </Button>
+
+                                                <AlertDialogHandle
+                                                    title={`Eliminacion de rol ${role.nombre_rol}`}
+                                                    description={`¿Estas seguro de querer eliminar al usuario ${role.nombre_rol}?`}
+                                                    confirmLabel="Eliminar"
+                                                    cancelLabel="Cancelar"
+                                                    onConfirm={() => handleRoleDelete(role.id_rol)}
+                                                >
+                                                    <Button variant="destructive" size="sm">
+                                                        <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                                                    </Button>
+                                                </AlertDialogHandle>
                                             </div>
                                         </CardContent>
                                     </Card>
