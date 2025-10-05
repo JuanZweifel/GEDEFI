@@ -37,6 +37,7 @@ type UserFormProps = {
 
 export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSuccess }: UserFormProps) {
     const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+    const [open, setOpen] = useState(false)
     const [form, setForm] = useState<User>(
         user || {
             rut_usuario: "",
@@ -68,6 +69,16 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
         if (isEdit && user) setForm(user);
     }, [user, isEdit, roles]);
 
+    const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        const form = e.currentTarget;
+
+        if (form.reportValidity()) {
+            setOpen(true) //disparamos el alert
+        }
+    }
+
     const handleSubmit = async () => {
         setIsLoading(true);
         try {
@@ -92,7 +103,7 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
             className="space-y-4"
             onSubmit={(e) => {
                 e.preventDefault();
-                handleSubmit();
+                handleAlert(e);
             }}
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -101,6 +112,9 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                         label="RUT"
                         value={form.rut_usuario}
                         onChange={(val) => setForm({ ...form, rut_usuario: val })}
+                        required
+                        pattern="^\d{7,8}-[0-9kK]$" // RUT format example: 12345678-9
+                        title="Ingrese un RUT válido (ej: 12345678-9)"
                     />
                 )}
 
@@ -108,29 +122,49 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                     label="Nombre"
                     value={form.nombre_usuario}
                     onChange={(val) => setForm({ ...form, nombre_usuario: val })}
+                    required
+                    minLength={2}
+                    maxLength={50}
+                    title="Ingrese un nombre entre 2 y 50 caracteres"
                 />
+
                 <InputField
                     label="Apellido"
                     value={form.apellido_usuario}
                     onChange={(val) => setForm({ ...form, apellido_usuario: val })}
+                    required
+                    minLength={2}
+                    maxLength={50}
+                    title="Ingrese un apellido entre 2 y 50 caracteres"
                 />
+
                 <InputField
                     label="Email"
                     type="email"
                     value={form.email_usuario}
                     onChange={(val) => setForm({ ...form, email_usuario: val })}
+                    required
+                    title="Ingrese un correo electrónico válido"
                 />
+
                 <InputField
                     label="Fecha de Nacimiento"
                     type="date"
                     value={form.fecha_nacimiento}
                     onChange={(val) => setForm({ ...form, fecha_nacimiento: val })}
+                    required
+                    max={new Date().toISOString().split("T")[0]} // no future dates
+                    title="Seleccione una fecha válida"
                 />
+
                 <InputField
                     label="Contraseña"
                     type="password"
                     value={form.pass_usuario}
                     onChange={(val) => setForm({ ...form, pass_usuario: val })}
+                    required
+                    minLength={8}
+                    title="La contraseña debe tener al menos 6 caracteres"
                 />
 
                 <div>
@@ -139,6 +173,7 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                         value={form.id_rol || ""}
                         onChange={(e) => setForm({ ...form, id_rol: Number(e.target.value) })}
                         className="w-full border rounded p-2"
+                        required
                     >
                         <option value="">Seleccione un rol</option>
                         {availableRoles.map((r) => (
@@ -155,6 +190,8 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                         type="number"
                         value={form.id_club ?? ""}
                         onChange={(val) => setForm({ ...form, id_club: Number(val) })}
+                        min={1}
+                        title="Ingrese un ID de club válido (opcional)"
                     />
                 )}
             </div>
@@ -186,17 +223,19 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                 <Button variant="outline" type="button" disabled={isLoading} onClick={onSuccess}>
                     Cancelar
                 </Button>
+                <Button type="submit" style={{ backgroundColor: "#0000db" }} className="text-white">
+                    {!isLoading && !isEdit && <Plus className="w-4 h-4 mr-2" />}
+                    {isLoading ? "Guardando..." : "Guardar"}
+                </Button>
                 <AlertDialogHandle
                     title={isEdit ? `Modificar usuario ${form.nombre_usuario}?` : `Registrar usuario ${form.nombre_usuario}?`}
                     description={isEdit ? "¿Desea guardar los cambios?" : "¿Desea registrar al usuario?"}
                     confirmLabel={isEdit ? "Modificar" : "Registrar"}
                     cancelLabel="Cancelar"
                     onConfirm={handleSubmit}
+                    open={open}
+                    onOpenChange={setOpen}
                 >
-                    <Button style={{ backgroundColor: "#0000db" }} className="text-white">
-                        {!isLoading && !isEdit && <Plus className="w-4 h-4 mr-2" />}
-                        {isLoading ? "Guardando..." : "Guardar"}
-                    </Button>
                 </AlertDialogHandle>
             </div>
         </form>
@@ -218,6 +257,7 @@ type RoleFormProps = {
 };
 
 export function RoleForm({ role, isEdit, refreshRoles, onSuccess }: RoleFormProps) {
+    const [open, setOpen] = useState(false)
     const [form, setForm] = useState<Role>(
         role || {
             nombre_rol: "",
@@ -230,6 +270,16 @@ export function RoleForm({ role, isEdit, refreshRoles, onSuccess }: RoleFormProp
     useEffect(() => {
         if (isEdit && role) setForm(role);
     }, [role, isEdit]);
+
+    const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        const form = e.currentTarget;
+
+        if (form.reportValidity()) {
+            setOpen(true) //disparamos el alert
+        }
+    }
 
     const handleSubmit = async () => {
         setIsLoading(true);
@@ -255,7 +305,7 @@ export function RoleForm({ role, isEdit, refreshRoles, onSuccess }: RoleFormProp
             className="space-y-4"
             onSubmit={(e) => {
                 e.preventDefault();
-                handleSubmit();
+                handleAlert(e);
             }}
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -263,11 +313,18 @@ export function RoleForm({ role, isEdit, refreshRoles, onSuccess }: RoleFormProp
                     label="Nombre del rol"
                     value={form.nombre_rol}
                     onChange={(val) => setForm({ ...form, nombre_rol: val })}
+                    required
+                    minLength={2}
+                    maxLength={50}
+                    title="Ingrese un nombre de rol entre 2 y 50 caracteres"
                 />
+
                 <InputField
                     label="Descripción"
                     value={form.desc_rol || ""}
                     onChange={(val) => setForm({ ...form, desc_rol: val })}
+                    maxLength={200}
+                    title="Ingrese una descripción de máximo 200 caracteres (opcional)"
                 />
                 <label className="flex items-center space-x-2">
                     <input
@@ -283,27 +340,35 @@ export function RoleForm({ role, isEdit, refreshRoles, onSuccess }: RoleFormProp
                 <Button variant="outline" type="button" disabled={isLoading} onClick={onSuccess}>
                     Cancelar
                 </Button>
+                <Button type="submit" style={{ backgroundColor: "#0000db" }} className="text-white">
+                    {isLoading ? "Guardando..." : "Guardar"}
+                </Button>
                 <AlertDialogHandle
                     title={isEdit ? `Modificar rol ${form.nombre_rol}?` : `Registrar rol ${form.nombre_rol}?`}
                     description={isEdit ? "¿Desea guardar los cambios?" : "¿Desea registrar el rol?"}
                     confirmLabel={isEdit ? "Modificar" : "Registrar"}
                     cancelLabel="Cancelar"
                     onConfirm={handleSubmit}
+                    open={open}
+                    onOpenChange={setOpen}
                 >
-                    <Button style={{ backgroundColor: "#0000db" }} className="text-white">
-                        {isLoading ? "Guardando..." : "Guardar"}
-                    </Button>
                 </AlertDialogHandle>
             </div>
         </form>
     );
 }
 
-function InputField({ label, value, onChange, type = "text" }: any) {
+function InputField({ label, value, onChange, type = "text", ...rest }: any) {
     return (
         <div>
             <label className="block text-sm font-medium">{label}</label>
-            <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border rounded p-2" />
+            <Input
+                type={type}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full border rounded p-2"
+                {...rest}
+            />
         </div>
     );
 }
@@ -313,12 +378,14 @@ export const UserRoleModule: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [openSelected, setOpenSelected] = useState<number | null>(null)
 
     const handleUserDelete = async (rut_usuario: string) => {
         try {
             const response = await deleteUser(rut_usuario);
             console.log(response)
             toast.success(response.detail)
+            setOpenSelected(null)
             fetchUsers();
         } catch (error) {
             toast.error(String(error))
@@ -331,6 +398,7 @@ export const UserRoleModule: React.FC = () => {
             const response = await deleteRole(rut_usuario);
             console.log(response)
             toast.success(response.detail)
+            setOpenSelected(null)
             fetchRoles();
         } catch (error) {
             toast.error(String(error))
@@ -436,16 +504,20 @@ export const UserRoleModule: React.FC = () => {
                                                             )}
                                                         </DialogHandle>
                                                         <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
+                                                        <Button onClick={() => setOpenSelected(user.rut_usuario)} variant="destructive" size="sm">
+                                                            <Trash2 className="w-4 h-4 mr-1" />
+                                                        </Button>
                                                         <AlertDialogHandle
                                                             title={`Eliminacion de usuario ${user.nombre_usuario}`}
-                                                            description={`¿Estas seguro de querer eliminar al usuario ${user.nombre_usuario}`}
+                                                            description={`¿Estas seguro de querer eliminar al club ${user.nombre_usuario}`}
                                                             confirmLabel='Eliminar'
                                                             cancelLabel='Cancelar'
                                                             onConfirm={() => handleUserDelete(user.rut_usuario)}
+                                                            open={openSelected === user.rut_usuario}
+                                                            onOpenChange={(Open) => {
+                                                                if (!Open) setOpenSelected(null); // cerrar el dialog
+                                                            }}
                                                         >
-                                                            <Button variant="destructive" size="sm">
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
                                                         </AlertDialogHandle>
                                                     </div>
                                                 </TableCell>
@@ -499,17 +571,20 @@ export const UserRoleModule: React.FC = () => {
                                                 <Button variant="outline" size="sm">
                                                     <Shield className="w-4 h-4 mr-1" /> Permisos
                                                 </Button>
-
+                                                <Button onClick={() => setOpenSelected(role.id_rol)} variant="destructive" size="sm">
+                                                    <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                                                </Button>
                                                 <AlertDialogHandle
                                                     title={`Eliminacion de rol ${role.nombre_rol}`}
                                                     description={`¿Estas seguro de querer eliminar al usuario ${role.nombre_rol}?`}
                                                     confirmLabel="Eliminar"
                                                     cancelLabel="Cancelar"
                                                     onConfirm={() => handleRoleDelete(role.id_rol)}
+                                                    open={openSelected === role.id_rol}
+                                                    onOpenChange={(Open) => {
+                                                        if (!Open) setOpenSelected(null); // cerrar el dialog
+                                                    }}
                                                 >
-                                                    <Button variant="destructive" size="sm">
-                                                        <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                                                    </Button>
                                                 </AlertDialogHandle>
                                             </div>
                                         </CardContent>
