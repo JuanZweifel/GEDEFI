@@ -103,3 +103,15 @@ export async function deleteJugador(rut_jugador: string) {
 }
 
 
+export async function deleteLesion(id_lesion: number): Promise<void> {
+    const response = await fetch(`${URL_BASE_LESION}${id_lesion}`, {
+        method: "DELETE",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Error al eliminar la lesión");
+    }
+}
+
+

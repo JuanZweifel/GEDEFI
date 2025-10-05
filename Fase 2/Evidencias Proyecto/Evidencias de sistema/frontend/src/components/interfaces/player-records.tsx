@@ -12,7 +12,13 @@ import {
     History, FileText, AlertCircle, CheckCircle,
     Upload, X
 } from 'lucide-react';
-import { getJugadores, uploadExcel, putJugador, postJugador, postLesion, getLesiones, putLesion, deleteJugador } from '../../services/jugadoresService';
+import {
+    getJugadores, uploadExcel, putJugador,
+    postJugador, postLesion, getLesiones, putLesion,
+    deleteJugador, deleteLesion
+}
+    from '../../services/jugadoresService';
+import { AlertDialogHandle } from '../alert-dialog-component';
 
 
 type DialogFormJugadorProps = {
@@ -43,6 +49,11 @@ type ButtonDeleteJugadorProps = {
     refreshJugadores: () => Promise<void>;
 };
 
+type ButtonDeleteLesionProps = {
+    id_lesion: number;
+    refreshLesiones: () => Promise<void>;
+};
+
 type Lesion = {
     id_lesion: number;
     rut_jugador: string;
@@ -57,17 +68,63 @@ type Lesion = {
     fecha_modificacion?: string;
 };
 
+
+// Aqui comienza la logica de eliminar una lesion
+export const ButtonDeleteLesion: React.FC<ButtonDeleteLesionProps> = ({ id_lesion, refreshLesiones }) => {
+
+    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+
+    const handleDelete = async () => {
+        if (!id_lesion) {
+            alert("❌ Lesión no válida");
+            return;
+        }
+
+        try {
+            await deleteLesion(id_lesion);
+            await refreshLesiones();
+        } catch (error: any) {
+            console.error("❌ Error al eliminar lesión:", error);
+            alert(error.message || "❌ Error al eliminar lesión");
+        }
+    };
+
+    return (
+        <>
+            <Button variant="destructive" size="sm" onClick={() => setIsDialogOpen(true)}>
+                <Trash2 className="w-4 h-4" />
+            </Button>
+
+            <AlertDialogHandle
+                title="Confirmar eliminación"
+                description="¿Estás seguro de que deseas eliminar esta lesión?"
+                confirmLabel="Eliminar"
+                cancelLabel="Cancelar"
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                onConfirm={async () => {
+                    setIsDialogOpen(false);
+                    await handleDelete();
+                }}
+            />
+        </>
+    );
+};
+// Aqui termina la logica de eliminar una lesion
+
+
 // Aqui comienza la logica de editar una lesion
 export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refreshLesiones }) => {
     const [rutJugador, setRutJugador] = useState("");
     const [nombreLesion, setNombreLesion] = useState("");
-    const [tipoLesion, setTipoLesion] = useState<boolean | null>(null);
+    const [tipoLesion, setTipoLesion] = useState<boolean>(false); // Inicializamos como false
     const [descripcion, setDescripcion] = useState("");
     const [fechaLesion, setFechaLesion] = useState("");
     const [tiempoRecuperacion, setTiempoRecuperacion] = useState("");
     const [fechaFinLesion, setFechaFinLesion] = useState("");
     const [isEditFormOpen, setIsEditFormOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
     useEffect(() => {
         if (lesion) {
@@ -83,7 +140,7 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
 
     const handleSave = async () => {
         if (!lesion || lesion.id_lesion === undefined) {
-            alert("Error: lesión no válida");
+            console.error("❌ Lesión no válida");
             return;
         }
 
@@ -98,9 +155,7 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
                 fecha_fin_lesion: fechaFinLesion || null,
             };
 
-            // <-- usamos id_lesion
             await putLesion(lesion.id_lesion, updatedData);
-
             await refreshLesiones();
             setIsEditFormOpen(false);
         } catch (error: any) {
@@ -112,109 +167,97 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
     };
 
     return (
-        <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm" onClick={() => setIsEditFormOpen(true)}>
-                    <Edit className="w-4 h-4" />
-                </Button>
-            </DialogTrigger>
+        <>
+            <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={() => setIsEditFormOpen(true)}>
+                        <Edit className="w-4 h-4" />
+                    </Button>
+                </DialogTrigger>
 
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Editar Lesión</DialogTitle>
-                </DialogHeader>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Editar Lesión</DialogTitle>
+                    </DialogHeader>
 
-                <div className="space-y-3">
-                    <div>
-                        <label className="text-sm font-medium">RUT del Jugador</label>
-                        <Input
-                            value={rutJugador}
-                            className="w-full border p-2 rounded"
-                            disabled
-                        />
+                    <div className="space-y-3">
+                        <div>
+                            <label className="text-sm font-medium">RUT del Jugador</label>
+                            <Input value={rutJugador} className="w-full border p-2 rounded" disabled />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Nombre de la Lesión</label>
+                            <Input value={nombreLesion} onChange={(e) => setNombreLesion(e.target.value)} className="w-full border p-2 rounded" />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Tipo de Lesión</label>
+                            <Select
+                                value={String(tipoLesion)}
+                                onValueChange={(v: string) => setTipoLesion(v === "true")}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Seleccione tipo de lesión" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="true">Grave</SelectItem>
+                                    <SelectItem value="false">Leve</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Descripción</label>
+                            <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border p-2 rounded" />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Fecha de Lesión</label>
+                            <Input type="date" value={fechaLesion} onChange={(e) => setFechaLesion(e.target.value)} className="w-full border p-2 rounded" />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Tiempo de Recuperación (semanas)</label>
+                            <Input type="number" value={tiempoRecuperacion} onChange={(e) => setTiempoRecuperacion(e.target.value)} className="w-full border p-2 rounded" min={0} />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Fecha Fin de Lesión</label>
+                            <Input type="date" value={fechaFinLesion} onChange={(e) => setFechaFinLesion(e.target.value)} className="w-full border p-2 rounded" />
+                        </div>
+
+                        <div className="flex justify-end space-x-2 mt-4">
+                            <Button variant="outline" onClick={() => setIsEditFormOpen(false)} disabled={isLoading}>
+                                Cancelar
+                            </Button>
+                            <Button
+                                style={{ backgroundColor: '#0000db' }}
+                                className="text-white"
+                                onClick={() => setIsConfirmDialogOpen(true)}
+                                disabled={isLoading}
+                            >
+                                Guardar
+                            </Button>
+                        </div>
                     </div>
+                </DialogContent>
+            </Dialog>
 
-                    <div>
-                        <label className="text-sm font-medium">Nombre de la Lesión</label>
-                        <Input
-                            value={nombreLesion}
-                            onChange={(e) => setNombreLesion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Tipo de Lesión</label>
-                        <Select
-                            value={tipoLesion ? "true" : "false"}
-                            onValueChange={(value: string) => setTipoLesion(value === "true")}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Seleccione tipo de lesión" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="true">Grave</SelectItem>
-                                <SelectItem value="false">Leve</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Descripción</label>
-                        <textarea
-                            value={descripcion}
-                            onChange={(e) => setDescripcion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Fecha de Lesión</label>
-                        <Input
-                            type="date"
-                            value={fechaLesion}
-                            onChange={(e) => setFechaLesion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Tiempo de Recuperación (semanas)</label>
-                        <Input
-                            type="number"
-                            value={tiempoRecuperacion}
-                            onChange={(e) => setTiempoRecuperacion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                            min={0}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Fecha Fin de Lesión</label>
-                        <Input
-                            type="date"
-                            value={fechaFinLesion}
-                            onChange={(e) => setFechaFinLesion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                        />
-                    </div>
-
-                    <div className="flex justify-end space-x-2 mt-4">
-                        <Button variant="outline" onClick={() => setIsEditFormOpen(false)} disabled={isLoading}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            style={{ backgroundColor: '#0000db' }}
-                            className="text-white"
-                            onClick={handleSave}
-                            disabled={isLoading}
-                        >
-                            Guardar
-                        </Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
+            {/* --- Confirmación personalizada antes de guardar --- */}
+            <AlertDialogHandle
+                title="Confirmar actualización"
+                description="¿Deseas guardar los cambios en esta lesión?"
+                confirmLabel="Guardar"
+                cancelLabel="Cancelar"
+                open={isConfirmDialogOpen}
+                onOpenChange={setIsConfirmDialogOpen}
+                onConfirm={async () => {
+                    setIsConfirmDialogOpen(false);
+                    await handleSave();
+                }}
+            />
+        </>
     );
 };
 // Aqui termina la logica de editar una lesion
@@ -313,11 +356,13 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
     const [open, setOpen] = useState(false);
     const [rutJugador, setRutJugador] = useState("");
     const [nombreLesion, setNombreLesion] = useState("");
-    const [tipoLesion, setTipoLesion] = useState(false); // booleano
+    const [tipoLesion, setTipoLesion] = useState<boolean>(false);
     const [descripcion, setDescripcion] = useState("");
     const [fechaLesion, setFechaLesion] = useState("");
     const [tiempoRecuperacion, setTiempoRecuperacion] = useState("");
     const [fechaFinLesion, setFechaFinLesion] = useState("");
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async () => {
         if (!rutJugador || !nombreLesion || !descripcion || !fechaLesion) {
@@ -325,6 +370,7 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
             return;
         }
 
+        setIsLoading(true);
         const nuevaLesion = {
             rut_jugador: rutJugador,
             nombre_lesion: nombreLesion,
@@ -343,119 +389,142 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
             // Limpiar formulario
             setRutJugador("");
             setNombreLesion("");
-            setTipoLesion(true);
+            setTipoLesion(false);
             setDescripcion("");
             setFechaLesion("");
             setTiempoRecuperacion("");
             setFechaFinLesion("");
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert("Ocurrió un error al registrar la lesión.");
+            alert(err.message || "Ocurrió un error al registrar la lesión.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button style={{ backgroundColor: "#0000db" }} className="text-white">
-                    + Agregar Lesión
-                </Button>
-            </DialogTrigger>
-
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Registrar Lesión</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-3">
-                    <div>
-                        <label className="text-sm font-medium">RUT del Jugador</label>
-                        <input
-                            type="text"
-                            value={rutJugador}
-                            onChange={(e) => setRutJugador(e.target.value)}
-                            className="w-full border p-2 rounded"
-                            placeholder="Ej: 12.345.678-9"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Nombre de la Lesión</label>
-                        <input
-                            type="text"
-                            value={nombreLesion}
-                            onChange={(e) => setNombreLesion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Tipo de Lesión</label>
-                        <select
-                            value={tipoLesion ? "true" : "false"}
-                            onChange={(e) => setTipoLesion(e.target.value === "true")}
-                            className="w-full border p-2 rounded"
-                        >
-                            <option value="true">Grave</option>
-                            <option value="false">Leve</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Descripción</label>
-                        <textarea
-                            value={descripcion}
-                            onChange={(e) => setDescripcion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Fecha de Lesión</label>
-                        <input
-                            type="date"
-                            value={fechaLesion}
-                            onChange={(e) => setFechaLesion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Tiempo de Recuperación (semanas)</label>
-                        <input
-                            type="number"
-                            value={tiempoRecuperacion}
-                            onChange={(e) => setTiempoRecuperacion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                            min={0}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Fecha Fin de Lesión</label>
-                        <input
-                            type="date"
-                            value={fechaFinLesion}
-                            onChange={(e) => setFechaFinLesion(e.target.value)}
-                            className="w-full border p-2 rounded"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex justify-end space-x-2 mt-4">
-                    <Button variant="outline" onClick={() => setOpen(false)}>
-                        Cancelar
+        <>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                    <Button style={{ backgroundColor: "#0000db" }} className="text-white">
+                        + Agregar Lesión
                     </Button>
-                    <Button
-                        style={{ backgroundColor: "#0000db" }}
-                        className="text-white"
-                        onClick={handleSubmit}
-                    >
-                        Guardar
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+                </DialogTrigger>
+
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Registrar Lesión</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-3">
+                        <div>
+                            <label className="text-sm font-medium">RUT del Jugador</label>
+                            <input
+                                type="text"
+                                value={rutJugador}
+                                onChange={(e) => setRutJugador(e.target.value)}
+                                className="w-full border p-2 rounded"
+                                placeholder="Ej: 12.345.678-9"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Nombre de la Lesión</label>
+                            <input
+                                type="text"
+                                value={nombreLesion}
+                                onChange={(e) => setNombreLesion(e.target.value)}
+                                className="w-full border p-2 rounded"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Tipo de Lesión</label>
+                            <Select
+                                value={String(tipoLesion)}
+                                onValueChange={(v: string) => setTipoLesion(v === "true")}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Seleccione tipo de lesión" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="true">Grave</SelectItem>
+                                    <SelectItem value="false">Leve</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Descripción</label>
+                            <textarea
+                                value={descripcion}
+                                onChange={(e) => setDescripcion(e.target.value)}
+                                className="w-full border p-2 rounded"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Fecha de Lesión</label>
+                            <input
+                                type="date"
+                                value={fechaLesion}
+                                onChange={(e) => setFechaLesion(e.target.value)}
+                                className="w-full border p-2 rounded"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Tiempo de Recuperación (semanas)</label>
+                            <input
+                                type="number"
+                                value={tiempoRecuperacion}
+                                onChange={(e) => setTiempoRecuperacion(e.target.value)}
+                                className="w-full border p-2 rounded"
+                                min={0}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Fecha Fin de Lesión</label>
+                            <input
+                                type="date"
+                                value={fechaFinLesion}
+                                onChange={(e) => setFechaFinLesion(e.target.value)}
+                                className="w-full border p-2 rounded"
+                            />
+                        </div>
+
+                        <div className="flex justify-end space-x-2 mt-4">
+                            <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
+                                Cancelar
+                            </Button>
+                            <Button
+                                style={{ backgroundColor: "#0000db" }}
+                                className="text-white"
+                                onClick={() => setIsConfirmDialogOpen(true)}
+                                disabled={isLoading}
+                            >
+                                Guardar
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirmación personalizada */}
+            <AlertDialogHandle
+                title="Confirmar registro"
+                description="¿Deseas registrar esta lesión?"
+                confirmLabel="Registrar"
+                cancelLabel="Cancelar"
+                open={isConfirmDialogOpen}
+                onOpenChange={setIsConfirmDialogOpen}
+                onConfirm={async () => {
+                    setIsConfirmDialogOpen(false);
+                    await handleSubmit();
+                }}
+            />
+        </>
     );
 };
 // Aqui termina la logica de creción de lesion
@@ -464,6 +533,7 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
 export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugadores }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
     const [rutJugador, setRutJugador] = useState("");
     const [primerNombreJugador, setPrimerNombreJugador] = useState("");
@@ -493,6 +563,7 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
             });
             await refreshJugadores();
             setIsOpen(false);
+
             // Limpiar campos
             setRutJugador("");
             setPrimerNombreJugador("");
@@ -504,68 +575,84 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
             setEnfermedadesCronicas("");
             setFonoJugador("");
             setJugadorActivo("true");
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Error al agregar jugador");
+            alert(error.message || "Error al agregar jugador");
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Jugador
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-                <DialogHeader>
-                    <DialogTitle>Agregar Jugador</DialogTitle>
-                </DialogHeader>
+        <>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                    <Button style={{ backgroundColor: '#0000db' }} className="text-white">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo Jugador
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Agregar Jugador</DialogTitle>
+                    </DialogHeader>
 
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <InputField label="Rut Jugador" value={rutJugador} onChange={setRutJugador} />
-                        <InputField label="Primer Nombre" value={primerNombreJugador} onChange={setPrimerNombreJugador} />
-                        <InputField label="Segundo Nombre" value={segundoNombreJugador} onChange={setSegundoNombreJugador} />
-                        <InputField label="Primer Apellido" value={primerApellidoJugador} onChange={setPrimerApellidoJugador} />
-                        <InputField label="Segundo Apellido" value={segundoApellidoJugador} onChange={setSegundoApellidoJugador} />
-                        <SelectField
-                            label="Género"
-                            value={genero}
-                            onChange={setGenero}
-                            options={[
-                                { value: "true", label: "Masculino" },
-                                { value: "false", label: "Femenino" },
-                            ]}
-                        />
-                        <InputField label="Fecha de Nacimiento" type="date" value={fechaNacimiento} onChange={setFechaNacimiento} />
-                        <InputField label="Enfermedades Crónicas" value={enfermedadesCronicas} onChange={setEnfermedadesCronicas} />
-                        <InputField label="Teléfono" value={fonoJugador} onChange={setFonoJugador} />
-                        <SelectField
-                            label="Jugador Activo"
-                            value={jugadorActivo}
-                            onChange={setJugadorActivo}
-                            options={[
-                                { value: "true", label: "Sí" },
-                                { value: "false", label: "No" },
-                            ]}
-                        />
-                    </div>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <InputField label="Rut Jugador" value={rutJugador} onChange={setRutJugador} />
+                            <InputField label="Primer Nombre" value={primerNombreJugador} onChange={setPrimerNombreJugador} />
+                            <InputField label="Segundo Nombre" value={segundoNombreJugador} onChange={setSegundoNombreJugador} />
+                            <InputField label="Primer Apellido" value={primerApellidoJugador} onChange={setPrimerApellidoJugador} />
+                            <InputField label="Segundo Apellido" value={segundoApellidoJugador} onChange={setSegundoApellidoJugador} />
+                            <SelectField
+                                label="Género"
+                                value={genero}
+                                onChange={setGenero}
+                                options={[
+                                    { value: "true", label: "Masculino" },
+                                    { value: "false", label: "Femenino" },
+                                ]}
+                            />
+                            <InputField label="Fecha de Nacimiento" type="date" value={fechaNacimiento} onChange={setFechaNacimiento} />
+                            <InputField label="Enfermedades Crónicas" value={enfermedadesCronicas} onChange={setEnfermedadesCronicas} />
+                            <InputField label="Teléfono" value={fonoJugador} onChange={setFonoJugador} />
+                            <SelectField
+                                label="Jugador Activo"
+                                value={jugadorActivo}
+                                onChange={setJugadorActivo}
+                                options={[
+                                    { value: "true", label: "Sí" },
+                                    { value: "false", label: "No" },
+                                ]}
+                            />
+                        </div>
 
-                    <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleSave} disabled={isLoading}>
-                            Guardar
-                        </Button>
+                        <div className="flex justify-end space-x-2">
+                            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
+                                Cancelar
+                            </Button>
+                            <Button onClick={() => setIsConfirmDialogOpen(true)} disabled={isLoading}>
+                                Guardar
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            </DialogContent>
-        </Dialog>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirmación personalizada antes de guardar */}
+            <AlertDialogHandle
+                title="Confirmar registro"
+                description="¿Deseas registrar este jugador?"
+                confirmLabel="Registrar"
+                cancelLabel="Cancelar"
+                open={isConfirmDialogOpen}
+                onOpenChange={setIsConfirmDialogOpen}
+                onConfirm={async () => {
+                    setIsConfirmDialogOpen(false);
+                    await handleSave();
+                }}
+            />
+        </>
     );
 };
 
@@ -599,34 +686,45 @@ const SelectField = ({ label, value, onChange, options }: any) => (
 // Aqui comienza la logica de eliminar un jugador
 export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({ rutJugador, refreshJugadores }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleDelete = async () => {
-        const confirmDelete = confirm("⚠️ ¿Estás seguro que deseas eliminar este jugador?");
-        if (!confirmDelete) return;
-
         try {
             setIsLoading(true);
-            await deleteJugador(rutJugador); // Llamada a tu servicio backend
-            await refreshJugadores(); // Actualiza la lista
-            alert("✅ Jugador eliminado correctamente");
+            await deleteJugador(rutJugador);
+            await refreshJugadores();
         } catch (error) {
             console.error("❌ Error al eliminar jugador:", error);
-            alert("❌ No se pudo eliminar el jugador");
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <Button
-            variant="outline"
-            size="sm"
-            className="text-red-600 border-red-600 hover:bg-red-100"
-            onClick={handleDelete}
-            disabled={isLoading}
-        >
-            <Trash2 className="w-4 h-4" />
-        </Button>
+        <>
+            <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 border-red-600 hover:bg-red-100"
+                onClick={() => setIsDialogOpen(true)}
+                disabled={isLoading}
+            >
+                <Trash2 className="w-4 h-4" />
+            </Button>
+
+            <AlertDialogHandle
+                title="Confirmar eliminación"
+                description="¿Estás seguro de que deseas eliminar este jugador?"
+                confirmLabel="Eliminar"
+                cancelLabel="Cancelar"
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                onConfirm={async () => {
+                    setIsDialogOpen(false);
+                    await handleDelete();
+                }}
+            />
+        </>
     );
 };
 // Aqui termina la logica de eliminar un jugador
@@ -772,100 +870,75 @@ export const DialogViewJugador: React.FC<DialogFormJugadorProps> = ({
 
 
 // Aqui comienza la logica y formulario del modificar jugador
-export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({
-    jugador,
-    refreshJugadores
+export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({ jugador, refreshJugadores }) => {
+    const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
-}) => {
     const [primerNombreJugador, setPrimerNombreJugador] = useState("");
     const [segundoNombreJugador, setSegundoNombreJugador] = useState("");
     const [primerApellidoJugador, setPrimerApellidoJugador] = useState("");
     const [segundoApellidoJugador, setSegundoApellidoJugador] = useState("");
-    const [genero, setGenero] = useState<boolean | null>(null);
+    const [genero, setGenero] = useState<string>("");
     const [fechaNacimiento, setFechaNacimiento] = useState("");
     const [enfermedadesCronicas, setEnfermedadesCronicas] = useState("");
     const [fonoJugador, setFonoJugador] = useState("");
-    const [jugadorActivo, setJugadorActivo] = useState<boolean | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+    const [jugadorActivo, setJugadorActivo] = useState<string>("true");
 
     // Cargar datos al abrir el diálogo
     useEffect(() => {
         if (jugador) {
-            console.log(jugador)
             setPrimerNombreJugador(jugador.primer_nombre);
-            setSegundoNombreJugador(jugador.segundo_nombre ? jugador.segundo_nombre : "");
+            setSegundoNombreJugador(jugador.segundo_nombre || "");
             setPrimerApellidoJugador(jugador.primer_apellido);
-            setSegundoApellidoJugador(jugador.segundo_apellido ? jugador.segundo_apellido : "");
-            setGenero(jugador.genero);
+            setSegundoApellidoJugador(jugador.segundo_apellido || "");
+            setGenero(jugador.genero ? "true" : "false");
             setFechaNacimiento(jugador.fecha_nacimiento);
-            setEnfermedadesCronicas(jugador.enfermedades_cronicas ? jugador.enfermedades_cronicas : "");
-            setFonoJugador(jugador.fono_jugador ? jugador.fono_jugador : "");
-            setJugadorActivo(jugador.jugador_activo);
+            setEnfermedadesCronicas(jugador.enfermedades_cronicas || "");
+            setFonoJugador(jugador.fono_jugador || "");
+            setJugadorActivo(jugador.jugador_activo ? "true" : "false");
         }
     }, [jugador]);
 
-    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setIsLoading(true);
-        await sleep(3000);
-        setIsLoading(false);
-        alert("Jugador modificado exitosamente");
-    };
-
     const handleSave = async () => {
         if (!jugador) return;
+        setIsLoading(true);
         try {
-            const updatedData = {
+            await putJugador(jugador.rut_jugador, {
                 primer_nombre: primerNombreJugador,
                 segundo_nombre: segundoNombreJugador || null,
                 primer_apellido: primerApellidoJugador,
                 segundo_apellido: segundoApellidoJugador || null,
-                genero: genero,
+                genero: genero === "true",
                 fecha_nacimiento: fechaNacimiento,
                 enfermedades_cronicas: enfermedadesCronicas || null,
                 fono_jugador: fonoJugador || null,
-                jugador_activo: jugadorActivo,
-            };
-
-            const data = await putJugador<{ message: string }>(
-                jugador.rut_jugador,
-                updatedData
-            );
-
+                jugador_activo: jugadorActivo === "true",
+            });
             await refreshJugadores();
             setIsEditFormOpen(false);
-            setIsLoading(false);
-
         } catch (error: any) {
             console.error("❌ Error al actualizar jugador:", error);
             alert(error.message || "❌ Error al actualizar jugador");
+        } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
-            <DialogTrigger asChild>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        //setSelectedPlayer(player);
-                        setIsEditFormOpen(true);
-                    }}
-                >
-                    <Edit className="w-4 h-4" />
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-                <DialogHeader>
-                    <DialogTitle>Modificar jugador</DialogTitle>
-                </DialogHeader>
+        <>
+            <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={() => setIsEditFormOpen(true)}>
+                        <Edit className="w-4 h-4" />
+                    </Button>
+                </DialogTrigger>
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Modificar Jugador</DialogTitle>
+                    </DialogHeader>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block mb-2">Primer Nombre:</label>
@@ -884,7 +957,6 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({
                                 value={segundoNombreJugador}
                                 onChange={(e) => setSegundoNombreJugador(e.target.value)}
                                 maxLength={50}
-                                className="input"
                             />
                         </div>
                         <div>
@@ -895,7 +967,6 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({
                                 onChange={(e) => setPrimerApellidoJugador(e.target.value)}
                                 required
                                 maxLength={50}
-                                className="input"
                             />
                         </div>
                         <div>
@@ -905,12 +976,11 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({
                                 value={segundoApellidoJugador}
                                 onChange={(e) => setSegundoApellidoJugador(e.target.value)}
                                 maxLength={50}
-                                className="input"
                             />
                         </div>
                         <div>
                             <label className="block mb-2">Género:</label>
-                            <Select value={String(genero)} onValueChange={(value: string) => setGenero(value === "true")} >
+                            <Select value={genero} onValueChange={setGenero}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Seleccione género" />
                                 </SelectTrigger>
@@ -927,7 +997,6 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({
                                 value={fechaNacimiento}
                                 onChange={(e) => setFechaNacimiento(e.target.value)}
                                 max={new Date().toISOString().split("T")[0]}
-                                className="input"
                                 required
                             />
                         </div>
@@ -938,7 +1007,6 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({
                                 value={enfermedadesCronicas}
                                 onChange={(e) => setEnfermedadesCronicas(e.target.value)}
                                 maxLength={200}
-                                className="input"
                             />
                         </div>
                         <div>
@@ -948,24 +1016,22 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({
                                 value={fonoJugador}
                                 onChange={(e) => setFonoJugador(e.target.value)}
                                 pattern="^[0-9]{9}$"
-                                className="input"
                             />
                         </div>
                         <div>
                             <label className="block mb-2">Jugador Activo:</label>
-                            <Select value={String(jugadorActivo)} onValueChange={(value: string) => setJugadorActivo(value === "true")} >
+                            <Select value={jugadorActivo} onValueChange={setJugadorActivo}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione si esta activo" />
+                                    <SelectValue placeholder="Seleccione si está activo" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="true">Si</SelectItem>
+                                    <SelectItem value="true">Sí</SelectItem>
                                     <SelectItem value="false">No</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="flex justify-end space-x-2 col-span-2">
                             <Button
-                                type="button"
                                 variant="outline"
                                 disabled={isLoading}
                                 onClick={() => setIsEditFormOpen(false)}
@@ -973,17 +1039,32 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({
                                 Cancelar
                             </Button>
                             <Button
-                                style={{ backgroundColor: '#0000db' }}
+                                style={{ backgroundColor: "#0000db" }}
                                 className="text-white"
-                                onClick={handleSave}
+                                onClick={() => setIsConfirmDialogOpen(true)}
+                                disabled={isLoading}
                             >
                                 Guardar
                             </Button>
                         </div>
                     </div>
-                </form>
-            </DialogContent>
-        </Dialog>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirmación antes de guardar */}
+            <AlertDialogHandle
+                title="Confirmar actualización"
+                description="¿Deseas guardar los cambios de este jugador?"
+                confirmLabel="Guardar"
+                cancelLabel="Cancelar"
+                open={isConfirmDialogOpen}
+                onOpenChange={setIsConfirmDialogOpen}
+                onConfirm={async () => {
+                    setIsConfirmDialogOpen(false);
+                    await handleSave();
+                }}
+            />
+        </>
     );
 };
 // Aqui termina la logica y el formulario de modificar jugador
@@ -997,57 +1078,74 @@ type UploadExcelProps = {
 
 export const UploadExcel: React.FC<UploadExcelProps> = ({ refreshJugadores }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isAlertOpen, setIsAlertOpen] = useState(false); // Control de apertura de alerta
+    const [alertMessage, setAlertMessage] = useState(""); // Mensaje de la alerta
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, refreshJugadores: () => Promise<void>) => {
+    // Función para mostrar la alerta
+    const showAlert = (message: string) => {
+        setAlertMessage(message);
+        setIsAlertOpen(true);
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
         if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-            alert('Por favor seleccione un archivo Excel (.xlsx o .xls)');
+            showAlert('Por favor seleccione un archivo Excel (.xlsx o .xls)');
             return;
         }
 
-        // Crear el FormData para enviar el archivo al backend
         const formData = new FormData();
         formData.append("file", file);
 
         try {
-            const data = await uploadExcel(formData)
-            alert(data);
-            await refreshJugadores()
-        } catch (error) {
+            await uploadExcel(formData); 
+            showAlert("¿Desea agregar a todos los jugadores que aparecen en el archivo?"); 
+            await refreshJugadores(); 
+        } catch (error: any) {
             console.error("❌ Error al subir el archivo:", error);
-            alert("❌ Error al subir el archivo");
+            showAlert("❌ Error al subir el archivo"); 
         }
 
-        // Limpiar el input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const openFileDialog = () => {
         fileInputRef.current?.click();
     };
-    return (<>
-        <input
-            type="file"
-            accept=".xlsx, .xls"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={(event) => handleFileUpload(event, refreshJugadores)}
-        />
-        <Button
-            variant="outline"
-            onClick={openFileDialog}
-            style={{ borderColor: '#0000db', color: '#0000db' }}
-        >
-            <Upload className="w-4 h-4 mr-2" />
-            Upload Excel
-        </Button>
-    </>
-    )
-}
+
+    return (
+        <>
+            <input
+                type="file"
+                accept=".xlsx, .xls"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileUpload}
+            />
+            <Button
+                variant="outline"
+                onClick={openFileDialog}
+                style={{ borderColor: '#0000db', color: '#0000db' }}
+            >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Excel
+            </Button>
+
+            {/* Alerta personalizada */}
+            <AlertDialogHandle
+                title="Mensaje"
+                description={alertMessage}
+                confirmLabel="Aceptar"
+                cancelLabel="Cancelar"
+                open={isAlertOpen}
+                onOpenChange={setIsAlertOpen}
+                onConfirm={() => setIsAlertOpen(false)}
+            />
+        </>
+    );
+};
 
 
 type Jugador = {
@@ -1462,9 +1560,7 @@ export const PlayerRecordsModule: React.FC = () => {
                                                 <div className="flex space-x-1">
                                                     <DialogEditLesion lesion={injury} refreshLesiones={fetchLesiones} />
                                                     <DialogViewLesion lesion={injury} refreshLesiones={fetchLesiones} />
-                                                    <Button variant="destructive" size="sm">
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                    <ButtonDeleteLesion id_lesion={injury.id_lesion} refreshLesiones={fetchLesiones} />
                                                 </div>
                                             </TableCell>
                                         </TableRow>
