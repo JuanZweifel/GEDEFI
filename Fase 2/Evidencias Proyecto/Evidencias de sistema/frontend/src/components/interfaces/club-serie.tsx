@@ -4,64 +4,37 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Label } from '../ui/label.tsx';
 import { DialogHandle } from '../dialog-component.tsx';
 import { Input } from '../ui/input';
 import {
     Plus, Edit, Eye, Users,
-    Club,
     Trash2
 } from 'lucide-react';
 
 import { toast } from 'sonner';
 
 
-import { getClubs, createClub, updateClub, deleteClub } from '../../services/clubServices.ts';
+import { getClubs, createClub, updateClub, deleteClub, getSeriesClub, getUsuariosClub, getJugadoresClub } from '../../services/clubServices.ts';
 import { AlertDialogHandle } from '../alert-dialog-component.tsx';
+import {
+    type ClubType,
+    type ClubApiType,
+    type SerieType,
+    type JugadorType,
+    type UsuarioType,
+    type ClubDetailsType,
+    type serieResponseType,
+    type DirectivaResponseType,
+    type JugadorResponseType
+} from '../../types.tsx';
 
 // Enhanced User & Roles Module (USUARIO, ROL, HISTORIAL_USUARIO)
 
-type directiva = {
-    rut_usuario: string;
-    email_usuario: string;
-    nombre_usuario: string;
-    apellido_usuario: string;
-    fecha_nacimiento: string;
-    huella_pulgar: string;
-    huella_indice: string;
-    usuario_activo: boolean;
-    id_rol: number;
-    fecha_creacion: string;
-    fecha_modificacion: string;
-}
-type Club = {
-    id_club: number;
-    nombre_club: string;
-    fecha_fundacion: string;
-    fono_club: string;
-    direccion_club: string;
-    email_club: string;
-    club_activo: boolean
-    fecha_creacion: string;
-    fecha_modificacion: string;
-    series: number
-    jugadores: number;
-    directiva: [directiva];
-}
 
-type ClubApi = {
-
-    id_club?: number
-    club_activo?: boolean;
-    nombre_club: string;
-    fecha_fundacion: string;
-    fono_club: string;
-    direccion_club: string;
-    email_club: string;
-
-}
 
 type ClubFormProps = {
-    club?: Club | null
+    club?: ClubType | null
     isEdit: boolean
     refreshClub: () => Promise<void>
     onSuccess: () => void // para cerrar el dialog
@@ -75,7 +48,6 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
     const [emailClub, setEmailClub] = useState(club?.email_club ?? "")
     const [clubActivo, setClubActivo] = useState(club?.club_activo ?? true)
     const [isLoading, setIsLoading] = useState(false)
-    console.log(club)
 
     useEffect(() => {
         if (isEdit && club) {
@@ -91,7 +63,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
     const handleSubmit = async () => {
         setIsLoading(true)
         try {
-            const clubObject: ClubApi = {
+            const clubObject: ClubApiType = {
                 nombre_club: nombreClub,
                 fecha_fundacion: fechaFundacion,
                 fono_club: fonoClub,
@@ -109,7 +81,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
             }
 
             refreshClub()
-            onSuccess() // 👈 aquí cierras el diálogo
+            onSuccess()
         } catch (error) {
             toast.error(String(error))
         } finally {
@@ -121,7 +93,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block mb-2">Nombre del club:</label>
+                    <Label className="block mb-2">Nombre del club:</Label>
                     <Input
                         placeholder="Ej: Estadio Municipal"
                         value={nombreClub}
@@ -133,7 +105,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                     />
                 </div>
                 <div>
-                    <label className="block mb-2">Fecha fundación:</label>
+                    <Label className="block mb-2">Fecha fundación:</Label>
                     <Input
                         type="date"
                         value={fechaFundacion}
@@ -143,7 +115,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                     />
                 </div>
                 <div className="col-span-2">
-                    <label className="block mb-2">Dirección completa</label>
+                    <Label className="block mb-2">Dirección completa</Label>
                     <Input
                         placeholder="Dirección del club"
                         value={direccionClub}
@@ -154,7 +126,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                     />
                 </div>
                 <div>
-                    <label className="block mb-2">Teléfono:</label>
+                    <Label className="block mb-2">Teléfono:</Label>
                     <Input
                         placeholder="Ej: 987654321"
                         value={fonoClub}
@@ -164,7 +136,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                     />
                 </div>
                 <div>
-                    <label className="block mb-2">Correo electrónico:</label>
+                    <Label className="block mb-2">Correo electrónico:</Label>
                     <Input
                         type="email"
                         placeholder="club@example.com"
@@ -175,16 +147,16 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                 </div>
                 {isEdit && (
                     <div className="col-span-2 flex items-center space-x-2">
-                        <input
+                        <Input
                             type="checkbox"
                             id="club-activo"
                             checked={clubActivo}
                             onChange={(e) => setClubActivo(e.target.checked)}
                             className="w-4 h-4 rounded border"
                         />
-                        <label htmlFor="club-activo" className="text-sm">
+                        <Label htmlFor="club-activo" className="text-sm">
                             Club activo
-                        </label>
+                        </Label>
                     </div>
                 )}
                 <div className="flex justify-end space-x-2 col-span-2">
@@ -218,15 +190,179 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
     )
 }
 
+
+export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+    const [series, setSeries] = useState<SerieType[]>([])
+    const [directiva, SetDirectiva] = useState<UsuarioType[]>([])
+    const [jugadores, setJugadores] = useState<JugadorType[]>([])
+
+
+    useEffect(() => {
+        if (isDetailsOpen && club) {
+            const fetchSeries = async () => {
+                const serieData = await getSeriesClub<serieResponseType>(club.id_club)
+                setSeries(serieData.series)
+            }
+            const fetchDirectiva = async () => {
+                const dataDirectiva = await getUsuariosClub<DirectivaResponseType>(club.id_club)
+                SetDirectiva(dataDirectiva.usuarios)
+            }
+            const fetchJugadores = async () => {
+                const jugadoresData = await getJugadoresClub<JugadorResponseType>(club.id_club)
+                setJugadores(jugadoresData.jugadores)
+            }
+            fetchSeries();
+            fetchDirectiva();
+            fetchJugadores();
+        }
+    }, [isDetailsOpen, club])
+
+    return (
+        <DialogHandle
+            title={`Detalles del club: ${club.nombre_club}`}
+            trigger={
+                <Button variant="outline" size="sm" className="flex-1">
+                    <Eye className="w-4 h-4 mr-1" />
+                    Ver Detalles
+                </Button>
+            }
+            open={isDetailsOpen}
+            onOpenChange={setIsDetailsOpen}
+            initialData={club}
+        >
+            {() => (
+                <div className="space-y-6">
+                    {/* Información del club */}
+                    <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label className="block mb-2">Nombre:</Label>
+                            <Input value={club.nombre_club} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Fecha Fundación:</Label>
+                            <Input value={club.fecha_fundacion} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Email:</Label>
+                            <Input value={club.email_club} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Teléfono:</Label>
+                            <Input value={club.fono_club} disabled />
+                        </div>
+                        <div className="col-span-2">
+                            <Label className="block mb-2">Dirección:</Label>
+                            <Input value={club.direccion_club} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Activo:</Label>
+                            <Input value={club.club_activo ? "Sí" : "No"} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Creado:</Label>
+                            <Input value={club.fecha_creacion} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Modificado:</Label>
+                            <Input value={club.fecha_modificacion} disabled />
+                        </div>
+                    </section>
+
+                    {/* Tabla directiva */}
+                    <section>
+                        <h3 className="font-semibold mb-2">Directiva</h3>
+                        <div className="max-h-40 overflow-y-auto border rounded">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>RUT</TableHead>
+                                        <TableHead>Nombre</TableHead>
+                                        <TableHead>Email</TableHead>
+                                        <TableHead>Activo</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {Array.isArray(directiva) && directiva.map((d) => (
+                                        <TableRow key={d.rut_usuario}>
+                                            <TableCell>{d.rut_usuario}</TableCell>
+                                            <TableCell>{`${d.nombre_usuario} ${d.apellido_usuario}`}</TableCell>
+                                            <TableCell>{d.email_usuario}</TableCell>
+                                            <TableCell>{d.usuario_activo ? "Sí" : "No"}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </section>
+
+                    {/* Tabla series */}
+                    <section>
+                        <h3 className="font-semibold mb-2">Series</h3>
+                        <div className="max-h-40 overflow-y-auto border rounded">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>ID</TableHead>
+                                        <TableHead>Nombre</TableHead>
+                                        <TableHead>Activo</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {Array.isArray(series) && series.map((s) => (
+                                        <TableRow key={s.id_serie}>
+                                            <TableCell>{s.id_serie}</TableCell>
+                                            <TableCell>{s.nombre_serie}</TableCell>
+                                            <TableCell>{s.serie_activa ? "Sí" : "No"}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </section>
+
+                    {/* Tabla jugadores */}
+                    <section>
+                        <h3 className="font-semibold mb-2">Jugadores</h3>
+                        <div className="max-h-40 overflow-y-auto border rounded">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>RUT</TableHead>
+                                        <TableHead>Nombre</TableHead>
+                                        <TableHead>Apellido</TableHead>
+                                        <TableHead>Fono</TableHead>
+                                        <TableHead>Activo</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {Array.isArray(jugadores) && jugadores.map((j) => (
+                                        <TableRow key={j.rut_jugador}>
+                                            <TableCell>{j.rut_jugador}</TableCell>
+                                            <TableCell>{`${j.primer_nombre} ${j.segundo_nombre ?? ""}`}</TableCell>
+                                            <TableCell>{`${j.primer_apellido} ${j.segundo_apellido ?? ""}`}</TableCell>
+                                            <TableCell>{j.fono_jugador}</TableCell>
+                                            <TableCell>{j.jugador_activo ? "Sí" : "No"}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </section>
+                </div>
+            )}
+        </DialogHandle>
+    );
+}
+
 // Enhanced Clubs & Series Module (CLUB, SERIE, DETALLE_CLUB_JUGADOR, FICHA_JUGADOR)
 export const ClubSeriesModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
-    const [clubList, setClubList] = useState<Club[]>([])
+    const [clubList, setClubList] = useState<ClubType[]>([])
     //const [isEdit, setIsEdit] = useState(false)
 
     const fetchClubs = async () => {
-        const data = await getClubs<Club[]>();
-        console.log(data)
+        const data = await getClubs<ClubType[]>();
         setClubList(data);
     }
 
@@ -237,7 +373,6 @@ export const ClubSeriesModule: React.FC = () => {
     const handleDelete = async (id_club: number) => {
         try {
             const response = await deleteClub<{ detail: string }>(id_club)
-            console.log(response)
             toast.success(response.detail)
             fetchClubs();
         } catch (error) {
@@ -265,7 +400,7 @@ export const ClubSeriesModule: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2>Gestión de Clubes y Series</h2>
-                <DialogHandle<Club>
+                <DialogHandle<ClubType>
                     title="Crear nuevo club"
                     trigger={
                         <Button style={{ backgroundColor: "#0000db" }} className="text-white">
@@ -284,9 +419,8 @@ export const ClubSeriesModule: React.FC = () => {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="clubs">Clubes (CLUB)</TabsTrigger>
-                    <TabsTrigger value="series">Series (SERIE)</TabsTrigger>
                     <TabsTrigger value="history">Historial</TabsTrigger>
                 </TabsList>
 
@@ -329,14 +463,11 @@ export const ClubSeriesModule: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="flex space-x-2 pt-2">
-                                            <Button variant="outline" size="sm" className="flex-1">
-                                                <Eye className="w-4 h-4 mr-1" />
-                                                Ver Detalles
-                                            </Button>
-                                            <DialogHandle<Club>
+                                            <ClubDetails club={club} />
+                                            <DialogHandle<ClubType>
                                                 title={`Modificar club ${club.nombre_club}`}
                                                 trigger={
-                                                    <Button variant="outline" size="sm">
+                                                    <Button variant="outline" size="sm" className="flex-1">
                                                         <Edit className="w-4 h-4 mr-1" /> Editar
                                                     </Button>
                                                 }
@@ -370,57 +501,6 @@ export const ClubSeriesModule: React.FC = () => {
                             </Card>
                         ))}
                     </div>
-                </TabsContent>
-
-                <TabsContent value="series" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Series Registradas</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Nombre Serie</TableHead>
-                                        <TableHead>Club</TableHead>
-                                        <TableHead>Categoría</TableHead>
-                                        <TableHead>Jugadores</TableHead>
-                                        <TableHead>Fecha Inicio</TableHead>
-                                        <TableHead>Estado</TableHead>
-                                        <TableHead>Acciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {series.map((serie) => (
-                                        <TableRow key={serie.id}>
-                                            <TableCell className="font-medium">{serie.nombre}</TableCell>
-                                            <TableCell>{serie.club_nombre}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{serie.categoria}</Badge>
-                                            </TableCell>
-                                            <TableCell>{serie.jugadores_inscritos}</TableCell>
-                                            <TableCell>{serie.fecha_inicio}</TableCell>
-                                            <TableCell>
-                                                <Badge className={serie.activo ? 'bg-green-500' : 'bg-gray-500'}>
-                                                    {serie.activo ? 'Activa' : 'Inactiva'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex space-x-1">
-                                                    <Button variant="outline" size="sm">
-                                                        <Users className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button variant="outline" size="sm">
-                                                        <Edit className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
                 </TabsContent>
 
                 <TabsContent value="history" className="space-y-4">
