@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
 
-router = APIRouter(prefix="/Usuario", tags=["Usuarios"])
+router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 
 @router.post("/", response_model=schemas.UsuarioRead)
@@ -27,7 +27,7 @@ def get_usuarios(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
 
 @router.put("/{rut_usuario}", response_model=schemas.UsuarioRead)
 def update_usuario(
-    rut_usuario: int, usuario: schemas.UsuarioUpdate, db: Session = Depends(get_db)
+    rut_usuario: str, usuario: schemas.UsuarioUpdate, db: Session = Depends(get_db)
 ):
     db_usuario = services.update_usuario(db, rut_usuario, usuario)
     if db_usuario is None:
