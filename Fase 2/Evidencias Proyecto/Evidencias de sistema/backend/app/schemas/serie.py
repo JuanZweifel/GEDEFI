@@ -1,7 +1,8 @@
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional, List
-from .ficha_jugador import FichaJugadorRead
+from .jugador import JugadorRead
 from ..utils.validaciones import validar_nombre
+from datetime import datetime
 
 class SerieBase(BaseModel):
     nombre_serie: str = Field(..., max_length=30, description="Nombre de la serie")
@@ -24,13 +25,12 @@ class SerieUpdate(SerieBase):
 class SerieRead(SerieBase):
     id_serie: int
     serie_activa: bool
-
-    class Config:
-        from_attributes = True
-
-
-class SerieWithPlayers(SerieRead):
-    jugadores: List[FichaJugadorRead] = Field(default_factory=list)
+    id_club: int
+    nombre_club: str
+    jugadores: List[JugadorRead] = Field(default_factory=list)
+    cantidad_jugadores: int
+    fecha_creacion: str
+    fecha_modificacion: str
 
     class Config:
         from_attributes = True

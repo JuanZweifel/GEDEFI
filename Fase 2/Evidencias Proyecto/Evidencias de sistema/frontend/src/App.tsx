@@ -14,7 +14,7 @@ import { PenaltiesModule, CalendarModule, SoccerFieldsModule } from './component
 import { AuditModule } from './components/interfaces/auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA Y SEPARAR EN UN POSIBLE MODULO DIFERENTE
 import { PlayerRecordsModule } from './components/interfaces/player-records.tsx'
 import { UserRoleModule } from './components/interfaces/user-role.tsx'
-import { ClubSeriesModule } from './components/interfaces/club-serie.tsx'
+import { ClubModule } from './components/interfaces/club.tsx'
 import { MatchesTrainingModule } from './components/matches-training-module';
 import { EnhancedFieldsModule } from './components/enhanced-fields-module';
 import { useAuth } from './contexts/authContext.tsx';
@@ -38,9 +38,13 @@ import {
   Eye,
   Building,
   Activity,
-  Archive
+  Archive,
+  Building2
 } from 'lucide-react';
 import { Toaster } from './components/ui/sonner.tsx';
+import { SerieModule } from './components/interfaces/serie.tsx';
+
+
 
 
 // Mock user data with roles
@@ -297,7 +301,8 @@ export default function App() {
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
     { id: 'users-roles', label: 'Usuarios y Roles', icon: Users, component: UserRoleModule, permission: 'users' },
-    { id: 'clubs-series', label: 'Clubes y Series', icon: Building, component: ClubSeriesModule, permission: 'clubs' },
+    { id: 'clubs', label: 'Clubes', icon: Building, component: ClubModule, permission: 'clubs' },
+    {id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series'},
     { id: 'players-records', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
     { id: 'matches-training', label: 'Partidos y Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
     { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
@@ -394,7 +399,7 @@ export default function App() {
             <ActiveComponent />
           </main>
         </div>
-        <Toaster/>
+        <Toaster />
       </div>
     </SidebarProvider>
   );

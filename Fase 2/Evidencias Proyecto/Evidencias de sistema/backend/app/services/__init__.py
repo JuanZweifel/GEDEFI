@@ -19,5 +19,6 @@ from .permiso import *
 from .auth import *
 from .serie import *
 from .detalle_club_jugador import *
+from .ficha_jugador import *
 
 # WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente

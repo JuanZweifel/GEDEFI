@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
+import { Button } from '../ui/button.tsx';
+import { Badge } from '../ui/badge.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.tsx';
 import { Label } from '../ui/label.tsx';
 import { DialogHandle } from '../dialog-component.tsx';
-import { Input } from '../ui/input';
+import { Input } from '../ui/input.tsx';
 import {
-    Plus, Edit, Eye, Users,
+    Plus, Edit, Eye,
     Trash2
 } from 'lucide-react';
 
@@ -368,7 +368,7 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
 }
 
 // Enhanced Clubs & Series Module (CLUB, SERIE, DETALLE_CLUB_JUGADOR, FICHA_JUGADOR)
-export const ClubSeriesModule: React.FC = () => {
+export const ClubModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
     const [clubList, setClubList] = useState<ClubType[]>([])
     const [open, setOpen] = useState(false)
@@ -387,6 +387,7 @@ export const ClubSeriesModule: React.FC = () => {
         try {
             const response = await deleteClub<{ detail: string }>(id_club)
             toast.success(response.detail)
+            setOpenSelected(null)
             fetchClubs();
             setOpen(false)
         } catch (error) {
@@ -394,16 +395,6 @@ export const ClubSeriesModule: React.FC = () => {
         }
 
     }
-    const series = [
-        {
-            id: 1, nombre: "Serie A Masculina", id_club: 1, club_nombre: "FC Barcelona Santiago",
-            categoria: "Adultos", activo: true, fecha_inicio: "2024-03-01", jugadores_inscritos: 22
-        },
-        {
-            id: 2, nombre: "Serie Juvenil", id_club: 1, club_nombre: "FC Barcelona Santiago",
-            categoria: "Sub-18", activo: true, fecha_inicio: "2024-03-01", jugadores_inscritos: 18
-        }
-    ];
 
     const clubHistory = [
         { fecha: "2024-09-15", accion: "Registro nueva serie", club: "FC Barcelona Santiago", detalle: "Serie Femenina agregada" },
@@ -413,7 +404,7 @@ export const ClubSeriesModule: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2>Gestión de Clubes y Series</h2>
+                <h2>Gestión de Clubes</h2>
                 <DialogHandle<ClubType>
                     title="Crear nuevo club"
                     trigger={
@@ -434,7 +425,7 @@ export const ClubSeriesModule: React.FC = () => {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="clubs">Clubes (CLUB)</TabsTrigger>
+                    <TabsTrigger value="clubs">Clubes</TabsTrigger>
                     <TabsTrigger value="history">Historial</TabsTrigger>
                 </TabsList>
 
@@ -512,47 +503,47 @@ export const ClubSeriesModule: React.FC = () => {
                                                     if (!Open) setOpenSelected(null); // cerrar el dialog
                                                 }}
                                             >
-                                        </AlertDialogHandle>
+                                            </AlertDialogHandle>
+                                        </div>
                                     </div>
-                                </div>
-                            </CardContent>
+                                </CardContent>
                             </Card>
                         ))}
-                </div>
-            </TabsContent>
+                    </div>
+                </TabsContent>
 
-            <TabsContent value="history" className="space-y-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Historial de Clubes y Series</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Fecha</TableHead>
-                                    <TableHead>Acción</TableHead>
-                                    <TableHead>Club</TableHead>
-                                    <TableHead>Detalle</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {clubHistory.map((item, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>{item.fecha}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline">{item.accion}</Badge>
-                                        </TableCell>
-                                        <TableCell>{item.club}</TableCell>
-                                        <TableCell>{item.detalle}</TableCell>
+                <TabsContent value="history" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Historial de Clubes y Series</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Fecha</TableHead>
+                                        <TableHead>Acción</TableHead>
+                                        <TableHead>Club</TableHead>
+                                        <TableHead>Detalle</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        </Tabs>
+                                </TableHeader>
+                                <TableBody>
+                                    {clubHistory.map((item, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell>{item.fecha}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{item.accion}</Badge>
+                                            </TableCell>
+                                            <TableCell>{item.club}</TableCell>
+                                            <TableCell>{item.detalle}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div >
     );
 };

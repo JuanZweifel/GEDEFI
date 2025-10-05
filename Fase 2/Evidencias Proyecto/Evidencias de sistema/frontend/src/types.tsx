@@ -29,8 +29,11 @@ export type SerieType = {
     nombre_serie: string;
     serie_activa?: boolean;
     id_club: number;
+    nombre_club: string;
     fecha_creacion?: string;
     fecha_modificacion?: string;
+    jugadores: [JugadorType]
+    cantidad_jugadores: number
 }
 
 export type UsuarioType = {

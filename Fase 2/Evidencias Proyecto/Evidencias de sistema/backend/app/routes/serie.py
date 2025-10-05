@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
 
-router = APIRouter(prefix="/Serie", tags=["Series"])
+router = APIRouter(prefix="/series", tags=["Series"])
 
 
 @router.post("/", response_model=schemas.SerieRead)
@@ -20,8 +20,8 @@ def get_serie(id_serie: int, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[schemas.SerieRead])
-def get_series(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return services.get_series(db, skip=skip, limit=limit)
+def get_series(db: Session = Depends(get_db)):
+    return services.get_series(db)
 
 
 @router.delete("/{id_serie}")
