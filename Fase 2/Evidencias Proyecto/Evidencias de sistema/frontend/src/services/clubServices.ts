@@ -1,3 +1,4 @@
+
 const URL_BASE = "http://localhost:8000/clubs"
 
 
@@ -6,7 +7,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
         const errorData = await response.json();
         throw new Error(errorData || 'Error en la solicitud')
     }
-    console.log(response);
     const data:T = await response.json()
     return data
 }
@@ -55,5 +55,35 @@ export async function deleteClub<T>(id_club: number): Promise<T> {
         },
     })
 
+    return handleResponse(response)
+}
+
+export async function getSeriesClub<T>(id_club: number): Promise<T> {
+    const response = await fetch(`${URL_BASE}/${id_club}/series`, {
+        method: "GET",
+        headers: {
+            'content-type': 'application/json'
+        },
+    })
+    return handleResponse(response)
+}
+
+export async function getUsuariosClub<T>(id_club: number): Promise<T> {
+    const response = await fetch(`${URL_BASE}/${id_club}/usuarios`, {
+        method: "GET",
+        headers: {
+            'content-type': 'application/json'
+        },
+    })
+    return handleResponse(response)
+}
+
+export async function getJugadoresClub<T>(id_club: number): Promise<T> {
+    const response = await fetch(`${URL_BASE}/${id_club}/jugadores`, {
+        method: "GET",
+        headers: {
+            'content-type': 'application/json'
+        },
+    })
     return handleResponse(response)
 }
