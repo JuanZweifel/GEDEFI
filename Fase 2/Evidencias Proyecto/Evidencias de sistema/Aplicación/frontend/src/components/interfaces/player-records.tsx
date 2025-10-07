@@ -882,8 +882,8 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({ jugador, r
     const [genero, setGenero] = useState<string>("");
     const [fechaNacimiento, setFechaNacimiento] = useState("");
     const [enfermedadesCronicas, setEnfermedadesCronicas] = useState("");
-    const [fonoJugador, setFonoJugador] = useState("");
-    const [jugadorActivo, setJugadorActivo] = useState<string>("true");
+    const [fonoJugador, setFonoJugador] = useState<string|null>("");
+    const [jugadorActivo, setJugadorActivo] = useState ("true");
 
     // Cargar datos al abrir el diálogo
     useEffect(() => {
@@ -895,7 +895,7 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({ jugador, r
             setGenero(jugador.genero ? "true" : "false");
             setFechaNacimiento(jugador.fecha_nacimiento);
             setEnfermedadesCronicas(jugador.enfermedades_cronicas || "");
-            setFonoJugador(jugador.fono_jugador || "");
+            setFonoJugador(jugador.fono_jugador || null);
             setJugadorActivo(jugador.jugador_activo ? "true" : "false");
         }
     }, [jugador]);
