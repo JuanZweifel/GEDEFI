@@ -26,16 +26,16 @@ class Serie(Base):
         "Partido",
         back_populates="serie_local",
         foreign_keys="[Partido.id_serie_local]",
-        cascade="all, delete-orphan",
+        passive_deletes=False,
     )
 
     partidos_visitante: Mapped[list["Partido"]] = relationship(
         "Partido",
         back_populates="serie_visitante",
         foreign_keys="[Partido.id_serie_visitante]",
-        cascade="all, delete-orphan",
+        passive_deletes=False,
     )
 
     fichas_jugador: Mapped[list["FichaJugador"]] = relationship(
-        "FichaJugador", back_populates="serie", cascade="all, delete-orphan"
+        "FichaJugador", back_populates="serie", passive_deletes=False
     )

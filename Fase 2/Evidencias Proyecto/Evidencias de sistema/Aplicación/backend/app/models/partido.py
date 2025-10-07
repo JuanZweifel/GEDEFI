@@ -35,15 +35,15 @@ class Partido(Base):
 
     # relaciones
     rendimientos_partido: Mapped[list["RendimientoPartido"]] = relationship(
-        "RendimientoPartido", back_populates="partido"
+        "RendimientoPartido", back_populates="partido", passive_deletes=False
     )
 
     cancha: Mapped["Cancha"] = relationship("Cancha", back_populates="partido")
 
     serie_local: Mapped["Serie"] = relationship(
-        "Serie", back_populates="partidos_local", foreign_keys=[id_serie_local]
+        "Serie", back_populates="partidos_local", foreign_keys=[id_serie_local], passive_deletes=False
     )
 
     serie_visitante: Mapped["Serie"] = relationship(
-        "Serie", back_populates="partidos_visitante", foreign_keys=[id_serie_visitante]
+        "Serie", back_populates="partidos_visitante", foreign_keys=[id_serie_visitante], passive_deletes=False
     )

@@ -27,21 +27,21 @@ class Club(Base):
 
     # Relaciones
     ordenes_pago: Mapped[list["OrdenPago"]] = relationship(
-        "OrdenPago", back_populates="club", cascade="all, delete-orphan"
+        "OrdenPago", back_populates="club", passive_deletes=False
     )
 
     detalles_usuario: Mapped[list["DetalleUsuarioClub"]] = relationship(
-        "DetalleUsuarioClub", back_populates="club", cascade="all, delete-orphan"
+        "DetalleUsuarioClub", back_populates="club", passive_deletes=False
     )
 
     detalles_club_jugador: Mapped[list["DetalleClubJugador"]] = relationship(
-        "DetalleClubJugador", back_populates="club", cascade="all, delete-orphan"
+        "DetalleClubJugador", back_populates="club", passive_deletes=False
     )
 
     series: Mapped[list["Serie"]] = relationship(
-        "Serie", back_populates="club", cascade="all, delete-orphan"
+        "Serie", back_populates="club", passive_deletes=False
     )
 
     ordenes_pago: Mapped[list["OrdenPago"]] = relationship(
-        "OrdenPago", back_populates="club", cascade="all, delete-orphan"
+        "OrdenPago", back_populates="club", passive_deletes=False
     )

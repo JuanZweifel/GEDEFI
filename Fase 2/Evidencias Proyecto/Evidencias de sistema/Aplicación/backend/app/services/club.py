@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct, asc, desc
-from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
+import psycopg2
+from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError, OperationalError, DisconnectionError
 from app.models import (
     Club,
     Usuario,
@@ -25,7 +26,13 @@ from fastapi import HTTPException
 
 
 def get_club(db: Session, id_club: int) -> Club | None:
-    return db.query(Club).filter(Club.id_club == id_club).first()
+    try:
+        return db.query(Club).filter(Club.id_club == id_club).first()
+    except (DisconnectionError, OperationalError) as e: 
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
+    
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
 
 def get_clubs(db: Session, skip: int = 0, limit: int = 100):
@@ -39,29 +46,38 @@ def get_clubs(db: Session, skip: int = 0, limit: int = 100):
                 asc(Club.nombre_club).offset(skip).limit(limit).all(),
             )
         )
-
+    except (DisconnectionError, OperationalError) as e: 
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
+    
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
 
-def create_club(db: Session, club: ClubCreate) -> Club:
+def create_club(db: Session, club: ClubCreate) -> bool:
     try:
         db_club = Club(**club.dict())
         db.add(db_club)
         db.commit()
         db.refresh(db_club)
-        return db_club
+        return True
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(
-            status_code=400, detail="Ya existe un club con este nombre."
-        ) from e
+        if isinstance(e.orig, psycopg2.errors.UniqueViolation):
+            raise HTTPException(
+                status_code=400, detail=f"El correo ingresado ya esta asociado a un club."
+            ) from e
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Error de integridad en la base de datos"
+            ) from e
+    except (DisconnectionError, OperationalError) as e: 
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
 
-def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> Club | None:
+def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> bool | None:
     try:
         db_club = get_club(db, id_club)
         if not db_club:
@@ -70,27 +86,40 @@ def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> Club | No
             setattr(db_club, key, value)
         db.commit()
         db.refresh(db_club)
-        return db_club
+        return True
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail="Ya existe un club con este nombre.",  # REVISAR POR EL EMAIL
-        ) from e
+        if isinstance(e.orig, psycopg2.errors.UniqueViolation):
+            raise HTTPException(
+                status_code=400, detail=f"El correo ingresado ya esta asociado a un club."
+            ) from e
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Error de integridad en la base de datos"
+            ) from e
+    except (DisconnectionError, OperationalError) as e: 
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
 
-def delete_club(db: Session, id_club: int) -> dict:
+def delete_club(db: Session, id_club: int) -> bool:
     try:
         db_club = get_club(db, id_club)
         db.delete(db_club)
         db.commit()
-        return {"detail": "Club eliminado exitosamente."}
+        return True
+    except IntegrityError as e:
+        if isinstance(e.orig, psycopg2.errors.NotNullViolation):
+            raise HTTPException(status_code=500, detail="No puedes borrar un club que tenga registros asociados.") from e
+        else:
+            raise HTTPException(status_code=500, detail={"error": e.orig.args}) from e
+    except (DisconnectionError, OperationalError) as e:
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except (SQLAlchemyError, HTTPException) as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Error interno del servidor") from e
+        raise HTTPException(status_code=500, detail="Error interno del servidor" if isinstance(e, SQLAlchemyError) else e.detail) from e
 
 
 def get_club_with_details(db: Session) -> list[Club] | None:
@@ -135,6 +164,8 @@ def get_club_with_details(db: Session) -> list[Club] | None:
         return club_with_details
     except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Club no encontrado") from e
+    except (DisconnectionError, OperationalError) as e: 
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -150,8 +181,10 @@ def get_series_club(db: Session, id_club: int) -> SerieList:
         series_club = db.query(Serie).filter(Serie.id_club == db_club.id_club).all()
         series_pydantic = [SerieRead.model_validate(s) for s in series_club]
         return SerieList(series=series_pydantic)
+    except (DisconnectionError, OperationalError) as e: 
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except HTTPException as e:
-        raise e
+        raise HTTPException(status_code=500, detail="Error interno del servidor" if isinstance(e, SQLAlchemyError) else e.detail) from e
 
 
 def get_users_club(db: Session, id_club) -> UsuarioList:
@@ -173,8 +206,10 @@ def get_users_club(db: Session, id_club) -> UsuarioList:
         )
         usuarios_pydantic = [UsuarioRead.model_validate(u, from_attributes=True) for u in usuarios_club]
         return UsuarioList(usuarios=usuarios_pydantic)
+    except (DisconnectionError, OperationalError) as e: 
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except HTTPException as e:
-        raise e
+        raise HTTPException(status_code=500, detail="Error interno del servidor" if isinstance(e, SQLAlchemyError) else e.detail) from e
 
 
 def get_players_club(db: Session, id_club) -> JugadorList:
@@ -196,5 +231,7 @@ def get_players_club(db: Session, id_club) -> JugadorList:
         )
         jugadores_pydantic = [JugadorRead.model_validate(j) for j in jugadores_club]
         return JugadorList(jugadores=jugadores_pydantic)
+    except (DisconnectionError, OperationalError) as e: 
+        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except HTTPException as e:
-        raise e
+        raise HTTPException(status_code=500, detail="Error interno del servidor" if isinstance(e, SQLAlchemyError) else e.detail) from e

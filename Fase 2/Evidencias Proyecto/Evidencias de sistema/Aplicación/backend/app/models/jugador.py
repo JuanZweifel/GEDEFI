@@ -26,13 +26,13 @@ class Jugador(Base):
     )
 
     detalles_club_jugador: Mapped[list["DetalleClubJugador"]] = relationship(
-        "DetalleClubJugador", back_populates="jugador"
+        "DetalleClubJugador", back_populates="jugador", passive_deletes=False
     )
 
     fichas_jugador: Mapped[list["FichaJugador"]] = relationship(
-        "FichaJugador", back_populates="jugador"
+        "FichaJugador", back_populates="jugador", passive_deletes=False
     )
 
     rendimientos_entrenamiento: Mapped[list["RendimientoEntrenamiento"]] = relationship(
-        "RendimientoEntrenamiento", back_populates="jugador"
+        "RendimientoEntrenamiento", back_populates="jugador", passive_deletes=False
     )

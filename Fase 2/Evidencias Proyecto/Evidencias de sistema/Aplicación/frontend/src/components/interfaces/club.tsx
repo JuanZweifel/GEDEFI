@@ -83,11 +83,11 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
             }
 
             if (isEdit && club?.id_club) {
-                await updateClub<any>(clubObject, club.id_club)
-                toast.success("¡Club modificado correctamente!")
+                const response = await updateClub<any>(clubObject, club.id_club)
+                toast.success(response.message)
             } else {
-                await createClub<any>(clubObject)
-                toast.success("¡Club registrado correctamente!")
+                const response = await createClub<any>(clubObject)
+                toast.success(response.message)
             }
 
             refreshClub()
@@ -371,7 +371,6 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
 export const ClubModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
     const [clubList, setClubList] = useState<ClubType[]>([])
-    const [open, setOpen] = useState(false)
     const [openSelected, setOpenSelected] = useState<number | null>(null)
 
     const fetchClubs = async () => {
@@ -389,7 +388,6 @@ export const ClubModule: React.FC = () => {
             toast.success(response.detail)
             setOpenSelected(null)
             fetchClubs();
-            setOpen(false)
         } catch (error) {
             toast.error(String(error))
         }

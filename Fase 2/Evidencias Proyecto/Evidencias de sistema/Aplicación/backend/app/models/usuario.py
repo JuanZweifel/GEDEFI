@@ -34,46 +34,46 @@ class Usuario(Base):
     # Relaciones
     rol: Mapped["Rol"] = relationship("Rol", back_populates="usuarios")
     entrenamientos: Mapped[list["Entrenamiento"]] = relationship(
-        "Entrenamiento", back_populates="usuario", cascade="all, delete-orphan"
+        "Entrenamiento", back_populates="usuario", passive_deletes=False
     )
     archivos: Mapped[list["Archivo"]] = relationship(
-        "Archivo", back_populates="usuario", cascade="all, delete-orphan"
+        "Archivo", back_populates="usuario", passive_deletes=False
     )
     auditorias: Mapped[list["Auditoria"]] = relationship(
-        "Auditoria", back_populates="usuario", cascade="all, delete-orphan"
+        "Auditoria", back_populates="usuario", passive_deletes=False
     )
 
     detalles_reunion: Mapped[list["DetalleReunion"]] = relationship(
-        "DetalleReunion", back_populates="usuario", cascade="all, delete-orphan"
+        "DetalleReunion", back_populates="usuario", passive_deletes=False
     )
     solicitudes_realizadas: Mapped[list["Solicitud"]] = relationship(
         "Solicitud",
         back_populates="usuario_soli",
         foreign_keys="[Solicitud.usuario_solicitud]",
-        cascade="all, delete-orphan",
+        passive_deletes=False,
     )
 
     solicitudes_respondidas: Mapped[list["Solicitud"]] = relationship(
         "Solicitud",
         back_populates="usuario_resp",
         foreign_keys="[Solicitud.usuario_respuesta]",
-        cascade="all, delete-orphan",
+        passive_deletes=False,
     )
     detalles_usuario_club: Mapped[list["DetalleUsuarioClub"]] = relationship(
-        "DetalleUsuarioClub", back_populates="usuario", cascade="all, delete-orphan"
+        "DetalleUsuarioClub", back_populates="usuario", passive_deletes=False
     )
     ordenes_emitidas: Mapped[list["OrdenPago"]] = relationship(
         "OrdenPago",
         back_populates="emisor",
         foreign_keys="[OrdenPago.usuario_emisor]",
-        cascade="all, delete-orphan",
+        passive_deletes=False,
     )
 
     ordenes_pagadas: Mapped[list["OrdenPago"]] = relationship(
         "OrdenPago",
         back_populates="pagador",
         foreign_keys="[OrdenPago.usuario_pago]",
-        cascade="all, delete-orphan",
+        passive_deletes=False,
     )
 
     tokens_recuperacion: Mapped[list["RecuperacionContrasena"]] = relationship(

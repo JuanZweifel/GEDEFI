@@ -7,10 +7,13 @@ router = APIRouter(prefix="/clubs", tags=["Club"])
 
 
 
-@router.post("/", response_model=schemas.ClubRead)
+@router.post("/")
 def create_club(club: schemas.ClubCreate, db: Session = Depends(get_db)):
     try:
-        return services.create_club(db, club)
+        flag = services.create_club(db, club)
+
+        if(flag):
+            return {"message": "¡Club creado exitosamente!"}
     except HTTPException as e:
         raise e
 
@@ -52,13 +55,14 @@ def get_club_with_details(db: Session = Depends(get_db)):
         raise e
 
 
-@router.put("/{id_club}", response_model=schemas.ClubRead)
+@router.put("/{id_club}")
 def update_club(id_club: int, club: schemas.ClubUpdate, db: Session = Depends(get_db)):
     try:
-        db_club = services.get_club(db, id_club)
-        if db_club is None:
-            raise HTTPException(status_code=404, detail="Club not found.")
-        return services.update_club(db, id_club, club)
+        flag = services.update_club(db, id_club, club)
+        if(flag):
+            return {"message": "¡Club modificado correctamente!"}
+        else:
+            return {"message": "Error: No se encontro el club a modificar."}
     except HTTPException as e:
         raise e
 
@@ -66,7 +70,9 @@ def update_club(id_club: int, club: schemas.ClubUpdate, db: Session = Depends(ge
 @router.delete("/{id_club}")
 def delete_club(id_club: int, db: Session = Depends(get_db)):
     try:
-        return services.delete_club(db, id_club)
+        flag = services.delete_club(db, id_club)
+        if(flag):
+            return {"message": "¡Club eliminado correctamente!"}
     except HTTPException as e:
         raise e
 
