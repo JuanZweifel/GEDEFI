@@ -1,0 +1,43 @@
+from pydantic import BaseModel, Field, field_validator, ConfigDict
+from typing import Optional, List
+from .jugador import JugadorRead
+from ..utils.validaciones import validar_nombre
+from datetime import datetime
+
+class SerieBase(BaseModel):
+    nombre_serie: str = Field(..., max_length=30, description="Nombre de la serie")
+    id_club: int = Field(..., description="ID del club asociado a la serie")
+
+    @field_validator("nombre_serie", mode="before")
+    @classmethod
+    def validar_nombre_serie(cls, v) -> str:
+        return validar_nombre(v)
+
+
+class SerieCreate(SerieBase):
+    pass
+
+
+class SerieUpdate(SerieBase):
+    nombre_serie: Optional[str] = None
+
+
+class SerieRead(SerieBase):
+    id_serie: int
+    serie_activa: bool
+    id_club: int
+    nombre_club: str
+    jugadores: List[JugadorRead] = Field(default_factory=list)
+    cantidad_jugadores: int
+    fecha_creacion: str
+    fecha_modificacion: str
+
+    class Config:
+        from_attributes = True
+
+class SerieList(BaseModel):
+    series: List[SerieRead] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
