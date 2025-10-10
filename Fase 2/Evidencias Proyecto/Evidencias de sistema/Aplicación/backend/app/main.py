@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -67,6 +68,7 @@ app.include_router(serie.router)
 app.include_router(auth.router)
 app.include_router(limpieza_excel_jugadores.router)
 
+app.mount("/images", StaticFiles(directory="../images"), name="images") # Se debe modificar, esto enruta las imagenes del backend como rutas para el frontend
 
 # Configurar CORS para permitir el frontend
 origins = [

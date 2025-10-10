@@ -9,11 +9,16 @@ class Club(Base):
     __tablename__ = "CLUB"
 
     id_club: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    rut_club: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     nombre_club: Mapped[str] = mapped_column(String(250), nullable=False, unique=True)
     fecha_fundacion: Mapped[date] = mapped_column(Date, nullable=False)
     fono_club: Mapped[str] = mapped_column(String(12), nullable=True)
     direccion_club: Mapped[str] = mapped_column(String(500), nullable=False)
     email_club: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
+    logo_club: Mapped[str] = mapped_column(String(255), nullable=False)
+    color_primario: Mapped[str] = mapped_column(String(7), nullable=False)
+    color_secundario: Mapped[str] = mapped_column(String(7), nullable=False)
+    color_respaldo: Mapped[str] = mapped_column(String(7), nullable=True)
     club_activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(timezone.utc), nullable=False

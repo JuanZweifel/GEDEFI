@@ -37,7 +37,7 @@ export const AlertDialogHandle: React.FC<AlertDialogHandleProps> = ({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => onOpenChange(false)}>{cancelLabel}</AlertDialogCancel>
-                    <AlertDialogAction onClick={async(e) => {e.preventDefault(); await onConfirm(); console.log(open)}}>
+                    <AlertDialogAction onClick={async(e) => {e.preventDefault(); await onConfirm()}}>
                         {confirmLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>
