@@ -8,10 +8,11 @@ import { DialogHandle } from "../dialog-component.tsx";
 import { Input } from "../ui/input";
 import { Plus, Edit, Eye, Shield, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { getUsers, createUser, updateUser, deleteUser } from "../../services/usuarioService.ts";
 import { getRoles, createRole, updateRole, deleteRole } from "../../services/rolService.ts";
 import { AlertDialogHandle } from "../alert-dialog-component.tsx";
+import { validarRut } from "../../utils/validacion_rut.tsx";
 
 type User = {
     rut_usuario: string;
@@ -37,6 +38,8 @@ type UserFormProps = {
 
 export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSuccess }: UserFormProps) {
     const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+    const [rutError, setRutError] = useState("");
+
     const [open, setOpen] = useState(false)
     const [form, setForm] = useState<User>(
         user || {
@@ -72,11 +75,17 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
     const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        const form = e.currentTarget;
+        const form_html = e.currentTarget;
 
-        if (form.reportValidity()) {
+        if (!isEdit && !validarRut(form.rut_usuario)) {
+            setRutError("RUT inválido");
+            return;
+        }
+
+        if (form_html.reportValidity()) {
             setOpen(true) //disparamos el alert
         }
+
     }
 
     const handleSubmit = async () => {
@@ -92,6 +101,7 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
             await refreshUsers();
             onSuccess();
         } catch (error) {
+            setOpen(false)
             toast.error(String(error));
         } finally {
             setIsLoading(false);
@@ -109,17 +119,30 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {!isEdit && (
                     <InputField
-                        label="RUT"
+                        label="RUT *"
                         value={form.rut_usuario}
-                        onChange={(val) => setForm({ ...form, rut_usuario: val })}
+                        onChange={(val) => {
+                            setForm({ ...form, rut_usuario: val });
+                            console.log(form.rut_usuario)
+                            if (val) setRutError("");
+                        }}
+                        onBlur={() => {
+                            if (form.rut_usuario && !validarRut(form.rut_usuario)) {
+                                setRutError("RUT inválido");
+                            } else {
+                                setRutError("");
+                            }
+                        }}
+                        className={rutError ? "border-red-500" : ""}
                         required
-                        pattern="^\d{7,8}-[0-9kK]$" // RUT format example: 12345678-9
+                        pattern="^\d{7,8}-[0-9kK]$"
+                        minLength={7}
                         title="Ingrese un RUT válido (ej: 12345678-9)"
                     />
                 )}
 
                 <InputField
-                    label="Nombre"
+                    label="Nombre *"
                     value={form.nombre_usuario}
                     onChange={(val) => setForm({ ...form, nombre_usuario: val })}
                     required
@@ -129,7 +152,7 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                 />
 
                 <InputField
-                    label="Apellido"
+                    label="Apellido *"
                     value={form.apellido_usuario}
                     onChange={(val) => setForm({ ...form, apellido_usuario: val })}
                     required
@@ -139,7 +162,7 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                 />
 
                 <InputField
-                    label="Email"
+                    label="Email *"
                     type="email"
                     value={form.email_usuario}
                     onChange={(val) => setForm({ ...form, email_usuario: val })}
@@ -148,12 +171,13 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                 />
 
                 <InputField
-                    label="Fecha de Nacimiento"
+                    label="Fecha de Nacimiento *"
                     type="date"
                     value={form.fecha_nacimiento}
                     onChange={(val) => setForm({ ...form, fecha_nacimiento: val })}
                     required
-                    max={new Date().toISOString().split("T")[0]} // no future dates
+                    max={new Date().toISOString().split("T")[0]}
+                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 80)).toISOString().split("T")[0]} // 80 años antes
                     title="Seleccione una fecha válida"
                 />
 
@@ -162,13 +186,14 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                     type="password"
                     value={form.pass_usuario}
                     onChange={(val) => setForm({ ...form, pass_usuario: val })}
-                    required
-                    minLength={8}
-                    title="La contraseña debe tener al menos 6 caracteres"
+                    required={!isEdit}
+                    minLength={isEdit ? undefined : 8}
+                    placeholder={isEdit ? "Dejar vacío para no cambiar" : undefined}
+                    title={isEdit ? "Dejar vacío para no cambiar la contraseña" : "La contraseña debe tener al menos 8 caracteres"}
                 />
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Rol</label>
+                    <label className="block text-sm font-medium mb-1">Rol *</label>
                     <select
                         value={form.id_rol || ""}
                         onChange={(e) => setForm({ ...form, id_rol: Number(e.target.value) })}
@@ -186,7 +211,7 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
 
                 {!isEdit && (
                     <InputField
-                        label="ID Club (opcional)"
+                        label="ID Club"
                         type="number"
                         value={form.id_club ?? ""}
                         onChange={(val) => setForm({ ...form, id_club: Number(val) })}
@@ -379,6 +404,10 @@ export const UserRoleModule: React.FC = () => {
     const [roles, setRoles] = useState<Role[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [openSelected, setOpenSelected] = useState<number | null>(null)
+    const [userFilter, setUserFilter] = useState("");
+    const [userStatusFilter, setUserStatusFilter] = useState<"todos" | "activo" | "inactivo">("todos");
+    const [rolFilter, setRolFilter] = useState("");
+    const [rolStatusFilter, setRolStatusFilter] = useState<"todos" | "activo" | "inactivo">("todos");
 
     const handleUserDelete = async (rut_usuario: string) => {
         try {
@@ -425,7 +454,33 @@ export const UserRoleModule: React.FC = () => {
     };
 
     useEffect(() => { fetchUsers(); fetchRoles() }, []);
-    useEffect(() => { if (activeTab === "roles") fetchRoles(); }, [activeTab]);
+    useEffect(() => { if (activeTab === "roles") fetchRoles(); if (activeTab === "users") fetchUsers() }, [activeTab]);
+
+    const filteredUsers = users.filter((u) => {
+        const query = userFilter.toLowerCase();
+        const matchesQuery =
+            u.nombre_usuario.toLowerCase().includes(query) ||
+            u.apellido_usuario.toLowerCase().includes(query) ||
+            u.email_usuario.toLowerCase().includes(query) ||
+            u.rut_usuario.toLowerCase().includes(query);
+        const matchesStatus =
+            userStatusFilter === "todos" ||
+            (userStatusFilter === "activo" && u.usuario_activo) ||
+            (userStatusFilter === "inactivo" && !u.usuario_activo);
+        return matchesQuery && matchesStatus;
+    });
+
+
+    const filteredRols = roles.filter((r) => {
+        const query = rolFilter.toLowerCase();
+        const matchesQuery =
+            r.nombre_rol.toLowerCase().includes(query)
+        const matchesStatus =
+            userStatusFilter === "todos" ||
+            (userStatusFilter === "activo" && r.rol_activo) ||
+            (userStatusFilter === "inactivo" && !r.rol_activo);
+        return matchesQuery && matchesStatus;
+    });
 
     return (
         <div className="space-y-6">
@@ -464,6 +519,24 @@ export const UserRoleModule: React.FC = () => {
                     <Card>
                         <CardHeader><CardTitle>Usuarios del Sistema</CardTitle></CardHeader>
                         <CardContent>
+                            <div className="flex justify-between mb-4 space-x-2">
+                                <Input
+                                    placeholder="Buscar por nombre, apellido, email o RUT..."
+                                    value={userFilter}
+                                    onChange={(e) => setUserFilter(e.target.value)}
+                                    className="w-1/3"
+                                />
+                                <Select value={userStatusFilter} onValueChange={(value: string) => setUserStatusFilter(value)}>
+                                    <SelectTrigger className="w-48">
+                                        <SelectValue placeholder="Seleccionar estado" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="todos">Todos</SelectItem>
+                                        <SelectItem value="activo">Activo</SelectItem>
+                                        <SelectItem value="inactivo">Inactivo</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             {error ? <p className="text-red-500">{error}</p> : (
                                 <Table>
                                     <TableHeader>
@@ -477,7 +550,7 @@ export const UserRoleModule: React.FC = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {users.map((user) => (
+                                        {filteredUsers.map((user) => (
                                             <TableRow key={user.rut_usuario}>
                                                 <TableCell>{user.rut_usuario}</TableCell>
                                                 <TableCell>{user.nombre_usuario} {user.apellido_usuario}</TableCell>
@@ -537,8 +610,26 @@ export const UserRoleModule: React.FC = () => {
                             <CardTitle>Roles del Sistema</CardTitle>
                         </CardHeader>
                         <CardContent>
+                            <div className="flex justify-between mb-4 space-x-2">
+                                <Input
+                                    placeholder="Buscar por nombre"
+                                    value={rolFilter}
+                                    onChange={(e) => setRolFilter(e.target.value)}
+                                    className="w-1/3"
+                                />
+                                <Select value={rolStatusFilter} onValueChange={(value: string) => setRolStatusFilter(value)}>
+                                    <SelectTrigger className="w-48">
+                                        <SelectValue placeholder="Seleccionar estado" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="todos">Todos</SelectItem>
+                                        <SelectItem value="activo">Activo</SelectItem>
+                                        <SelectItem value="inactivo">Inactivo</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                {roles.map((role) => (
+                                {filteredRols.map((role) => (
                                     <Card key={role.id_rol} className="border">
                                         <CardHeader className="flex justify-between items-center">
                                             <CardTitle>{role.nombre_rol}</CardTitle>
