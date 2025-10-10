@@ -27,12 +27,18 @@ export async function getJugadores<T>(): Promise<T> {
 
 
 export async function uploadExcel<T>(formData: FormData): Promise<T> {
-
     const response = await fetch(`${URL_UPLOAD_EXCEL}`, {
         method: "POST",
         body: formData,
     });
-    return handleResponse<T>(response);
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Error al subir el archivo");
+    }
+
+    const data: T = await response.json();
+    return data;
 }
 
 
@@ -48,24 +54,61 @@ export async function putJugador<T>(rut_jugador: string, jugador: Record<string,
 
 
 export async function postJugador<T>(jugador: Record<string, any>): Promise<T> {
-
     const response = await fetch(URL_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(jugador),
     });
-    return handleResponse<T>(response);
+
+    let data: any;
+    try {
+        data = await response.json();
+    } catch {
+        data = {};
+    }
+
+    if (!response.ok) {
+        // Diferenciar error de validación (422), duplicado (409), u otros
+        if (response.status === 422 && Array.isArray(data.detail)) {
+            throw { status: 422, data: data.detail };
+        } else if (response.status === 409) {
+            throw { status: 409, data };
+        } else {
+            throw { status: response.status, data };
+        }
+    }
+
+    return data;
 }
 
 
-export async function postLesion<T>(data: any): Promise<T> {
-
+export async function postLesion<T>(lesion: Record<string, any>): Promise<T> {
     const response = await fetch(URL_BASE_LESION, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(lesion),
     });
-    return handleResponse<T>(response);
+
+    let data: any;
+    try {
+        data = await response.json();
+    } catch {
+        data = {};
+    }
+
+    if (!response.ok) {
+        // Diferenciar errores según el status
+        if (response.status === 422 && Array.isArray(data.detail)) {
+            throw { status: 422, data: data.detail };
+        } else if (response.status === 404) {
+            // Por ejemplo, jugador no encontrado
+            throw { status: 404, data };
+        } else {
+            throw { status: response.status, data };
+        }
+    }
+
+    return data;
 }
 
 

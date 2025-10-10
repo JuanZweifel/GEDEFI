@@ -11,13 +11,13 @@ class FichaJugador(Base):
 
     fecha_ini: Mapped[date] = mapped_column(Date, nullable=False)
     fecha_fin: Mapped[date] = mapped_column(Date, nullable=True)
-    talla_camiseta: Mapped[str] = mapped_column(String(5), nullable=False)
-    talla_short: Mapped[str] = mapped_column(String(5), nullable=False)
-    talla_media: Mapped[str] = mapped_column(String(2), nullable=False)
-    talla_botin: Mapped[str] = mapped_column(String(2), nullable=False)
-    estatura: Mapped[int] = mapped_column(Integer, nullable=False)
-    Peso: Mapped[int] = mapped_column(Integer, nullable=False)
-    imc: Mapped[int] = mapped_column(Integer, nullable=False)
+    talla_camiseta: Mapped[str] = mapped_column(String(5), nullable=True)
+    talla_short: Mapped[str] = mapped_column(String(5), nullable=True)
+    talla_media: Mapped[str] = mapped_column(String(2), nullable=True)
+    talla_botin: Mapped[str] = mapped_column(String(2), nullable=True)
+    estatura: Mapped[int] = mapped_column(Integer, nullable=True)
+    Peso: Mapped[int] = mapped_column(Integer, nullable=True)
+    imc: Mapped[int] = mapped_column(Integer, nullable=True)
     fecha_creacion: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )

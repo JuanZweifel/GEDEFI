@@ -5,13 +5,13 @@ from datetime import date, datetime
 class FichaJugadorBase(BaseModel):
     fecha_ini: date
     fecha_fin: Optional[date] = None
-    talla_camiseta: str
-    talla_short: str
-    talla_media: str
-    talla_botin: str
-    estatura: int
-    Peso: int
-    imc: int
+    talla_camiseta: Optional[str] = None
+    talla_short: Optional[str] = None
+    talla_media: Optional[str] = None
+    talla_botin: Optional[str] = None
+    estatura: Optional[int] = None
+    Peso: Optional[int] = None
+    imc: Optional[int] = None
     
 
 class FichaJugadorCreate(FichaJugadorBase):

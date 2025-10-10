@@ -8,7 +8,14 @@ router = APIRouter(prefix="/jugadores", tags=["Jugadores"])
 
 @router.post("/", response_model=schemas.JugadorRead)
 def create_jugador(jugador: schemas.JugadorCreate, db: Session = Depends(get_db)):
-    return services.create_jugador(db, jugador)
+    try:
+        return services.create_jugador(db, jugador)
+    except HTTPException:
+        # Permite que los HTTPException lleguen al cliente tal cual
+        raise
+    except Exception as e:
+        # Cualquier otro error será 500
+        raise HTTPException(status_code=500, detail=f"Error al crear jugador: {str(e)}")
 
 
 @router.get("/{rut_jugador}", response_model=schemas.JugadorRead)
