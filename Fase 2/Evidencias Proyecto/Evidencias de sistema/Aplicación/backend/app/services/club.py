@@ -55,7 +55,7 @@ def get_clubs(db: Session, skip: int = 0, limit: int = 100):
 
 def create_club(db: Session, club: ClubCreate) -> bool:
     try:
-        db_club = Club(**club.dict())
+        db_club = Club(**club.model_dump())
         db.add(db_club)
         db.commit()
         db.refresh(db_club)
@@ -63,8 +63,14 @@ def create_club(db: Session, club: ClubCreate) -> bool:
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, psycopg2.errors.UniqueViolation):
+            detail = (
+                "El RUT ingresado esta asociado a otro club." if "CLUB_rut_club_key" in str(e.orig) else 
+                "El correo ingresado ya esta asociado a un club." if "CLUB_email_club_key" in str(e.orig) else 
+                "El nombre ingresado se encuentrado asociado a otro club" if "CLUB_nombre_club_key" in str(e.orig)
+                else e.orig
+            )
             raise HTTPException(
-                status_code=400, detail=f"El correo ingresado ya esta asociado a un club."
+                status_code=400, detail=detail
             ) from e
         else:
             raise HTTPException(
@@ -89,17 +95,19 @@ def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> bool | No
         return True
     except IntegrityError as e:
         db.rollback()
-        if isinstance(e.orig, psycopg2.errors.UniqueViolation):
-            raise HTTPException(
-                status_code=400, detail=f"El correo ingresado ya esta asociado a un club."
-            ) from e
-        else:
-            raise HTTPException(
-                status_code=400, detail=f"Error de integridad en la base de datos"
-            ) from e
+        detail = (
+                "El RUT ingresado esta asociado a otro club." if "CLUB_rut_club_key" in str(e.orig) else 
+                "El correo ingresado ya esta asociado a un club." if "CLUB_email_club_key" in str(e.orig) else 
+                "El nombre ingresado se encuentrado asociado a otro club" if "CLUB_nombre_club_key" in str(e.orig)
+                else e.orig
+            )
+        raise HTTPException(
+            status_code=400, detail=detail
+        ) from e
     except (DisconnectionError, OperationalError) as e: 
         raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except SQLAlchemyError as e:
+        print(e)
         db.rollback()
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
@@ -150,6 +158,9 @@ def get_club_with_details(db: Session) -> list[Club] | None:
                 .filter(DetalleClubJugador.id_club == club.id_club)
                 .scalar()
             )
+
+            if club.logo_club:
+                club.logo_club = club.logo_club.replace("../images", "http://localhost:8000/images")
 
             club_details = ClubWithDetails(
                 **club.__dict__,

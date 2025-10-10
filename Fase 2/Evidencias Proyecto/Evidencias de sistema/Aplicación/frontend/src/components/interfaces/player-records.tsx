@@ -1603,10 +1603,6 @@ export const PlayerRecordsModule: React.FC = () => {
                                     </Button>
                                 </div>
 
-                                <div className="text-center py-8 text-gray-500">
-                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p>Seleccione un club y serie para ver las fichas de jugadores</p>
-                                </div>
                             </div>
                         </CardContent>
                     </Card>

@@ -1,27 +1,20 @@
 export type ClubType = {
     id_club: number;
+    rut_club?: string;
     nombre_club: string;
     fecha_fundacion: string;
     fono_club: string;
     direccion_club: string;
     email_club: string;
+    logo_club?: File;
+    color_primario?: string;
+    color_secundario?: string;
+    color_respaldo?: string;
     club_activo: boolean
     fecha_creacion: string;
     fecha_modificacion: string;
     series: number
     jugadores: number;
-}
-
-export type ClubApiType = {
-
-    id_club?: number
-    club_activo?: boolean;
-    nombre_club: string;
-    fecha_fundacion: string;
-    fono_club: string;
-    direccion_club: string;
-    email_club: string;
-
 }
 
 export type SerieType = {
