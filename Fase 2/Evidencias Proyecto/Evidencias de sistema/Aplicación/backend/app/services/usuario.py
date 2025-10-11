@@ -1,12 +1,13 @@
 from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.models import Usuario, DetalleUsuarioClub
+from app.models import Usuario, DetalleUsuarioClub, Club
 from app.schemas import UsuarioCreate, UsuarioUpdate
 from app.security import get_password_hash
 from app.utils.decorators import handle_db_exceptions
 from fastapi import HTTPException
 from app.services.emails import send_user_deactivated_email
+from datetime import datetime
 
 
 @handle_db_exceptions
@@ -16,7 +17,44 @@ def get_usuario(db: Session, rut_usu: str) -> Usuario | None:
 
 @handle_db_exceptions
 def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Usuario).offset(skip).limit(limit).all()
+    try:
+        usuarios_clubes = (
+            db.query(Usuario, Club.id_club)
+            .outerjoin(
+                DetalleUsuarioClub,
+                Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
+            )
+            .outerjoin(Club, DetalleUsuarioClub.id_club == Club.id_club)
+            .filter(DetalleUsuarioClub.fecha_fin == None)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+        usuarios = []
+        for usuario, id_club in usuarios_clubes:
+            usuarios.append(
+                {
+                    "rut_usuario": usuario.rut_usuario,
+                    "nombre_usuario": usuario.nombre_usuario,
+                    "apellido_usuario": usuario.apellido_usuario,
+                    "email_usuario": usuario.email_usuario,
+                    "fecha_nacimiento": usuario.fecha_nacimiento,
+                    "usuario_activo": usuario.usuario_activo,
+                    "fecha_creacion": usuario.fecha_creacion,
+                    "fecha_modificacion": usuario.fecha_modificacion,
+                    "id_rol": usuario.id_rol,
+                    "id_club": id_club or None,
+                }
+            )
+
+        return usuarios
+
+    except Exception as e:
+        print(f"Error fetching usuarios with club: {e}")
+        raise HTTPException(
+            status_code=500, detail="Error al obtener los usuarios con su club."
+        )
 
 
 @handle_db_exceptions
@@ -71,10 +109,34 @@ def update_usuario(
     if "pass_usuario" in update_data and update_data["pass_usuario"]:
         update_data["pass_usuario"] = get_password_hash(update_data["pass_usuario"])
 
+    new_club_ids = update_data.pop("id_club", None)
+    if new_club_ids is not None and not isinstance(new_club_ids, list):
+        new_club_ids = [new_club_ids]
+
     for key, value in update_data.items():
         setattr(db_usuario, key, value)
 
     try:
+        if new_club_ids is not None:
+            end_date = datetime.today()
+            active_relations = (
+                db.query(DetalleUsuarioClub)
+                .filter_by(rut_usuario=rut_usu, fecha_fin=None)
+                .all()
+            )
+            current_club_ids = {r.id_club for r in active_relations}
+
+            for relation in active_relations:
+                if relation.id_club not in new_club_ids:
+                    relation.fecha_fin = end_date
+
+            for club_id in new_club_ids:
+                if club_id not in current_club_ids:
+                    new_relation = DetalleUsuarioClub(
+                        rut_usuario=rut_usu, id_club=club_id
+                    )
+                    db_usuario.detalles_usuario_club.append(new_relation)
+
         db.commit()
         db.refresh(db_usuario)
 
@@ -84,6 +146,7 @@ def update_usuario(
             )
 
         return db_usuario
+
     except IntegrityError as e:
         db.rollback()
         constraint = getattr(e.orig.diag, "constraint_name", "")
@@ -99,9 +162,34 @@ def delete_usuario(db: Session, rut_usu: str) -> bool:
     db_usuario = get_usuario(db, rut_usu)
     if not db_usuario:
         return False
-    db.delete(db_usuario)
-    db.commit()
-    return True
+
+    try:
+        # db.query(DetalleUsuarioClub).filter_by(rut_usuario=rut_usu).delete()
+
+        db.delete(db_usuario)
+        db.commit()
+        return True
+
+    except AssertionError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "No se puede eliminar el usuario porque tiene relaciones activas "
+                "con clubes. Primero elimine o desvincule estas relaciones."
+            ),
+        ) from e
+
+    except IntegrityError as e:
+        db.rollback()
+        constraint = getattr(e.orig.diag, "constraint_name", "")
+        if constraint:
+            detail = (
+                f"No se puede eliminar el usuario debido a la restricción {constraint}."
+            )
+        else:
+            detail = "Error de integridad en la base de datos al intentar eliminar el usuario."
+        raise HTTPException(status_code=409, detail=detail) from e
 
 
 @handle_db_exceptions

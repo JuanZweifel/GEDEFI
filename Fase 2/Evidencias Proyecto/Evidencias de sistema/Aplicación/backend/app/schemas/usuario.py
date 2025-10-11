@@ -43,7 +43,9 @@ class UsuarioBase(BaseModel):
 
 class UsuarioCreate(UsuarioBase):
     admin: bool = Field(..., description="Indica si el usuario es administrador")
-    id_club: Optional[int] = Field(0, ge=0, description="ID del club asociado si no es admin")
+    id_club: Optional[int] = Field(
+        0, ge=0, description="ID del club asociado si no es admin"
+    )
     pass_usuario: str = Field(..., min_length=8, description="Contraseña del usuario")
 
 
@@ -57,11 +59,13 @@ class UsuarioUpdate(BaseModel):
     usuario_activo: Optional[bool] = None
     id_rol: Optional[int] = Field(None, ge=1)
     pass_usuario: Optional[str] = Field(None, min_length=8)
+    id_club: Optional[int] = Field(None, ge=1)
 
 
 class UsuarioRead(UsuarioBase):
     fecha_creacion: datetime
     fecha_modificacion: datetime
+    id_club: Optional[int] = None
 
     class Config:
         orm_mode = True
