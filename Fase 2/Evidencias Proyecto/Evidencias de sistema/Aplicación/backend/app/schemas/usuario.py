@@ -71,3 +71,16 @@ class UsuarioList(BaseModel):
     usuarios: List[UsuarioRead] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+# Creado por luis
+class UsuarioForClub(BaseModel):
+    rut_usuario: str
+    email_usuario: EmailStr
+    nombre_usuario: str
+    apellido_usuario: str
+    fecha_nacimiento: date
+    id_rol: int
+    nombre_rol: str
+
+    class Config:
+        from_attributes = True

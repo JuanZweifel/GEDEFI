@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
-import { DialogHandle } from "../dialog-component.tsx";
-import { Input } from "../ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { DialogHandle } from "../components/dialog-component.tsx";
+import { Input } from "../components/ui/input";
 import { Plus, Edit, Eye, Shield, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { getUsers, createUser, updateUser, deleteUser } from "../../services/usuarioService.ts";
-import { getRoles, createRole, updateRole, deleteRole } from "../../services/rolService.ts";
-import { AlertDialogHandle } from "../alert-dialog-component.tsx";
-import { validarRut } from "../../utils/validacion_rut.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { getUsers, createUser, updateUser, deleteUser } from "../services/usuarioService.ts";
+import { getRoles, createRole, updateRole, deleteRole } from "../services/rolService.ts";
+import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
+import { validarRut } from "../utils/validacion_rut.tsx";
 
 type User = {
     rut_usuario: string;
@@ -123,7 +123,7 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                         value={form.rut_usuario}
                         onChange={(val) => {
                             setForm({ ...form, rut_usuario: val });
-                            console.log(form.rut_usuario)
+                            (form.rut_usuario)
                             if (val) setRutError("");
                         }}
                         onBlur={() => {
@@ -412,7 +412,7 @@ export const UserRoleModule: React.FC = () => {
     const handleUserDelete = async (rut_usuario: string) => {
         try {
             const response = await deleteUser(rut_usuario);
-            console.log(response)
+            
             toast.success(response.detail)
             setOpenSelected(null)
             fetchUsers();
@@ -425,7 +425,6 @@ export const UserRoleModule: React.FC = () => {
     const handleRoleDelete = async (rut_usuario: string) => {
         try {
             const response = await deleteRole(rut_usuario);
-            console.log(response)
             toast.success(response.detail)
             setOpenSelected(null)
             fetchRoles();

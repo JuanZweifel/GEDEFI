@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import {
     Plus, Edit, Trash2, Eye, Search,
     History, FileText, AlertCircle, CheckCircle,
@@ -17,11 +17,11 @@ import {
     postJugador, postLesion, getLesiones, putLesion,
     deleteJugador, deleteLesion
 }
-    from '../../services/jugadoresService';
-import { getClubs } from '../../services/clubServices';
-import { getFichasPorFiltro } from '../../services/fichaJugadorService'
-import { getSeries } from '../../services/serieService';
-import { AlertDialogHandle } from '../alert-dialog-component';
+    from '../services/jugadoresService';
+import { getClubs } from '../services/clubServices';
+import { getFichasPorFiltro } from '../services/fichaJugadorService'
+import { getSeries } from '../services/serieService';
+import { AlertDialogHandle } from '../components/alert-dialog-component';
 import { toast } from "sonner";
 
 

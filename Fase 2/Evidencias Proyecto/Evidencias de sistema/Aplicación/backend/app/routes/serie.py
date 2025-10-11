@@ -21,12 +21,6 @@ def get_serie(id_serie: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Serie not found.")
     return db_serie
 
-
-@router.get("/", response_model=list[schemas.SerieWithDetails])
-def get_series(db: Session = Depends(get_db)):
-    return services.get_series_with_details(db)
-
-
 @router.delete("/{id_serie}")
 def delete_serie(id_serie: int, db: Session = Depends(get_db)):
     db_serie = services.get_serie(db, id_serie)

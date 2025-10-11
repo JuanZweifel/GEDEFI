@@ -1,14 +1,15 @@
 import React from 'react';
+import { NavLink } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Calendar, Trophy, Users, MapPin, Clock, LogIn } from 'lucide-react';
 
-interface LandingPageProps {
+/*interface LandingPageProps {
   onLogin: () => void;
-}
+}*/
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
+export const LandingPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -22,13 +23,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 <p className="text-blue-100">Portal Oficial</p>
               </div>
             </div>
-            <Button
-              className="bg-[#FF8C00] hover:bg-[#FF7700] text-white flex items-center"
-              onClick={onLogin}
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Iniciar Sesión
-            </Button>
+            <NavLink to="/dashboard">
+              <Button className="bg-[#FF8C00] hover:bg-[#FF7700] text-white flex items-center">
+                <LogIn className="w-4 h-4 mr-2" />
+                Iniciar Sesión
+              </Button>
+            </NavLink>
           </div>
         </div>
       </header>

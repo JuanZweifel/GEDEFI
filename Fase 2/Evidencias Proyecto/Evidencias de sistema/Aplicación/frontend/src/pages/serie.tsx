@@ -1,30 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
-import { Button } from '../ui/button.tsx';
-import { Badge } from '../ui/badge.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.tsx';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../ui/collapsible"
-import { Label } from '../ui/label.tsx';
-import { DialogHandle } from '../dialog-component.tsx';
-import { Input } from '../ui/input.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.tsx';
+import { Button } from '../components/ui/button.tsx';
+import { Badge } from '../components/ui/badge.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.tsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table.tsx';
+import { Label } from '../components/ui/label.tsx';
+import { DialogHandle } from '../components/dialog-component.tsx';
+import { Input } from '../components/ui/input.tsx';
 import {
     Plus, Edit, Eye, Users,
     Trash2
 } from 'lucide-react';
 
 import { toast } from 'sonner';
-import { type SerieType } from '../../types.tsx';
-import { getSeries } from '../../services/serieService.ts';
+import { type SerieType } from '../types.tsx';
+import { getSeries } from '../services/serieService.ts';
 
 // Enhanced Clubs & Series Module (CLUB, SERIE, DETALLE_CLUB_JUGADOR, FICHA_JUGADOR)
 export const SerieModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('series');
     const [serieList, setSerieList] = useState<SerieType[]>([]);
+    const [isLoading, setIsLoading] = useState(false)
+    const [isFetching, setIsFetching] = useState(false)
 
     const fetchSeries = async () => {
-        const data = await getSeries<SerieType[]>();
-        setSerieList(data)
+        let data: SerieType[] = []
+        try {
+            setIsFetching(true)
+            data = await getSeries<SerieType[]>();
+            setSerieList(data);
+            if (data.length === 0) {
+                toast.info("No hay series registradas en la base de datos.")
+            }
+        } catch (error: any) {
+            toast.warning(String(error))
+        } finally {
+            if (data.length === 0) {
+                setSerieList([])
+            }
+            setIsFetching(false)
+        }
+
     }
     useEffect(() => {
         fetchSeries();
@@ -35,9 +51,8 @@ export const SerieModule: React.FC = () => {
             <div className="flex justify-between items-center">
                 <h2>Gestión de Series</h2>
                 <div className="flex space-x-2">
-                    <Button variant="outline" style={{ borderColor: '#0000db', color: '#0000db' }}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nueva Serie
+                    <Button style={{ backgroundColor: "#0000db" }} size="sm" className="text-white flex-1">
+                        <Plus className="w-2 h-2 mr-2" /> Nueva serie
                     </Button>
                 </div>
             </div>

@@ -1,7 +1,13 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct, asc, desc
 import psycopg2
-from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError, OperationalError, DisconnectionError
+from sqlalchemy.exc import (
+    IntegrityError,
+    NoResultFound,
+    SQLAlchemyError,
+    OperationalError,
+    DisconnectionError,
+)
 from app.models import (
     Club,
     Usuario,
@@ -9,18 +15,16 @@ from app.models import (
     Serie,
     DetalleClubJugador,
     DetalleUsuarioClub,
+    FichaJugador,
+    Rol
 )
 from app.schemas import (
     ClubCreate,
     ClubUpdate,
     ClubWithDetails,
-    UsuarioRead,
-    SerieRead,
-    UsuarioRead,
-    JugadorRead,
-    SerieList,
-    UsuarioList,
-    JugadorList
+    UsuarioForClub,
+    SerieForClub,
+    JugadorBase,
 )
 from fastapi import HTTPException
 
@@ -28,9 +32,11 @@ from fastapi import HTTPException
 def get_club(db: Session, id_club: int) -> Club | None:
     try:
         return db.query(Club).filter(Club.id_club == id_club).first()
-    except (DisconnectionError, OperationalError) as e: 
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
-    
+    except (DisconnectionError, OperationalError) as e:
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        ) from e
+
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
@@ -46,9 +52,11 @@ def get_clubs(db: Session, skip: int = 0, limit: int = 100):
                 asc(Club.nombre_club).offset(skip).limit(limit).all(),
             )
         )
-    except (DisconnectionError, OperationalError) as e: 
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
-    
+    except (DisconnectionError, OperationalError) as e:
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        ) from e
+
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
@@ -64,20 +72,27 @@ def create_club(db: Session, club: ClubCreate) -> bool:
         db.rollback()
         if isinstance(e.orig, psycopg2.errors.UniqueViolation):
             detail = (
-                "El RUT ingresado esta asociado a otro club." if "CLUB_rut_club_key" in str(e.orig) else 
-                "El correo ingresado ya esta asociado a un club." if "CLUB_email_club_key" in str(e.orig) else 
-                "El nombre ingresado se encuentrado asociado a otro club" if "CLUB_nombre_club_key" in str(e.orig)
-                else e.orig
+                "El RUT ingresado esta asociado a otro club."
+                if "CLUB_rut_club_key" in str(e.orig)
+                else (
+                    "El correo ingresado ya esta asociado a un club."
+                    if "CLUB_email_club_key" in str(e.orig)
+                    else (
+                        "El nombre ingresado se encuentrado asociado a otro club"
+                        if "CLUB_nombre_club_key" in str(e.orig)
+                        else e.orig
+                    )
+                )
             )
-            raise HTTPException(
-                status_code=400, detail=detail
-            ) from e
+            raise HTTPException(status_code=400, detail=detail) from e
         else:
             raise HTTPException(
                 status_code=400, detail=f"Error de integridad en la base de datos"
             ) from e
-    except (DisconnectionError, OperationalError) as e: 
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
+    except (DisconnectionError, OperationalError) as e:
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        ) from e
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
@@ -96,16 +111,23 @@ def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> bool | No
     except IntegrityError as e:
         db.rollback()
         detail = (
-                "El RUT ingresado esta asociado a otro club." if "CLUB_rut_club_key" in str(e.orig) else 
-                "El correo ingresado ya esta asociado a un club." if "CLUB_email_club_key" in str(e.orig) else 
-                "El nombre ingresado se encuentrado asociado a otro club" if "CLUB_nombre_club_key" in str(e.orig)
-                else e.orig
+            "El RUT ingresado esta asociado a otro club."
+            if "CLUB_rut_club_key" in str(e.orig)
+            else (
+                "El correo ingresado ya esta asociado a un club."
+                if "CLUB_email_club_key" in str(e.orig)
+                else (
+                    "El nombre ingresado se encuentrado asociado a otro club"
+                    if "CLUB_nombre_club_key" in str(e.orig)
+                    else e.orig
+                )
             )
+        )
+        raise HTTPException(status_code=400, detail=detail) from e
+    except (DisconnectionError, OperationalError) as e:
         raise HTTPException(
-            status_code=400, detail=detail
+            status_code=500, detail="Problemas de conexión con la base de datos."
         ) from e
-    except (DisconnectionError, OperationalError) as e: 
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
     except SQLAlchemyError as e:
         print(e)
         db.rollback()
@@ -120,23 +142,35 @@ def delete_club(db: Session, id_club: int) -> bool:
         return True
     except IntegrityError as e:
         if isinstance(e.orig, psycopg2.errors.NotNullViolation):
-            raise HTTPException(status_code=500, detail="No puedes borrar un club que tenga registros asociados.") from e
+            raise HTTPException(
+                status_code=500,
+                detail="No puedes borrar un club que tenga registros asociados.",
+            ) from e
         else:
             raise HTTPException(status_code=500, detail={"error": e.orig.args}) from e
     except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        ) from e
     except (SQLAlchemyError, HTTPException) as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Error interno del servidor" if isinstance(e, SQLAlchemyError) else e.detail) from e
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Error interno del servidor"
+                if isinstance(e, SQLAlchemyError)
+                else e.detail
+            ),
+        ) from e
 
 
-def get_club_with_details(db: Session) -> list[Club] | None:
+def get_club_with_details(db: Session) -> list[ClubWithDetails] | None:
     try:
         db_clubs = db.query(Club).all()
-
-        club_with_details = []
+        club_with_details: list[ClubWithDetails] = []
 
         for club in db_clubs:
+            # --- DIRECTIVA ---
             db_directiva = (
                 db.query(Usuario)
                 .join(
@@ -147,56 +181,112 @@ def get_club_with_details(db: Session) -> list[Club] | None:
                 .all()
             )
 
-            db_series = (
-                db.query(Serie).filter(Serie.id_club == club.id_club).all()
-            )
-            
-            db_jugadores = (
-                db.query(Jugador).join(DetalleClubJugador).filter(DetalleClubJugador.id_club == club.id_club).all()
-            )
-            cantidad_series = db.query(Serie).filter(Serie.id_club == club.id_club).count()
+            # --- SERIES ---
+            db_series = db.query(Serie).filter(Serie.id_club == club.id_club).all()
 
-            cantidad_jugadores = (
-                db.query(func.count(distinct(Jugador.rut_jugador)))
+            # --- JUGADORES (todos los jugadores del club, por DetalleClubJugador) ---
+            db_jugadores = (
+                db.query(Jugador)
                 .join(
                     DetalleClubJugador,
                     Jugador.rut_jugador == DetalleClubJugador.rut_jugador,
                 )
-                .filter(DetalleClubJugador.id_club == club.id_club).count()
+                .filter(DetalleClubJugador.id_club == club.id_club)
+                .all()
             )
 
+            # --- CANTIDADES GLOBALES ---
+            cantidad_series = len(db_series)
+            cantidad_jugadores = len(db_jugadores)
+
+            # --- Ajustar logo si existe ---
             if club.logo_club:
-                club.logo_club = club.logo_club.replace("../images", "http://localhost:8000/images")
-            print(db_directiva)
-            print(db_jugadores)
+                club.logo_club = club.logo_club.replace(
+                    "../images", "http://localhost:8000/images"
+                )
+
+            # --- Construcción de DIRECTIVA con rol incluido ---
+            usuarios_for_club = []
+            for u in db_directiva:
+                role_name = None
+                role_obj = None
+
+                if hasattr(u, "rol"):
+                    role_obj = getattr(u, "rol")
+                elif hasattr(u, "role"):
+                    role_obj = getattr(u, "role")
+
+                if role_obj is not None:
+                    role_name = getattr(role_obj, "nombre_rol", None) or getattr(
+                        role_obj, "name", None
+                    )
+                else:
+                    if getattr(u, "id_rol", None) is not None:
+                        rol_db = db.query(Rol).filter(Rol.id_rol == u.id_rol).first()
+                        if rol_db:
+                            role_name = getattr(rol_db, "nombre_rol", None) or getattr(
+                                rol_db, "name", None
+                            )
+
+                usuario_dict = {
+                    "rut_usuario": getattr(u, "rut_usuario", None),
+                    "email_usuario": getattr(u, "email_usuario", None),
+                    "nombre_usuario": getattr(u, "nombre_usuario", None),
+                    "apellido_usuario": getattr(u, "apellido_usuario", None),
+                    "fecha_nacimiento": getattr(u, "fecha_nacimiento", None),
+                    "id_rol": getattr(u, "id_rol", None),
+                    "nombre_rol": role_name or "",
+                }
+
+                usuarios_for_club.append(UsuarioForClub.model_validate(usuario_dict))
+
+            # --- Construcción de SERIES (con cantidad de jugadores desde FichaJugador) ---
+            series_for_club = []
+            for s in db_series:
+                # contar jugadores únicos asociados a esta serie a través de FICHA_JUGADOR
+                cant_jugadores_serie = (
+                    db.query(func.count(func.distinct(FichaJugador.rut_jugador)))
+                    .filter(FichaJugador.id_serie == s.id_serie)
+                    .scalar()
+                )
+
+                serie_dict = {
+                    **s.__dict__,
+                    "cantidad_jugadores": cant_jugadores_serie or 0,
+                }
+
+                series_for_club.append(
+                    SerieForClub.model_validate(serie_dict, from_attributes=True)
+                )
+
+            # --- Construcción final del objeto ClubWithDetails ---
             club_details = ClubWithDetails(
                 **club.__dict__,
-                directiva=[
-                    UsuarioRead.model_validate(u, from_attributes=True)
-                    for u in db_directiva
-                ],
-                series=[
-                    SerieRead.model_validate(s, from_attributes=True)
-                    for s in db_series
-                ],
+                directiva=usuarios_for_club,
+                series=series_for_club,
                 jugadores=[
-                    JugadorRead.model_validate(j, from_attributes=True)
+                    JugadorBase.model_validate(j, from_attributes=True)
                     for j in db_jugadores
                 ],
                 cantidad_series=cantidad_series,
                 cantidad_jugadores=cantidad_jugadores,
             )
+
             club_with_details.append(club_details)
+
         return club_with_details
-    except NoResultFound as e:
-        raise HTTPException(status_code=404, detail="Club no encontrado") from e
-    except (DisconnectionError, OperationalError) as e: 
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
+
+    except NoResultFound:
+        raise HTTPException(status_code=404, detail="Club no encontrado")
+    except (DisconnectionError, OperationalError):
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        )
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-def get_series_club(db: Session, id_club: int) -> SerieList:
+"""def get_series_club(db: Session, id_club: int) -> SerieList:
     try:
         db_club = get_club(db, id_club=id_club)
         if db_club is None:
@@ -207,10 +297,19 @@ def get_series_club(db: Session, id_club: int) -> SerieList:
         series_club = db.query(Serie).filter(Serie.id_club == db_club.id_club).all()
         series_pydantic = [SerieRead.model_validate(s) for s in series_club]
         return SerieList(series=series_pydantic)
-    except (DisconnectionError, OperationalError) as e: 
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
+    except (DisconnectionError, OperationalError) as e:
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        ) from e
     except HTTPException as e:
-        raise HTTPException(status_code=500, detail="Error interno del servidor" if isinstance(e, SQLAlchemyError) else e.detail) from e
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Error interno del servidor"
+                if isinstance(e, SQLAlchemyError)
+                else e.detail
+            ),
+        ) from e
 
 
 def get_users_club(db: Session, id_club) -> UsuarioList:
@@ -230,12 +329,23 @@ def get_users_club(db: Session, id_club) -> UsuarioList:
             .filter(DetalleUsuarioClub.id_club == db_club.id_club)
             .all()
         )
-        usuarios_pydantic = [UsuarioRead.model_validate(u, from_attributes=True) for u in usuarios_club]
+        usuarios_pydantic = [
+            UsuarioRead.model_validate(u, from_attributes=True) for u in usuarios_club
+        ]
         return UsuarioList(usuarios=usuarios_pydantic)
-    except (DisconnectionError, OperationalError) as e: 
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
+    except (DisconnectionError, OperationalError) as e:
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        ) from e
     except HTTPException as e:
-        raise HTTPException(status_code=500, detail="Error interno del servidor" if isinstance(e, SQLAlchemyError) else e.detail) from e
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Error interno del servidor"
+                if isinstance(e, SQLAlchemyError)
+                else e.detail
+            ),
+        ) from e
 
 
 def get_players_club(db: Session, id_club) -> JugadorList:
@@ -257,7 +367,16 @@ def get_players_club(db: Session, id_club) -> JugadorList:
         )
         jugadores_pydantic = [JugadorRead.model_validate(j) for j in jugadores_club]
         return JugadorList(jugadores=jugadores_pydantic)
-    except (DisconnectionError, OperationalError) as e: 
-        raise HTTPException(status_code=500, detail="Problemas de conexión con la base de datos.") from e
+    except (DisconnectionError, OperationalError) as e:
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        ) from e
     except HTTPException as e:
-        raise HTTPException(status_code=500, detail="Error interno del servidor" if isinstance(e, SQLAlchemyError) else e.detail) from e
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Error interno del servidor"
+                if isinstance(e, SQLAlchemyError)
+                else e.detail
+            ),
+        ) from e"""

@@ -71,34 +71,12 @@ def get_club(id_club: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
 
-@router.get("/{id_club}/series", response_model=schemas.SerieList)
-def get_series_club(id_club: int, db: Session = Depends(get_db)):
-    try:
-        return services.get_series_club(db, id_club=id_club)
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-
-
-@router.get("/{id_club}/jugadores", response_model=schemas.JugadorList)
-def get_players_club(id_club: int, db: Session = Depends(get_db)):
-    try:
-        return services.get_players_club(db, id_club=id_club)
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-
-
-@router.get("/{id_club}/usuarios", response_model=schemas.UsuarioList)
-def get_users_club(id_club: int, db: Session = Depends(get_db)):
-    try:
-        return services.get_users_club(db, id_club=id_club)
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-
-
 @router.get("/", response_model=list[schemas.ClubWithDetails])
 def get_club_with_details(db: Session = Depends(get_db)):
     try:
-        return services.get_club_with_details(db)
+        info = services.get_club_with_details(db)
+        print(info)
+        return info
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 

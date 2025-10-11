@@ -3,13 +3,11 @@ const URL_BASE = "http://localhost:8000/clubs/"
 
 
 async function handleResponse<T>(response: Response): Promise<T> {
-    console.log(response)
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail)
     }
     const data: T = await response.json()
-    console.log(data)
     return data
 }
 
@@ -33,10 +31,10 @@ export async function createClub<T>(club: Record<string, any>, logo_club?: File)
     formData.append("email_club", club.email_club);
     formData.append("color_primario", club.color_primario);
     formData.append("color_secundario", club.color_secundario);
-    if(club.color_respaldo){
+    if (club.color_respaldo) {
         formData.append("color_respaldo", club.color_respaldo);
     }
-    if(logo_club){
+    if (logo_club) {
         formData.append("logo_club", logo_club); // logoFile es tipo File de input
     }
     const response = await fetch(URL_BASE, {
@@ -57,10 +55,10 @@ export async function updateClub<T>(club: Record<string, any>, id_club: number, 
     formData.append("email_club", club.email_club);
     formData.append("color_primario", club.color_primario);
     formData.append("color_secundario", club.color_secundario);
-    if(club.color_respaldo){
+    if (club.color_respaldo) {
         formData.append("color_respaldo", club.color_respaldo);
     }
-    if(logo_club instanceof File){
+    if (logo_club instanceof File) {
         formData.append("logo_club", logo_club); // logoFile es tipo File de input
     }
     formData.append("club_activo", club.club_activo)
@@ -79,35 +77,5 @@ export async function deleteClub<T>(id_club: number): Promise<T> {
         },
     })
 
-    return handleResponse(response)
-}
-
-export async function getSeriesClub<T>(id_club: number): Promise<T> {
-    const response = await fetch(`${URL_BASE}${id_club}/series`, {
-        method: "GET",
-        headers: {
-            'content-type': 'application/json'
-        },
-    })
-    return handleResponse(response)
-}
-
-export async function getUsuariosClub<T>(id_club: number): Promise<T> {
-    const response = await fetch(`${URL_BASE}${id_club}/usuarios`, {
-        method: "GET",
-        headers: {
-            'content-type': 'application/json'
-        },
-    })
-    return handleResponse(response)
-}
-
-export async function getJugadoresClub<T>(id_club: number): Promise<T> {
-    const response = await fetch(`${URL_BASE}${id_club}/jugadores`, {
-        method: "GET",
-        headers: {
-            'content-type': 'application/json'
-        },
-    })
     return handleResponse(response)
 }

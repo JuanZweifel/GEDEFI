@@ -10,7 +10,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
         const errorData = await response.json();
         throw new Error(errorData || 'Error en la solicitud')
     }
-    console.log(response);
+    (response);
     return response.json() as Promise<T>;
 }
 

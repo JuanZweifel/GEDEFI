@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, selectinload
 from app.models import Serie, Jugador, FichaJugador
-from app.schemas import SerieCreate, SerieRead, JugadorList, JugadorRead, SerieWithDetails
+from app.schemas import SerieCreate, SerieRead, JugadorList, JugadorRead
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError, OperationalError, DisconnectionError
 import psycopg2
@@ -11,37 +11,6 @@ from fastapi import HTTPException
 
 def get_serie(db: Session, id_serie: int) -> Serie | None:
     return db.query(Serie).filter(Serie.id_serie == id_serie).first()
-
-def get_series_with_details(db: Session, skip: int = 0, limit: int = 100) -> list[SerieWithDetails]:
-    # Traemos las series
-    series = db.query(Serie).offset(skip).limit(limit).all()
-    
-    result = []
-    for s in series:
-        # Traemos los jugadores asociados a la serie usando la tabla intermedia
-        jugadores = (
-            db.query(Jugador)
-            .join(FichaJugador, FichaJugador.rut_jugador == Jugador.rut_jugador)
-            .filter(FichaJugador.id_serie == s.id_serie)
-            .all()
-        )
-        
-        jugadores_read = [JugadorRead.model_validate(j) for j in jugadores]
-
-        serie_read = SerieWithDetails(
-            id_serie=s.id_serie,
-            nombre_serie=s.nombre_serie,
-            id_club=s.id_club,
-            nombre_club=s.club.nombre_club,  # asumiendo Serie tiene relación con club
-            serie_activa=s.serie_activa,
-            jugadores=jugadores_read,
-            cantidad_jugadores=len(jugadores_read), # <-- aquí agregamos la cantidad
-            fecha_creacion = s.fecha_creacion.strftime("%Y-%m-%d"),
-            fecha_modificacion = s.fecha_modificacion.strftime("%Y-%m-%d")
-        )
-        result.append(serie_read)
-    
-    return result
 
 def get_series(db:Session):
     return db.query(Serie).all()

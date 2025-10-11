@@ -37,7 +37,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
     const [direccionClub, setDireccionClub] = useState("")
     const [fonoClub, setFonoClub] = useState("")
     const [emailClub, setEmailClub] = useState("")
-    const [logoClub, setLogoClub] = useState<string|File|undefined>(undefined)
+    const [logoClub, setLogoClub] = useState<string | File | undefined>(undefined)
     const [colorPrimario, setColorPrimario] = useState("")
     const [colorSecundario, setColorSecundario] = useState("")
     const [colorRespaldo, setcolorRespaldo] = useState("")
@@ -121,7 +121,6 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                 toast.success(response.message)
             } else {
                 const response = await createClub<any>(clubObject, logoClub)
-                console.log(response)
                 toast.success(response.message)
             }
 

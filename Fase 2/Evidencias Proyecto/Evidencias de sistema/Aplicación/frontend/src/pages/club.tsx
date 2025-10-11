@@ -1,62 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card.tsx';
-import { Button } from '../ui/button.tsx';
-import { Badge } from '../ui/badge.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.tsx';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table.tsx';
-import { Label } from '../ui/label.tsx';
-import { DialogHandle } from '../dialog-component.tsx';
-import { Input } from '../ui/input.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.tsx';
+import { Button } from '../components/ui/button.tsx';
+import { Badge } from '../components/ui/badge.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.tsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table.tsx';
+import { Label } from '../components/ui/label.tsx';
+import { DialogHandle } from '../components/dialog-component.tsx';
+import { Input } from '../components/ui/input.tsx';
 import {
     Plus, Edit, Eye,
     Trash2, RefreshCcw, FileText
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 
 
-import { getClubs, deleteClub, getSeriesClub, getUsuariosClub, getJugadoresClub } from '../../services/clubServices.ts';
-import { AlertDialogHandle } from '../alert-dialog-component.tsx';
-import { ClubForm } from '../forms.tsx';
+import { getClubs, deleteClub } from '../services/clubServices.ts';
+import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
+import { ClubForm } from '../components/forms.tsx';
 import {
     type ClubType,
     type SerieType,
     type JugadorType,
     type UsuarioType,
     type ClubDetailsType,
-    type serieResponseType,
-    type DirectivaResponseType,
-    type JugadorResponseType
-} from '../../types.tsx';
+} from '../types.tsx';
 
 // Enhanced User & Roles Module (USUARIO, ROL, HISTORIAL_USUARIO)
 export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
     const [series, setSeries] = useState<SerieType[]>([])
-    const [directiva, SetDirectiva] = useState<UsuarioType[]>([])
+    const [directiva, setDirectiva] = useState<UsuarioType[]>([])
     const [jugadores, setJugadores] = useState<JugadorType[]>([])
     const [activeTab, setActiveTab] = useState("directiva")
 
 
     useEffect(() => {
-        if (isDetailsOpen && club) {
-            const fetchSeries = async () => {
-                const serieData = await getSeriesClub<serieResponseType>(club.id_club)
-                console.log(serieData)
-                setSeries(serieData.series)
-            }
-            const fetchDirectiva = async () => {
-                const dataDirectiva = await getUsuariosClub<DirectivaResponseType>(club.id_club)
-                SetDirectiva(dataDirectiva.usuarios)
-            }
-            const fetchJugadores = async () => {
-                const jugadoresData = await getJugadoresClub<JugadorResponseType>(club.id_club)
-                setJugadores(jugadoresData.jugadores)
-            }
-            fetchSeries();
-            fetchDirectiva();
-            fetchJugadores();
-        }
+        (club.series)
+        setDirectiva(club.directiva)
+        setSeries(club.series)
+        setJugadores(club.jugadores)
     }, [isDetailsOpen, club])
 
     return (
@@ -141,21 +124,61 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
                         <TabsContent value="directiva" className="space-y-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Historial de Clubes y Series</CardTitle>
+                                    <CardTitle className='font-medium'>Usuarios directivos</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>Acción</TableHead>
-                                                <TableHead>Club</TableHead>
-                                                <TableHead>Detalle</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                        </TableBody>
-                                    </Table>
+                                    {directiva.length > 0 &&
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>RUT</TableHead>
+                                                    <TableHead>Nombre completo</TableHead>
+                                                    <TableHead>Fecha nacimiento</TableHead>
+                                                    <TableHead>Correo electronico</TableHead>
+                                                    <TableHead>Huella registrada</TableHead>
+                                                    <TableHead>ROL</TableHead>
+                                                    <TableHead>Estado</TableHead>
+                                                    <TableHead>Acciones</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {directiva.map((d) => (
+                                                    <TableRow >
+                                                        <TableCell className="font-medium">{d.rut_usuario}</TableCell>
+                                                        <TableCell className="font-medium">{d.nombre_usuario} {d.apellido_usuario}</TableCell>
+                                                        <TableCell className="font-medium">{d.fecha_nacimiento}</TableCell>
+                                                        <TableCell className="font-medium">{d.email_usuario}</TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <Badge className={d.huella_indice || d.huella_pulgar ? 'bg-green-500' : 'bg-red-500'}>
+                                                                {d.huella_indice || d.huella_pulgar ? 'Registrada' : 'Sin registrar'}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <Badge className='bg-blue-500'>
+                                                                {d.nombre_rol?.toUpperCase()}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <Badge className={d.usuario_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                                                                {d.usuario_activo ? 'Activo' : 'Inactivo'}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    }
+                                    {directiva.length === 0 &&
+                                        <div className="text-center py-8 text-gray-500">
+                                            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                            <p>Este club no tiene directiva asociada.</p>
+                                        </div>
+                                    }
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -163,28 +186,101 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
                         <TabsContent value="series" className="space-y-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle >Series Registradas</CardTitle>
+                                    <CardTitle className='font-medium'>Series registradas</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Nombre Serie</TableHead>
-                                                <TableHead>Jugadores</TableHead>
-                                                <TableHead>Fecha Inicio</TableHead>
-                                                <TableHead>Estado</TableHead>
-                                                <TableHead>Acciones</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {series.map((serie) => (
-                                                <TableRow >
-                                                    <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
-                                                    <TableCell className="font-medium">{serie.cantidad_jugadores}</TableCell>
+                                    {series.length > 0 &&
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Nombre Serie</TableHead>
+                                                    <TableHead>Jugadores</TableHead>
+                                                    <TableHead>Fecha Inicio</TableHead>
+                                                    <TableHead>Estado</TableHead>
+                                                    <TableHead>Acciones</TableHead>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {series.map((serie) => (
+                                                    <TableRow >
+                                                        <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
+                                                        <TableCell className="font-medium">{serie.cantidad_jugadores}</TableCell>
+                                                        <TableCell className="font-medium">{serie.fecha_creacion?.split("T")[0]}</TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <Badge className={serie.serie_activa ? 'bg-green-500' : 'bg-gray-500'}>
+                                                                {serie.serie_activa ? 'Activo' : 'Inactivo'}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    }
+                                    {series.length === 0 &&
+                                        <div className="text-center py-8 text-gray-500">
+                                            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                            <p>Este club no tiene series registradas.</p>
+                                        </div>
+                                    }
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="jugadores" className="space-y-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className='font-medium'>Usuarios directivos</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {jugadores.length > 0 &&
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>RUT</TableHead>
+                                                    <TableHead>Nombre completo</TableHead>
+                                                    <TableHead>Genero</TableHead>
+                                                    <TableHead>Fecha nacimiento</TableHead>
+                                                    <TableHead>Enfermedades cronicas</TableHead>
+                                                    <TableHead>Telefono</TableHead>
+                                                    <TableHead>Estado</TableHead>
+                                                    <TableHead>Acciones</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {jugadores.map((j) => (
+                                                    <TableRow >
+                                                        <TableCell className="font-medium">{j.rut_jugador}</TableCell>
+                                                        <TableCell className="font-medium">{j.primer_nombre} {j.segundo_nombre} {j.primer_apellido} {j.segundo_apellido}</TableCell>
+                                                        <TableCell className="font-medium">{j.genero ? "Masculino" : "Femenino"}</TableCell>
+                                                        <TableCell className="font-medium">{j.fecha_nacimiento}</TableCell>
+                                                        <TableCell className="font-medium">{j.enfermedades_cronicas}</TableCell>
+                                                        <TableCell className="font-medium">{j.fono_jugador}</TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <Badge className={j.jugador_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                                                                {j.jugador_activo ? 'Activo' : 'Inactivo'}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="font-medium">
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    }
+                                    {jugadores.length === 0 &&
+                                        <div className="text-center py-8 text-gray-500">
+                                            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                            <p>Este club no tiene jugadores asociados.</p>
+                                        </div>
+                                    }
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -209,6 +305,7 @@ export const ClubModule: React.FC = () => {
         try {
             setIsFetching(true)
             data = await getClubs<ClubType[]>();
+            (data)
             setClubList(data);
             if (data.length === 0) {
                 toast.info("No hay clubs registrados en la base de datos.")
@@ -240,7 +337,7 @@ export const ClubModule: React.FC = () => {
     }
 
     const filteredClubs = (() => {
-        console.log(clubList.length)
+        (clubList.length)
         // 1️⃣ Primero filtramos por estado (según el select)
         let baseList = clubList;
 
