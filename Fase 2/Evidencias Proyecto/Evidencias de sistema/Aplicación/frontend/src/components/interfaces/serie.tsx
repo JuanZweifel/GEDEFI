@@ -30,42 +30,6 @@ export const SerieModule: React.FC = () => {
         fetchSeries();
     }, [])
 
-    const series = [
-        {
-            id: 1,
-            nombre: "Serie A Masculina",
-            id_club: 1,
-            club_nombre: "FC Barcelona Santiago",
-            categoria: "Adultos",
-            activo: true,
-            fecha_inicio: "2024-03-01",
-            jugadores_inscritos: 22,
-            jugadores: [
-                { id: 1, nombre: "Carlos", apellido: "Gómez", posicion: "Delantero" },
-                { id: 2, nombre: "Luis", apellido: "Pérez", posicion: "Mediocampista" },
-                { id: 3, nombre: "Javier", apellido: "Rojas", posicion: "Defensa" },
-                { id: 4, nombre: "Andrés", apellido: "Ramírez", posicion: "Arquero" },
-            ],
-        },
-        {
-            id: 2,
-            nombre: "Serie Juvenil",
-            id_club: 1,
-            club_nombre: "FC Barcelona Santiago",
-            categoria: "Sub-18",
-            activo: true,
-            fecha_inicio: "2024-03-01",
-            jugadores_inscritos: 18,
-            jugadores: [
-                { id: 1, nombre: "Matías", apellido: "Fernández", posicion: "Delantero" },
-                { id: 2, nombre: "Diego", apellido: "Soto", posicion: "Mediocampista" },
-                { id: 3, nombre: "Tomás", apellido: "Castro", posicion: "Defensa" },
-            ],
-        },
-    ];
-
-
-
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -103,53 +67,27 @@ export const SerieModule: React.FC = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {serieList.map((serie) => (
-                                        <Collapsible key={serie.id_serie} asChild>
-                                            <>
-                                                {/* Fila principal */}
-                                                <TableRow>
-                                                    <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
-                                                    <TableCell>{serie.nombre_club}</TableCell>
-                                                    <TableCell>{serie.cantidad_jugadores}</TableCell>
-                                                    <TableCell>{serie.fecha_creacion}</TableCell>
-                                                    <TableCell>
-                                                        <Badge className={serie.serie_activa ? "bg-green-500" : "bg-gray-500"}>
-                                                            {serie.serie_activa ? "Activa" : "Inactiva"}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex space-x-1">
-                                                            <CollapsibleTrigger asChild>
-                                                                <Button variant="outline" size="sm">
-                                                                    <Users className="w-4 h-4" />
-                                                                </Button>
-                                                            </CollapsibleTrigger>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="w-4 h-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-
-                                                {/* Fila expandida */}
-                                                <CollapsibleContent asChild>
-                                                    <TableRow>
-                                                        <TableCell colSpan={7}>
-                                                            <div className="p-4 bg-muted rounded-md">
-                                                                <h4 className="font-semibold mb-2">Jugadores de {serie.nombre_serie}</h4>
-                                                                <ul className="list-disc pl-5 space-y-1 text-sm">
-                                                                    {serie.jugadores?.map((j) => (
-                                                                        <Input
-                                                                            key={j.rut_jugador} value={`${j.primer_nombre} ${j?.segundo_nombre} ${j.primer_apellido} ${j?.segundo_apellido}`}
-                                                                            disabled
-                                                                        />
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                </CollapsibleContent>
-                                            </>
-                                        </Collapsible>
+                                        <TableRow >
+                                            <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
+                                            <TableCell>{serie.nombre_club}</TableCell>
+                                            <TableCell>{serie.cantidad_jugadores}</TableCell>
+                                            <TableCell>{serie.fecha_creacion}</TableCell>
+                                            <TableCell>
+                                                <Badge className={serie.serie_activa ? "bg-green-500" : "bg-gray-500"}>
+                                                    {serie.serie_activa ? "Activa" : "Inactiva"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex space-x-1">
+                                                    <Button variant="outline" size="sm">
+                                                        <Users className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="outline" size="sm">
+                                                        <Edit className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
@@ -179,6 +117,6 @@ export const SerieModule: React.FC = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
-        </div>
+        </div >
     );
 };
