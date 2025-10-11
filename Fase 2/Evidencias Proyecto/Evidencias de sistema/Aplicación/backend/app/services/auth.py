@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.usuario import Usuario
 from app.models.recuperacion_contrasena import RecuperacionContrasena
 from app.security import verify_password, create_access_token, get_password_hash
+from app.utils.decorators import handle_db_exceptions
 
 # Mailtrap credentials
 # TODO: Reemplazar con un servicio de email real en producción
@@ -19,13 +20,22 @@ MAILTRAP_PASS = "56d9db479081a8"
 FROM_EMAIL = "no-reply@gedefi.cl"
 
 
+@handle_db_exceptions
 def authenticate_user(db: Session, email: str, password: str) -> Usuario | None:
-    user = db.query(Usuario).filter(Usuario.email_usuario == email).first()
+    user: Usuario = db.query(Usuario).filter(Usuario.email_usuario == email).first()
     if not user or not verify_password(password, user.pass_usuario):
         return None
+
+    if not user.usuario_activo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La cuenta se encuentra deshabilitada",
+        )
+
     return user
 
 
+@handle_db_exceptions
 def login_for_access_token(db: Session, email: str, password: str) -> dict | None:
     user = authenticate_user(db, email, password)
     if not user:
@@ -44,10 +54,14 @@ def login_for_access_token(db: Session, email: str, password: str) -> dict | Non
     return {"access_token": token, "token_type": "bearer"}
 
 
+@handle_db_exceptions
 def send_recovery_email(db: Session, email: str) -> None:
-    user = db.query(Usuario).filter(Usuario.email_usuario == email).first()
+    user: Usuario = db.query(Usuario).filter(Usuario.email_usuario == email).first()
+
     if not user:
-        return
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if not user.usuario_activo:
+        raise HTTPException(status_code=400, detail="Usuario inactivo")
 
     token = secrets.token_urlsafe(32)
     expires_at = datetime.utcnow() + timedelta(hours=1)

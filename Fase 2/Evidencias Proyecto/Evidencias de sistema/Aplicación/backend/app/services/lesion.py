@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from app.models import Lesion
 from app.schemas import LesionCreate, LesionUpdate
+from app.models import Jugador
+from fastapi import HTTPException
 
 
 def get_lesion(db: Session, lesion_id: int) -> Lesion | None:
@@ -12,6 +14,16 @@ def get_lesiones(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_lesion(db: Session, lesion: LesionCreate) -> Lesion:
+    # Verificar si el jugador existe
+    jugador = db.query(Jugador).filter(Jugador.rut_jugador == lesion.rut_jugador).first()
+    if not jugador:
+        # Lanzar error HTTP 404 si no existe
+        raise HTTPException(
+            status_code=404,
+            detail=f"No se encontró un jugador con el RUT ingresado"
+        )
+
+    # Si existe, crear la lesión
     db_lesion = Lesion(**lesion.dict())
     db.add(db_lesion)
     db.commit()

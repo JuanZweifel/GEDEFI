@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import FichaJugador
+from app.models import FichaJugador, Serie, Jugador
 from app.schemas import FichaJugadorCreate, FichaJugadorUpdate
 
 
@@ -12,6 +12,25 @@ def get_ficha_jugador(db: Session, rut_jugador: str, id_serie: int) -> FichaJuga
 
 def get_fichas_jugador(db: Session, skip: int = 0, limit: int = 100):
     return db.query(FichaJugador).offset(skip).limit(limit).all()
+
+
+def get_fichas_por_filtro(db: Session, id_club: int | None = None, id_serie: int | None = None):
+    """
+    Retorna fichas filtradas por club, serie o ambos.
+    Si no se pasa ningún parámetro, retorna todas las fichas.
+    """
+    query = (
+        db.query(FichaJugador)
+        .join(Serie, FichaJugador.id_serie == Serie.id_serie)
+        .join(Jugador, FichaJugador.rut_jugador == Jugador.rut_jugador)
+    )
+
+    if id_club is not None:
+        query = query.filter(Serie.id_club == id_club)
+    if id_serie is not None:
+        query = query.filter(FichaJugador.id_serie == id_serie)
+
+    return query.all()
 
 
 def create_ficha_jugador(db: Session, ficha: FichaJugadorCreate) -> FichaJugador:

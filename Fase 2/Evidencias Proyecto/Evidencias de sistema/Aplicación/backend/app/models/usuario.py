@@ -29,7 +29,9 @@ class Usuario(Base):
     )
 
     # Claves foráneas
-    id_rol: Mapped[int] = mapped_column(ForeignKey("ROL.id_rol"), nullable=False)
+    id_rol: Mapped[int] = mapped_column(
+        ForeignKey("ROL.id_rol", ondelete="RESTRICT"), nullable=False
+    )
 
     # Relaciones
     rol: Mapped["Rol"] = relationship("Rol", back_populates="usuarios")
@@ -77,6 +79,6 @@ class Usuario(Base):
     )
 
     tokens_recuperacion: Mapped[list["RecuperacionContrasena"]] = relationship(
-        "RecuperacionContrasena", back_populates="usuario"
+        "RecuperacionContrasena", back_populates="usuario", passive_deletes=False
     )
     # TODO: Agregar relaciones con Historiales

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import Jugador
 from app.schemas import JugadorCreate, JugadorUpdate
+from fastapi import HTTPException
 
 
 def get_jugador(db: Session, rut_jugador: str) -> Jugador | None:
@@ -12,11 +13,21 @@ def get_jugadores(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_jugador(db: Session, jugador: JugadorCreate) -> Jugador:
-    db_jugador = Jugador(**jugador.dict())
-    db.add(db_jugador)
+    # Verificar si el jugador ya existe
+    db_jugador = get_jugador(db, jugador.rut_jugador)
+    if db_jugador:
+        # Lanzar error HTTP 409 (conflicto)
+        raise HTTPException(
+            status_code=409,
+            detail="El RUT ingresado ya se encuentra registrado"
+        )
+    
+    # Crear jugador
+    nuevo_jugador = Jugador(**jugador.dict())
+    db.add(nuevo_jugador)
     db.commit()
-    db.refresh(db_jugador)
-    return db_jugador
+    db.refresh(nuevo_jugador)
+    return nuevo_jugador
 
 
 def update_jugador(

@@ -8,7 +8,14 @@ router = APIRouter(prefix="/lesiones", tags=["Lesiones"])
 
 @router.post("/", response_model=schemas.LesionRead)
 def create_lesion(lesion: schemas.LesionCreate, db: Session = Depends(get_db)):
-    return services.create_lesion(db, lesion)
+    try:
+        return services.create_lesion(db, lesion)
+    except HTTPException:
+        # Permite que los HTTPException lleguen al cliente tal cual
+        raise
+    except Exception as e:
+        # Cualquier otro error será 500
+        raise HTTPException(status_code=500, detail=f"Error al crear lesión: {str(e)}")
 
 
 @router.get("/{id_lesion}", response_model=schemas.LesionRead)

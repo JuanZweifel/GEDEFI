@@ -9,8 +9,18 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
     });
 
     if (!res.ok) {
-        const errorData = await res.text();
-        throw new Error(`Error ${res.status}: ${errorData}`);
+        let errorMessage = `${res.status}`;
+        try {
+            const errorData = await res.json();
+            if (errorData.detail) {
+                errorMessage += ` | ${errorData.detail}`;
+            }
+        } catch {
+            // En caso de que la respuesta no sea JSON
+            const text = await res.text();
+            if (text) errorMessage += `: ${text}`;
+        }
+        throw new Error(errorMessage);
     }
 
     return res.json() as Promise<T>;

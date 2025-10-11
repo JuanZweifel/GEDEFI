@@ -18,7 +18,11 @@ import {
     deleteJugador, deleteLesion
 }
     from '../../services/jugadoresService';
+import { getClubs } from '../../services/clubServices';
+import { getFichasPorFiltro } from '../../services/fichaJugadorService'
+import { getSeries } from '../../services/serieService';
 import { AlertDialogHandle } from '../alert-dialog-component';
+import { toast } from "sonner";
 
 
 type DialogFormJugadorProps = {
@@ -46,6 +50,8 @@ type DialogEditLesionProps = {
 
 type ButtonDeleteJugadorProps = {
     rutJugador: string;
+    primerNombre: string;
+    primerApellido: string;
     refreshJugadores: () => Promise<void>;
 };
 
@@ -53,6 +59,36 @@ type ButtonDeleteLesionProps = {
     id_lesion: number;
     refreshLesiones: () => Promise<void>;
 };
+
+type UploadExcelProps = {
+    refreshJugadores: () => Promise<void>;
+    onUploadComplete?: (result: any[]) => void;
+    openHistory?: () => void;
+};
+
+type DialogEditJugadorProps = {
+    jugador: Jugador;
+    refreshJugadores: () => Promise<void>;
+};
+
+type Club = {
+    id_club: number;
+    nombre_club: string
+};
+
+type Serie = {
+    id_serie: number;
+    nombre_serie: string
+};
+
+type Ficha = {
+    id_ficha: number;
+    rut_jugador: string;
+    id_serie: number;
+    fecha_creacion: string;
+    fecha_modificacion: string;
+};
+
 
 type Lesion = {
     id_lesion: number;
@@ -66,6 +102,21 @@ type Lesion = {
     activo?: boolean;
     fecha_creacion?: string;
     fecha_modificacion?: string;
+};
+
+type Jugador = {
+    rut_jugador: string;
+    primer_nombre: string;
+    segundo_nombre?: string;
+    primer_apellido: string;
+    segundo_apellido?: string;
+    genero: boolean;
+    fecha_nacimiento: string;
+    enfermedades_cronicas?: string;
+    fono_jugador?: string;
+    jugador_activo: boolean;
+    fecha_creacion: string;
+    fecha_modificacion: string;
 };
 
 
@@ -82,6 +133,7 @@ export const ButtonDeleteLesion: React.FC<ButtonDeleteLesionProps> = ({ id_lesio
 
         try {
             await deleteLesion(id_lesion);
+            toast.success("La lesion se a eliminado correctamente")
             await refreshLesiones();
         } catch (error: any) {
             console.error("❌ Error al eliminar lesión:", error);
@@ -128,7 +180,6 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
 
     useEffect(() => {
         if (lesion) {
-            setRutJugador(lesion.rut_jugador);
             setNombreLesion(lesion.nombre_lesion);
             setTipoLesion(lesion.tipo_lesion);
             setDescripcion(lesion.descripcion || "");
@@ -155,6 +206,7 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
                 fecha_fin_lesion: fechaFinLesion || null,
             };
 
+            toast.success("lesión modificada correctamente")
             await putLesion(lesion.id_lesion, updatedData);
             await refreshLesiones();
             setIsEditFormOpen(false);
@@ -181,11 +233,6 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
                     </DialogHeader>
 
                     <div className="space-y-3">
-                        <div>
-                            <label className="text-sm font-medium">RUT del Jugador</label>
-                            <Input value={rutJugador} className="w-full border p-2 rounded" disabled />
-                        </div>
-
                         <div>
                             <label className="text-sm font-medium">Nombre de la Lesión</label>
                             <Input value={nombreLesion} onChange={(e) => setNombreLesion(e.target.value)} className="w-full border p-2 rounded" />
@@ -262,7 +309,8 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
 };
 // Aqui termina la logica de editar una lesion
 
-// Aqui comienza la logica de verla lesion de un jugador
+
+// Aqui comienza la logica de ver la lesion de un jugador
 export const DialogViewLesion: React.FC<DialogViewLesionProps> = ({
     lesion,
     refreshLesiones
@@ -351,6 +399,7 @@ export const DialogViewLesion: React.FC<DialogViewLesionProps> = ({
 };
 // Aqui termina la logica de ver la lesion de un jugador
 
+
 // Aqui comienza la logica de creación de lesion
 export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesiones }) => {
     const [open, setOpen] = useState(false);
@@ -364,39 +413,75 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async () => {
-        if (!rutJugador || !nombreLesion || !descripcion || !fechaLesion) {
-            alert("Por favor completa los campos obligatorios (RUT, Nombre, Descripción y Fecha).");
-            return;
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const validarRut = (rut: string): boolean => {
+        rut = rut.replace(/\s+/g, "").toUpperCase();
+        const [numero, dv] = rut.split("-");
+        if (!numero || !dv) return false;
+        if (!/^\d+$/.test(numero)) return false;
+
+        let suma = 0;
+        let factor = 2;
+        for (let i = numero.length - 1; i >= 0; i--) {
+            suma += parseInt(numero[i], 10) * factor;
+            factor = factor === 7 ? 2 : factor + 1;
         }
 
+        const dvCalculado = 11 - (suma % 11);
+        const dvEsperado = dvCalculado === 11 ? "0" : dvCalculado === 10 ? "K" : dvCalculado.toString();
+        return dv === dvEsperado;
+    };
+
+    // Limpiar formulario
+    const resetForm = () => {
+        setRutJugador("");
+        setNombreLesion("");
+        setTipoLesion(false);
+        setDescripcion("");
+        setFechaLesion("");
+        setTiempoRecuperacion("");
+        setFechaFinLesion("");
+    };
+
+    // Abrir alerta antes de guardar
+    const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (formRef.current && formRef.current.reportValidity()) {
+            setIsConfirmDialogOpen(true);
+        }
+    };
+
+    // Guardar lesión
+    const handleSave = async () => {
         setIsLoading(true);
-        const nuevaLesion = {
-            rut_jugador: rutJugador,
-            nombre_lesion: nombreLesion,
-            tipo_lesion: tipoLesion,
-            descripcion,
-            fecha_lesion: fechaLesion,
-            tiempo_recuperacion: tiempoRecuperacion ? Number(tiempoRecuperacion) : null,
-            fecha_fin_lesion: fechaFinLesion || null,
-        };
 
         try {
+            const nuevaLesion = {
+                rut_jugador: rutJugador,
+                nombre_lesion: nombreLesion,
+                tipo_lesion: tipoLesion,
+                descripcion,
+                fecha_lesion: fechaLesion,
+                tiempo_recuperacion: tiempoRecuperacion ? Number(tiempoRecuperacion) : null,
+                fecha_fin_lesion: fechaFinLesion || null,
+            };
+
             await postLesion(nuevaLesion);
+            toast.success("La lesión se ha registrado correctamente");
             await refreshLesiones();
             setOpen(false);
+            resetForm();
 
-            // Limpiar formulario
-            setRutJugador("");
-            setNombreLesion("");
-            setTipoLesion(false);
-            setDescripcion("");
-            setFechaLesion("");
-            setTiempoRecuperacion("");
-            setFechaFinLesion("");
         } catch (err: any) {
-            console.error(err);
-            alert(err.message || "Ocurrió un error al registrar la lesión.");
+            console.error("❌ Error al guardar lesión:", err);
+
+            // Manejo de errores del backend
+            if (err?.status && err?.data?.detail) {
+                toast.error(err.data.detail); // muestra el mensaje que viene del backend
+            } else {
+                toast.error(err.message || "Ocurrió un error al registrar la lesión");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -412,32 +497,40 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
                 </DialogTrigger>
 
                 <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Registrar Lesión</DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-3">
+                    <form ref={formRef} onSubmit={handleAlert} className="space-y-3">
+                        {/* RUT */}
                         <div>
                             <label className="text-sm font-medium">RUT del Jugador</label>
-                            <input
-                                type="text"
+                            <Input
                                 value={rutJugador}
-                                onChange={(e) => setRutJugador(e.target.value)}
-                                className="w-full border p-2 rounded"
-                                placeholder="Ej: 12.345.678-9"
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setRutJugador(value);
+                                    if (!validarRut(value)) {
+                                        e.currentTarget.setCustomValidity(
+                                            "RUT inválido. Verifica el formato y dígito verificador."
+                                        );
+                                    } else {
+                                        e.currentTarget.setCustomValidity("");
+                                    }
+                                }}
+                                required
+                                pattern="^\d{7,8}-[0-9Kk]$"
+                                title="Ingrese un RUT válido (ej: 12345678-9)"
                             />
                         </div>
 
+                        {/* Nombre Lesión */}
                         <div>
                             <label className="text-sm font-medium">Nombre de la Lesión</label>
-                            <input
-                                type="text"
+                            <Input
                                 value={nombreLesion}
                                 onChange={(e) => setNombreLesion(e.target.value)}
-                                className="w-full border p-2 rounded"
+                                required
                             />
                         </div>
 
+                        {/* Tipo de Lesión */}
                         <div>
                             <label className="text-sm font-medium">Tipo de Lesión</label>
                             <Select
@@ -454,80 +547,94 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
                             </Select>
                         </div>
 
+                        {/* Descripción */}
                         <div>
                             <label className="text-sm font-medium">Descripción</label>
                             <textarea
                                 value={descripcion}
                                 onChange={(e) => setDescripcion(e.target.value)}
                                 className="w-full border p-2 rounded"
+                                required
                             />
                         </div>
 
+                        {/* Fecha de Lesión */}
                         <div>
                             <label className="text-sm font-medium">Fecha de Lesión</label>
-                            <input
+                            <Input
                                 type="date"
                                 value={fechaLesion}
                                 onChange={(e) => setFechaLesion(e.target.value)}
-                                className="w-full border p-2 rounded"
+                                required
                             />
                         </div>
 
+                        {/* Tiempo de recuperación */}
                         <div>
                             <label className="text-sm font-medium">Tiempo de Recuperación (semanas)</label>
-                            <input
+                            <Input
                                 type="number"
                                 value={tiempoRecuperacion}
                                 onChange={(e) => setTiempoRecuperacion(e.target.value)}
-                                className="w-full border p-2 rounded"
                                 min={0}
                             />
                         </div>
 
+                        {/* Fecha fin de lesión */}
                         <div>
                             <label className="text-sm font-medium">Fecha Fin de Lesión</label>
-                            <input
+                            <Input
                                 type="date"
                                 value={fechaFinLesion}
                                 onChange={(e) => setFechaFinLesion(e.target.value)}
-                                className="w-full border p-2 rounded"
                             />
                         </div>
 
+                        {/* Botones */}
                         <div className="flex justify-end space-x-2 mt-4">
-                            <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => {
+                                    resetForm();
+                                    setOpen(false);
+                                    setIsConfirmDialogOpen(false);
+                                }}
+                                disabled={isLoading}
+                            >
                                 Cancelar
                             </Button>
                             <Button
+                                type="submit"
+                                disabled={isLoading}
                                 style={{ backgroundColor: "#0000db" }}
                                 className="text-white"
-                                onClick={() => setIsConfirmDialogOpen(true)}
-                                disabled={isLoading}
                             >
                                 Guardar
                             </Button>
                         </div>
-                    </div>
+                    </form>
                 </DialogContent>
             </Dialog>
 
-            {/* Confirmación personalizada */}
+            {/* Confirmación */}
             <AlertDialogHandle
                 title="Confirmar registro"
-                description="¿Deseas registrar esta lesión?"
+                description={`¿Desea registrar la lesión "${nombreLesion}" al jugador con el rut: ${rutJugador}?`}
                 confirmLabel="Registrar"
                 cancelLabel="Cancelar"
                 open={isConfirmDialogOpen}
                 onOpenChange={setIsConfirmDialogOpen}
                 onConfirm={async () => {
                     setIsConfirmDialogOpen(false);
-                    await handleSubmit();
+                    await handleSave();
                 }}
             />
         </>
     );
 };
 // Aqui termina la logica de creción de lesion
+
 
 // Aqui comienza la logica de agregar jugador
 export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugadores }) => {
@@ -546,8 +653,83 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
     const [fonoJugador, setFonoJugador] = useState("");
     const [jugadorActivo, setJugadorActivo] = useState<string>("true");
 
+
+    const validarRut = (rut: string): boolean => {
+        // Limpiar espacios y mayúsculas
+        rut = rut.replace(/\s+/g, "").toUpperCase();
+
+        // Separar número y dígito verificador
+        const [numero, dv] = rut.split("-");
+        if (!numero || !dv) return false;
+
+        // Validar que el número sea solo dígitos
+        if (!/^\d+$/.test(numero)) return false;
+
+        // Calcular dígito verificador
+        let suma = 0;
+        let factor = 2;
+        for (let i = numero.length - 1; i >= 0; i--) {
+            suma += parseInt(numero[i], 10) * factor;
+            factor = factor === 7 ? 2 : factor + 1;
+        }
+
+        const dvCalculado = 11 - (suma % 11);
+        let dvEsperado = "";
+        if (dvCalculado === 11) dvEsperado = "0";
+        else if (dvCalculado === 10) dvEsperado = "K";
+        else dvEsperado = dvCalculado.toString();
+
+        return dv === dvEsperado;
+    };
+
+
+    const validarCelularChile = (numero: string): string => {
+        // Limpiar espacios al inicio y fin
+        const tel = numero.trim();
+
+        // Patrones permitidos
+        const patrones = [
+            /^\+569\d{8}$/,  // +569XXXXXXXX
+            /^9\d{8}$/,      // 9XXXXXXXX
+            /^41\d{8}$/      // 41XXXXXXXX (ej: Concepción)
+        ];
+
+        // Verificar si alguno de los patrones coincide
+        const valido = patrones.some(p => p.test(tel));
+
+        if (!valido) {
+            throw new Error("Número de celular inválido");
+        }
+
+        return tel;
+    };
+
+
+    // Función para limpiar todos los campos del formulario
+    const resetForm = () => {
+        setRutJugador("");
+        setPrimerNombreJugador("");
+        setSegundoNombreJugador("");
+        setPrimerApellidoJugador("");
+        setSegundoApellidoJugador("");
+        setGenero("");
+        setFechaNacimiento("");
+        setEnfermedadesCronicas("");
+        setFonoJugador("");
+        setJugadorActivo("true");
+    };
+
+    const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        if (form.reportValidity()) {
+            setIsConfirmDialogOpen(true);
+        }
+    };
+
     const handleSave = async () => {
         setIsLoading(true);
+
         try {
             await postJugador({
                 rut_jugador: rutJugador,
@@ -561,28 +743,36 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                 fono_jugador: fonoJugador || null,
                 jugador_activo: jugadorActivo === "true",
             });
+
+            toast.success("El jugador fue registrado correctamente!");
             await refreshJugadores();
             setIsOpen(false);
+            resetForm();
 
-            // Limpiar campos
-            setRutJugador("");
-            setPrimerNombreJugador("");
-            setSegundoNombreJugador("");
-            setPrimerApellidoJugador("");
-            setSegundoApellidoJugador("");
-            setGenero("");
-            setFechaNacimiento("");
-            setEnfermedadesCronicas("");
-            setFonoJugador("");
-            setJugadorActivo("true");
         } catch (error: any) {
-            console.error(error);
-            alert(error.message || "Error al agregar jugador");
-        } finally {
-            setIsLoading(false);
+            if (error?.status) {
+                if (error.status === 409) {
+                    toast.error(error.data.detail || "El RUT ingresado ya se encuentra registrado.");
+                    return;
+                }
+
+                if (error.status === 422) {
+                    const firstError = Array.isArray(error.data) ? error.data[0] : error.data;
+                    if (firstError?.loc?.includes("rut_jugador")) {
+                        toast.error("RUT inválido. Verifica el formato 12345678-9");
+                    } else {
+                        toast.error(firstError?.msg || "Error de validación en los datos enviados");
+                    }
+                    return;
+                }
+
+                // Otros errores
+                toast.error(error.data.detail || "Error al crear jugador");
+            } else {
+                toast.error(error.message || "Ocurrió un error inesperado al agregar el jugador.");
+            }
         }
     };
-
     return (
         <>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -597,52 +787,157 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                         <DialogTitle>Agregar Jugador</DialogTitle>
                     </DialogHeader>
 
-                    <div className="space-y-4">
+                    {/* Contenedor principal vertical */}
+                    <form onSubmit={handleAlert} className="flex flex-col gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField label="Rut Jugador" value={rutJugador} onChange={setRutJugador} />
-                            <InputField label="Primer Nombre" value={primerNombreJugador} onChange={setPrimerNombreJugador} />
-                            <InputField label="Segundo Nombre" value={segundoNombreJugador} onChange={setSegundoNombreJugador} />
-                            <InputField label="Primer Apellido" value={primerApellidoJugador} onChange={setPrimerApellidoJugador} />
-                            <InputField label="Segundo Apellido" value={segundoApellidoJugador} onChange={setSegundoApellidoJugador} />
-                            <SelectField
-                                label="Género"
-                                value={genero}
-                                onChange={setGenero}
-                                options={[
-                                    { value: "true", label: "Masculino" },
-                                    { value: "false", label: "Femenino" },
-                                ]}
-                            />
-                            <InputField label="Fecha de Nacimiento" type="date" value={fechaNacimiento} onChange={setFechaNacimiento} />
-                            <InputField label="Enfermedades Crónicas" value={enfermedadesCronicas} onChange={setEnfermedadesCronicas} />
-                            <InputField label="Teléfono" value={fonoJugador} onChange={setFonoJugador} />
-                            <SelectField
-                                label="Jugador Activo"
-                                value={jugadorActivo}
-                                onChange={setJugadorActivo}
-                                options={[
-                                    { value: "true", label: "Sí" },
-                                    { value: "false", label: "No" },
-                                ]}
-                            />
+                            {/* Rut Jugador */}
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Rut Jugador *</label>
+                                <Input
+                                    value={rutJugador}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setRutJugador(value);
+
+                                        // Validación con tu función
+                                        if (!validarRut(value)) {
+                                            e.currentTarget.setCustomValidity("RUT inválido. Verifica el formato y dígito verificador.");
+                                        } else {
+                                            e.currentTarget.setCustomValidity(""); // limpio el mensaje si es válido
+                                        }
+                                    }}
+                                    required
+                                    pattern="^\d{7,8}-[0-9Kk]$"
+                                    title="Ingrese un RUT válido (ej: 12345678-9)"
+                                />
+                            </div>
+
+                            {/* Primer Nombre */}
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Primer Nombre *</label>
+                                <Input
+                                    value={primerNombreJugador}
+                                    onChange={(e) => setPrimerNombreJugador(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            {/* Segundo Nombre */}
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Segundo Nombre</label>
+                                <Input
+                                    value={segundoNombreJugador}
+                                    onChange={(e) => setSegundoNombreJugador(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Primer Apellido */}
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Primer Apellido *</label>
+                                <Input
+                                    value={primerApellidoJugador}
+                                    onChange={(e) => setPrimerApellidoJugador(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            {/* Segundo Apellido */}
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Segundo Apellido</label>
+                                <Input
+                                    value={segundoApellidoJugador}
+                                    onChange={(e) => setSegundoApellidoJugador(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Género */}
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Género *</label>
+                                <Select
+                                    value={genero}
+                                    onValueChange={(value: string) => setGenero(value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccione Género" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="true">Masculino</SelectItem>
+                                        <SelectItem value="false">Femenino</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Fecha de Nacimiento */}
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Fecha de Nacimiento *</label>
+                                <Input
+                                    type="date"
+                                    value={fechaNacimiento}
+                                    onChange={(e) => setFechaNacimiento(e.target.value)}
+                                    required
+                                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 80)).toISOString().split("T")[0]}
+                                    max={new Date().toISOString().split("T")[0]}
+                                />
+                            </div>
+
+                            {/* Enfermedades Crónicas */}
+                            <div className="col-span-2 flex flex-col">
+                                <label className="block mb-1">Enfermedades Crónicas</label>
+                                <Input
+                                    value={enfermedadesCronicas}
+                                    onChange={(e) => setEnfermedadesCronicas(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Teléfono */}
+                            <div className="col-span-2 flex flex-col">
+                                <label className="block mb-1">Teléfono</label>
+                                <Input
+                                    value={fonoJugador}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setFonoJugador(value);
+
+                                        try {
+                                            // Validación con tu función
+                                            validarCelularChile(value);
+                                            e.currentTarget.setCustomValidity(""); // limpio el mensaje si es válido
+                                        } catch (error: any) {
+                                            e.currentTarget.setCustomValidity(error.message); // mensaje de error
+                                        }
+                                    }}
+                                    pattern="^(\+569\d{8}|9\d{8}|41\d{8})$"
+                                    title="Ingrese un número de celular chileno válido (+569XXXXXXXX, 9XXXXXXXX o 41XXXXXXXX)"
+                                />
+                                {/* Párrafo debajo del teléfono */}
+                                <p className="text-sm text-gray-600 mt-2">
+                                    Los campos marcados con (*) son campos obligatorios
+                                </p>
+                            </div>
                         </div>
 
+                        {/* Botones */}
                         <div className="flex justify-end space-x-2">
-                            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => {
+                                    resetForm();
+                                    setIsOpen(false);
+                                    setIsConfirmDialogOpen(false);
+                                }}
+                            >
                                 Cancelar
                             </Button>
-                            <Button onClick={() => setIsConfirmDialogOpen(true)} disabled={isLoading}>
-                                Guardar
-                            </Button>
+                            <Button type="submit">Guardar</Button>
                         </div>
-                    </div>
+                    </form>
                 </DialogContent>
             </Dialog>
 
-            {/* Confirmación personalizada antes de guardar */}
             <AlertDialogHandle
                 title="Confirmar registro"
-                description="¿Deseas registrar este jugador?"
+                description={`¿Está seguro que desea registrar al jugador ${primerNombreJugador} ${primerApellidoJugador}?`}
                 confirmLabel="Registrar"
                 cancelLabel="Cancelar"
                 open={isConfirmDialogOpen}
@@ -655,41 +950,17 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
         </>
     );
 };
-
-// Componentes auxiliares
-const InputField = ({ label, value, onChange, type = "text" }: any) => (
-    <div>
-        <label className="block mb-2">{label}</label>
-        <Input value={value} type={type} onChange={(e) => onChange(e.target.value)} />
-    </div>
-);
-
-const SelectField = ({ label, value, onChange, options }: any) => (
-    <div>
-        <label className="block mb-2">{label}</label>
-        <Select value={value} onValueChange={onChange}>
-            <SelectTrigger>
-                <SelectValue placeholder={`Seleccione ${label}`} />
-            </SelectTrigger>
-            <SelectContent>
-                {options.map((opt: any) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-    </div>
-);
 // Aqui termina la logica de agregar jugador
 
+
 // Aqui comienza la logica de eliminar un jugador
-export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({ rutJugador, refreshJugadores }) => {
+export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({ rutJugador, primerNombre, primerApellido, refreshJugadores }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleDelete = async () => {
         try {
+            toast.success("El jugador fue eliminado correctamente!");
             setIsLoading(true);
             await deleteJugador(rutJugador);
             await refreshJugadores();
@@ -714,7 +985,7 @@ export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({ rutJug
 
             <AlertDialogHandle
                 title="Confirmar eliminación"
-                description="¿Estás seguro de que deseas eliminar este jugador?"
+                description={`¿Estás seguro de que deseas eliminar al jugador ${primerNombre} ${primerApellido}?`}
                 confirmLabel="Eliminar"
                 cancelLabel="Cancelar"
                 open={isDialogOpen}
@@ -728,6 +999,7 @@ export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({ rutJug
     );
 };
 // Aqui termina la logica de eliminar un jugador
+
 
 // Aqui comienza la logica de visualizar jugador
 export const DialogViewJugador: React.FC<DialogFormJugadorProps> = ({
@@ -868,43 +1140,73 @@ export const DialogViewJugador: React.FC<DialogFormJugadorProps> = ({
 // Aqui termina la logica de visualizar jugador
 
 
-
 // Aqui comienza la logica y formulario del modificar jugador
-export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({ jugador, refreshJugadores }) => {
-    const [isEditFormOpen, setIsEditFormOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-
+export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
+    jugador,
+    refreshJugadores,
+}) => {
     const [primerNombreJugador, setPrimerNombreJugador] = useState("");
     const [segundoNombreJugador, setSegundoNombreJugador] = useState("");
     const [primerApellidoJugador, setPrimerApellidoJugador] = useState("");
     const [segundoApellidoJugador, setSegundoApellidoJugador] = useState("");
-    const [genero, setGenero] = useState<string>("");
+    const [genero, setGenero] = useState<string>("true");
     const [fechaNacimiento, setFechaNacimiento] = useState("");
     const [enfermedadesCronicas, setEnfermedadesCronicas] = useState("");
-    const [fonoJugador, setFonoJugador] = useState<string|null>("");
-    const [jugadorActivo, setJugadorActivo] = useState ("true");
+    const [fonoJugador, setFonoJugador] = useState("");
+    const [jugadorActivo, setJugadorActivo] = useState<string>("true");
 
-    // Cargar datos al abrir el diálogo
+    const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+    // ✅ Cargar datos cuando se abra el diálogo
     useEffect(() => {
-        if (jugador) {
-            setPrimerNombreJugador(jugador.primer_nombre);
+        if (jugador && isEditFormOpen) {
+            setPrimerNombreJugador(jugador.primer_nombre || "");
             setSegundoNombreJugador(jugador.segundo_nombre || "");
-            setPrimerApellidoJugador(jugador.primer_apellido);
+            setPrimerApellidoJugador(jugador.primer_apellido || "");
             setSegundoApellidoJugador(jugador.segundo_apellido || "");
             setGenero(jugador.genero ? "true" : "false");
-            setFechaNacimiento(jugador.fecha_nacimiento);
+            setFechaNacimiento(jugador.fecha_nacimiento || "");
             setEnfermedadesCronicas(jugador.enfermedades_cronicas || "");
-            setFonoJugador(jugador.fono_jugador || null);
+            setFonoJugador(jugador.fono_jugador || "");
             setJugadorActivo(jugador.jugador_activo ? "true" : "false");
         }
-    }, [jugador]);
+    }, [jugador, isEditFormOpen]);
 
-    const handleSave = async () => {
+    // ✅ Resetea el formulario
+    const resetForm = () => {
         if (!jugador) return;
+        setPrimerNombreJugador(jugador.primer_nombre || "");
+        setSegundoNombreJugador(jugador.segundo_nombre || "");
+        setPrimerApellidoJugador(jugador.primer_apellido || "");
+        setSegundoApellidoJugador(jugador.segundo_apellido || "");
+        setGenero(jugador.genero ? "true" : "false");
+        setFechaNacimiento(jugador.fecha_nacimiento || "");
+        setEnfermedadesCronicas(jugador.enfermedades_cronicas || "");
+        setFonoJugador(jugador.fono_jugador || "");
+        setJugadorActivo(jugador.jugador_activo ? "true" : "false");
+    };
+
+    // ✅ Al presionar "Guardar Cambios", abre el diálogo de confirmación
+    const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        if (form.reportValidity()) {
+            setIsConfirmDialogOpen(true);
+        }
+    };
+
+    // ✅ Confirmar y guardar cambios
+    const handleSave = async () => {
+        if (!jugador || jugador.rut_jugador === undefined) {
+            console.error("❌ Jugador no válido");
+            return;
+        }
+
         setIsLoading(true);
         try {
-            await putJugador(jugador.rut_jugador, {
+            const updatedData = {
                 primer_nombre: primerNombreJugador,
                 segundo_nombre: segundoNombreJugador || null,
                 primer_apellido: primerApellidoJugador,
@@ -914,12 +1216,15 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({ jugador, r
                 enfermedades_cronicas: enfermedadesCronicas || null,
                 fono_jugador: fonoJugador || null,
                 jugador_activo: jugadorActivo === "true",
-            });
+            };
+
+            await putJugador(jugador.rut_jugador, updatedData);
+            toast.success("El jugador fue modificado correctamente");
             await refreshJugadores();
             setIsEditFormOpen(false);
         } catch (error: any) {
-            console.error("❌ Error al actualizar jugador:", error);
-            alert(error.message || "❌ Error al actualizar jugador");
+            console.error("❌ Error al modificar jugador:", error);
+            toast.error(error.message || "Ocurrió un error al modificar el jugador");
         } finally {
             setIsLoading(false);
         }
@@ -927,135 +1232,125 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({ jugador, r
 
     return (
         <>
-            <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" onClick={() => setIsEditFormOpen(true)}>
-                        <Edit className="w-4 h-4" />
-                    </Button>
-                </DialogTrigger>
+            {/* Botón para abrir el diálogo */}
+            <Button variant="outline" size="sm" onClick={() => setIsEditFormOpen(true)}>
+                <Edit className="w-4 h-4" />
+            </Button>
 
+            {/* Diálogo principal */}
+            <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
                 <DialogContent className="max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>Modificar Jugador</DialogTitle>
                     </DialogHeader>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block mb-2">Primer Nombre:</label>
-                            <Input
-                                placeholder="Primer Nombre"
-                                value={primerNombreJugador}
-                                onChange={(e) => setPrimerNombreJugador(e.target.value)}
-                                required
-                                maxLength={50}
-                            />
+                    <form onSubmit={handleAlert} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Primer Nombre *</label>
+                                <Input
+                                    value={primerNombreJugador}
+                                    onChange={(e) => setPrimerNombreJugador(e.target.value)}
+                                    required
+                                    minLength={3}
+                                    maxLength={50}
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Segundo Nombre</label>
+                                <Input
+                                    value={segundoNombreJugador}
+                                    onChange={(e) => setSegundoNombreJugador(e.target.value)}
+                                    minLength={3}
+                                    maxLength={50}
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Primer Apellido *</label>
+                                <Input
+                                    value={primerApellidoJugador}
+                                    onChange={(e) => setPrimerApellidoJugador(e.target.value)}
+                                    required
+                                    minLength={3}
+                                    maxLength={50}
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Segundo Apellido</label>
+                                <Input
+                                    value={segundoApellidoJugador}
+                                    onChange={(e) => setSegundoApellidoJugador(e.target.value)}
+                                    minLength={3}
+                                    maxLength={50}
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Género *</label>
+                                <Select value={genero} onValueChange={setGenero}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccione Género" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="true">Masculino</SelectItem>
+                                        <SelectItem value="false">Femenino</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="block mb-1">Fecha de Nacimiento *</label>
+                                <Input
+                                    type="date"
+                                    value={fechaNacimiento}
+                                    onChange={(e) => setFechaNacimiento(e.target.value)}
+                                    required
+                                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 80)).toISOString().split("T")[0]}
+                                    max={new Date().toISOString().split("T")[0]}
+                                />
+                            </div>
+                            <div className="col-span-2 flex flex-col">
+                                <label className="block mb-1">Enfermedades Crónicas</label>
+                                <Input
+                                    value={enfermedadesCronicas}
+                                    onChange={(e) => setEnfermedadesCronicas(e.target.value)}
+                                />
+                            </div>
+                            <div className="col-span-2 flex flex-col">
+                                <label className="block mb-1">Teléfono</label>
+                                <Input
+                                    value={fonoJugador}
+                                    onChange={(e) => setFonoJugador(e.target.value)}
+                                />
+                                <p className="text-sm text-gray-600 mt-2">
+                                    Los campos marcados con (*) son obligatorios
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block mb-2">Segundo Nombre:</label>
-                            <Input
-                                placeholder="Segundo Nombre"
-                                value={segundoNombreJugador}
-                                onChange={(e) => setSegundoNombreJugador(e.target.value)}
-                                maxLength={50}
-                            />
-                        </div>
-                        <div>
-                            <label className="block mb-2">Primer Apellido:</label>
-                            <Input
-                                placeholder="Primer Apellido"
-                                value={primerApellidoJugador}
-                                onChange={(e) => setPrimerApellidoJugador(e.target.value)}
-                                required
-                                maxLength={50}
-                            />
-                        </div>
-                        <div>
-                            <label className="block mb-2">Segundo Apellido:</label>
-                            <Input
-                                placeholder="Segundo Apellido"
-                                value={segundoApellidoJugador}
-                                onChange={(e) => setSegundoApellidoJugador(e.target.value)}
-                                maxLength={50}
-                            />
-                        </div>
-                        <div>
-                            <label className="block mb-2">Género:</label>
-                            <Select value={genero} onValueChange={setGenero}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione género" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="true">Masculino</SelectItem>
-                                    <SelectItem value="false">Femenino</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <label className="block mb-2">Fecha de Nacimiento:</label>
-                            <Input
-                                type="date"
-                                value={fechaNacimiento}
-                                onChange={(e) => setFechaNacimiento(e.target.value)}
-                                max={new Date().toISOString().split("T")[0]}
-                                required
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <label className="block mb-2">Enfermedades Crónicas:</label>
-                            <Input
-                                placeholder="Detalle enfermedades crónicas"
-                                value={enfermedadesCronicas}
-                                onChange={(e) => setEnfermedadesCronicas(e.target.value)}
-                                maxLength={200}
-                            />
-                        </div>
-                        <div>
-                            <label className="block mb-2">Teléfono:</label>
-                            <Input
-                                placeholder="Ej: 987654321"
-                                value={fonoJugador}
-                                onChange={(e) => setFonoJugador(e.target.value)}
-                                pattern="^[0-9]{9}$"
-                            />
-                        </div>
-                        <div>
-                            <label className="block mb-2">Jugador Activo:</label>
-                            <Select value={jugadorActivo} onValueChange={setJugadorActivo}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione si está activo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="true">Sí</SelectItem>
-                                    <SelectItem value="false">No</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex justify-end space-x-2 col-span-2">
+
+                        <div className="flex justify-end space-x-2">
                             <Button
                                 variant="outline"
-                                disabled={isLoading}
-                                onClick={() => setIsEditFormOpen(false)}
+                                type="button"
+                                onClick={() => {
+                                    resetForm();
+                                    setIsEditFormOpen(false);
+                                    setIsConfirmDialogOpen(false);
+                                }}
                             >
                                 Cancelar
                             </Button>
-                            <Button
-                                style={{ backgroundColor: "#0000db" }}
-                                className="text-white"
-                                onClick={() => setIsConfirmDialogOpen(true)}
-                                disabled={isLoading}
-                            >
-                                Guardar
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? "Guardando..." : "Guardar Cambios"}
                             </Button>
                         </div>
-                    </div>
+                    </form>
                 </DialogContent>
             </Dialog>
 
-            {/* Confirmación antes de guardar */}
+            {/* Diálogo de confirmación */}
             <AlertDialogHandle
-                title="Confirmar actualización"
-                description="¿Deseas guardar los cambios de este jugador?"
-                confirmLabel="Guardar"
+                title="Confirmar modificación"
+                description={`¿Está seguro que desea modificar al jugador ${primerNombreJugador} ${primerApellidoJugador}?`}
+                confirmLabel="Modificar"
                 cancelLabel="Cancelar"
                 open={isConfirmDialogOpen}
                 onOpenChange={setIsConfirmDialogOpen}
@@ -1070,49 +1365,73 @@ export const DialogFormJugador: React.FC<DialogFormJugadorProps> = ({ jugador, r
 // Aqui termina la logica y el formulario de modificar jugador
 
 
-
 // Aqui empieza la logica de cargar el excel
-type UploadExcelProps = {
-    refreshJugadores: () => Promise<void>;
-}
-
-export const UploadExcel: React.FC<UploadExcelProps> = ({ refreshJugadores }) => {
+export const UploadExcel: React.FC<UploadExcelProps> = ({
+    refreshJugadores,
+    onUploadComplete,
+    openHistory
+}) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [isAlertOpen, setIsAlertOpen] = useState(false); // Control de apertura de alerta
-    const [alertMessage, setAlertMessage] = useState(""); // Mensaje de la alerta
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+    const [pendingFile, setPendingFile] = useState<FormData | null>(null);
 
-    // Función para mostrar la alerta
     const showAlert = (message: string) => {
         setAlertMessage(message);
         setIsAlertOpen(true);
     };
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-            showAlert('Por favor seleccione un archivo Excel (.xlsx o .xls)');
+        if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
+            showAlert("Por favor seleccione un archivo Excel (.xlsx o .xls)");
             return;
         }
 
         const formData = new FormData();
         formData.append("file", file);
+        setPendingFile(formData);
 
-        try {
-            await uploadExcel(formData); 
-            showAlert("¿Desea agregar a todos los jugadores que aparecen en el archivo?"); 
-            await refreshJugadores(); 
-        } catch (error: any) {
-            console.error("❌ Error al subir el archivo:", error);
-            showAlert("❌ Error al subir el archivo"); 
-        }
+        showAlert("¿Desea agregar a todos los jugadores que aparecen en el archivo?");
 
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const openFileDialog = () => {
-        fileInputRef.current?.click();
+    const handleConfirmUpload = async () => {
+        if (!pendingFile) return;
+
+        try {
+            const response = await uploadExcel<{
+                message: string;
+                insertados: number;
+                saltados: number;
+                results: any[];
+            }>(pendingFile); // ✅ especificamos el tipo
+
+            const results = response.results ?? []; // ahora sí existe
+
+            // Añadimos fecha y nombre completo
+            const processedResults = results.map(item => ({
+                ...item,
+                fecha_creacion: new Date().toLocaleString(),
+                rut: item.rut,
+                nombreCompleto: `${item.primer_nombre} ${item.segundo_nombre ?? ''} ${item.primer_apellido} ${item.segundo_apellido ?? ''}`.trim()
+            }));
+
+            // Actualizamos historial
+            if (onUploadComplete) onUploadComplete(processedResults);
+
+            await refreshJugadores();
+            toast.success("Archivo procesado correctamente")
+            if (openHistory) openHistory();
+        } catch (error: any) {
+            console.error(error);
+            toast.warning("Error al subir el archivo ⚠️");
+        } finally {
+            setPendingFile(null);
+        }
     };
 
     return (
@@ -1121,115 +1440,63 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({ refreshJugadores }) =>
                 type="file"
                 accept=".xlsx, .xls"
                 ref={fileInputRef}
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 onChange={handleFileUpload}
             />
             <Button
                 variant="outline"
-                onClick={openFileDialog}
-                style={{ borderColor: '#0000db', color: '#0000db' }}
+                onClick={() => fileInputRef.current?.click()}
+                style={{ borderColor: "#0000db", color: "#0000db" }}
             >
                 <Upload className="w-4 h-4 mr-2" />
                 Upload Excel
             </Button>
 
-            {/* Alerta personalizada */}
             <AlertDialogHandle
                 title="Mensaje"
                 description={alertMessage}
                 confirmLabel="Aceptar"
                 cancelLabel="Cancelar"
                 open={isAlertOpen}
-                onOpenChange={setIsAlertOpen}
-                onConfirm={() => setIsAlertOpen(false)}
+                onOpenChange={(open) => {
+                    if (!open && pendingFile) setPendingFile(null);
+                    setIsAlertOpen(open);
+                }}
+                onConfirm={async () => {
+                    if (alertMessage.includes("¿Desea agregar")) {
+                        await handleConfirmUpload();
+                    }
+                    setIsAlertOpen(false);
+                }}
             />
         </>
     );
 };
+// Aqui termina la logica de cargar el excel 
 
 
-type Jugador = {
-    rut_jugador: string;
-    primer_nombre: string;
-    segundo_nombre?: string;
-    primer_apellido: string;
-    segundo_apellido?: string;
-    genero: boolean;
-    fecha_nacimiento: string;
-    enfermedades_cronicas?: string;
-    fono_jugador?: string;
-    jugador_activo: boolean;
-    fecha_creacion: string;
-    fecha_modificacion: string;
-};
+
+
 
 export const PlayerRecordsModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('players');
-    const [selectedPlayer, setSelectedPlayer] = useState<Jugador | null>(null);
+
     const [isUploadHistoryOpen, setIsUploadHistoryOpen] = useState(false);
     const [uploadHistory, setUploadHistory] = useState<any[]>([]);
     const [historyFilter, setHistoryFilter] = useState('ALL');
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [injuries, setInjuries] = useState<any[]>([]); // Para lesiones
-    const [playerHistory, setPlayerHistory] = useState<any[]>([]); // Para historial
+    const [injuries, setInjuries] = useState<any[]>([]);
+    const [playerHistory, setPlayerHistory] = useState<any[]>([]);
     const [players, setPlayers] = useState<Jugador[]>([]);
-    const [jugadores, setJugadores] = useState<Jugador[]>([]);
-    const [jugadorSeleccionado, setJugadorSeleccionado] = useState<Jugador | null>(null);
-    const [verDialogAbierto, setVerDialogAbierto] = useState(false);
 
-    const [formData, setFormData] = useState({
-        primer_nombre: "",
-        segundo_nombre: "",
-        primer_apellido: "",
-        segundo_apellido: "",
-        fecha_nacimiento: "",
-        genero: true,
-    });
+    // 🔹 Fichas y filtros
+    const [selectedClub, setSelectedClub] = useState<string | undefined>(undefined);
+    const [selectedSerie, setSelectedSerie] = useState<string | null>(null);
+    const [fichas, setFichas] = useState<any[]>([]);
+    const [clubs, setClubs] = useState<{ id_club: number; nombre: string }[]>([]);
+    const [allSeries, setAllSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
+    const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string }[]>([]);
 
-    useEffect(() => {
-        if (selectedPlayer) {
-            setFormData({
-                primer_nombre: selectedPlayer.primer_nombre,
-                segundo_nombre: selectedPlayer.segundo_nombre || "",
-                primer_apellido: selectedPlayer.primer_apellido,
-                segundo_apellido: selectedPlayer.segundo_apellido || "",
-                fecha_nacimiento: selectedPlayer.fecha_nacimiento || "",
-                genero: selectedPlayer.genero,
-            });
-        }
-    }, [selectedPlayer]);
-
-
-    const openFileDialog = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-            alert('Por favor seleccione un archivo Excel (.xlsx o .xls)');
-            return;
-        }
-
-        // Crear FormData para enviar al backend
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-            const data = await uploadExcel(formData)
-            //alert(data.message);
-        } catch (error) {
-            console.error(error);
-            alert("❌ Error al subir el archivo");
-        }
-
-        // Limpiar input
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-
+    // 🔹 Obtener jugadores
     const fetchJugadores = async () => {
         try {
             const data = await getJugadores<Jugador[]>();
@@ -1238,12 +1505,8 @@ export const PlayerRecordsModule: React.FC = () => {
             console.error("Error al obtener jugadores:", error);
         }
     };
-    useEffect(() => {
-        fetchJugadores();
-    }, []);
-    // Aqui termina la logica de cargar el excel
 
-
+    // 🔹 Obtener lesiones
     const fetchLesiones = async (): Promise<void> => {
         try {
             const data = await getLesiones<any[]>();
@@ -1253,11 +1516,51 @@ export const PlayerRecordsModule: React.FC = () => {
         }
     };
 
-    // Llamas al montar el componente padre
+    // 🔹 Obtener clubes
+    const fetchClubs = async () => {
+        try {
+            const data = await getClubs<any[]>();
+            const mapped = data.map(club => ({
+                id_club: club.id_club,
+                nombre: club.nombre_club
+            }));
+            setClubs(mapped);
+        } catch (error) {
+            console.error("Error al obtener clubes:", error);
+        }
+    };
+
+    // 🔹 Obtener todas las series (sin filtrar)
+    const fetchSeries = async () => {
+        try {
+            const data = await getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>();
+            setAllSeries(data);
+        } catch (error) {
+            console.error("Error al obtener series:", error);
+        }
+    };
+
     useEffect(() => {
+        fetchJugadores();
         fetchLesiones();
+        fetchClubs();
+        fetchSeries();
     }, []);
 
+    // 🔹 Filtrar series según club seleccionado
+    useEffect(() => {
+        if (selectedClub) {
+            const filtered = allSeries
+                .filter(s => s.id_club === Number(selectedClub))
+                .map(s => ({ id_serie: s.id_serie, nombre_serie: s.nombre_serie }));
+            setSeries(filtered);
+        } else {
+            setSeries([]); // Limpiar si no hay club seleccionado
+        }
+        setSelectedSerie(null);
+    }, [selectedClub, allSeries]);
+
+    // 🔹 Filtrado del historial
     const filteredHistory = uploadHistory.filter(item => {
         if (historyFilter === 'ALL') return true;
         if (historyFilter === 'SUCCESS') return item.status === 'success';
@@ -1265,15 +1568,57 @@ export const PlayerRecordsModule: React.FC = () => {
         return true;
     });
 
-    const successCount = uploadHistory.filter(item => item.status === 'success').length;
-    const errorCount = uploadHistory.filter(item => item.status === 'error').length;
+    const totalProcesados = uploadHistory.length;
+    const totalExitosos = uploadHistory.filter(item => item.status === 'success').length;
+    const totalErrores = uploadHistory.filter(item => item.status === 'error').length;
+
+    // 🔹 Buscar fichas (club y serie obligatorios)
+    const buscarFichas = async () => {
+        if (!selectedClub || !selectedSerie) {
+            alert("Seleccione un club y una serie");
+            return;
+        }
+
+        try {
+            // Traemos todas las fichas
+            const data = await getFichasPorFiltro<any[]>();
+
+            // Asociamos cada ficha con su club usando allSeries
+            const fichasConClub = data.map(ficha => {
+                const serie = allSeries.find(s => s.id_serie === ficha.id_serie);
+                return {
+                    ...ficha,
+                    id_club: serie?.id_club // agregamos id_club temporalmente
+                };
+            });
+
+            // Filtramos por club y serie
+            const filtered = fichasConClub.filter(ficha =>
+                ficha.id_club === Number(selectedClub) &&
+                ficha.id_serie === Number(selectedSerie)
+            );
+
+            setFichas(filtered);
+        } catch (error) {
+            console.error("Error al obtener fichas:", error);
+            setFichas([]);
+            alert("No se encontraron fichas con esos filtros");
+        }
+    };
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2>Gestión de Jugadores y Registros Médicos</h2>
-                <div className="flex space-x-2">
-                    <UploadExcel refreshJugadores={fetchJugadores} />
+                <div className="flex space-x-2 items-center">
+                    {/* 🔹 Upload Excel */}
+                    <UploadExcel
+                        refreshJugadores={fetchJugadores}
+                        onUploadComplete={(result) => setUploadHistory(prev => [...prev, ...result])}
+                        openHistory={() => setIsUploadHistoryOpen(true)}
+                    />
+
+                    {/* 🔹 Botón de historial solo si hay registros cargados */}
                     {uploadHistory.length > 0 && (
                         <Button
                             variant="outline"
@@ -1284,20 +1629,13 @@ export const PlayerRecordsModule: React.FC = () => {
                             Historial ({uploadHistory.length})
                         </Button>
                     )}
+
+                    {/* 🔹 Nuevo jugador */}
                     <DialogAddJugador refreshJugadores={fetchJugadores} />
                 </div>
             </div>
 
-            {/* Hidden file input */}
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-            />
-
-            {/* Upload History Modal */}
+            {/* 🔹 Modal de Historial de Cargas */}
             <Dialog open={isUploadHistoryOpen} onOpenChange={setIsUploadHistoryOpen}>
                 <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
                     <DialogHeader>
@@ -1305,14 +1643,14 @@ export const PlayerRecordsModule: React.FC = () => {
                     </DialogHeader>
 
                     <div className="flex-1 overflow-hidden flex flex-col space-y-4">
-                        {/* Summary Cards */}
+                        {/* 🔹 Resumen */}
                         <div className="grid grid-cols-3 gap-4">
                             <Card>
                                 <CardContent className="p-4">
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm text-gray-600">Total Procesados</p>
-                                            <p className="text-2xl font-bold text-[#0000db]">{uploadHistory.length}</p>
+                                            <p className="text-2xl font-bold text-[#0000db]">{totalProcesados}</p>
                                         </div>
                                         <FileText className="w-8 h-8 text-[#0000db]" />
                                     </div>
@@ -1324,7 +1662,7 @@ export const PlayerRecordsModule: React.FC = () => {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm text-gray-600">Exitosos</p>
-                                            <p className="text-2xl font-bold text-green-600">{successCount}</p>
+                                            <p className="text-2xl font-bold text-green-600">{totalExitosos}</p>
                                         </div>
                                         <CheckCircle className="w-8 h-8 text-green-500" />
                                     </div>
@@ -1336,7 +1674,7 @@ export const PlayerRecordsModule: React.FC = () => {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm text-gray-600">Con Errores</p>
-                                            <p className="text-2xl font-bold text-red-600">{errorCount}</p>
+                                            <p className="text-2xl font-bold text-red-600">{totalErrores}</p>
                                         </div>
                                         <AlertCircle className="w-8 h-8 text-red-500" />
                                     </div>
@@ -1344,7 +1682,7 @@ export const PlayerRecordsModule: React.FC = () => {
                             </Card>
                         </div>
 
-                        {/* Filter Controls */}
+                        {/* 🔹 Filtros */}
                         <div className="flex justify-between items-center">
                             <div className="flex items-center space-x-2">
                                 <label className="text-sm font-medium">Filtrar por estado:</label>
@@ -1370,7 +1708,7 @@ export const PlayerRecordsModule: React.FC = () => {
                             </Button>
                         </div>
 
-                        {/* History Table */}
+                        {/* 🔹 Tabla de historial */}
                         <div className="flex-1 overflow-auto border rounded-lg">
                             <Table>
                                 <TableHeader>
@@ -1378,7 +1716,6 @@ export const PlayerRecordsModule: React.FC = () => {
                                         <TableHead>Fecha/Hora</TableHead>
                                         <TableHead>RUT</TableHead>
                                         <TableHead>Nombre</TableHead>
-                                        <TableHead>Email</TableHead>
                                         <TableHead>Estado</TableHead>
                                         <TableHead>Observaciones</TableHead>
                                     </TableRow>
@@ -1387,19 +1724,17 @@ export const PlayerRecordsModule: React.FC = () => {
                                     {filteredHistory.length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                                                {uploadHistory.length === 0 ?
-                                                    "No hay registros en el historial" :
-                                                    "No hay registros que coincidan con el filtro seleccionado"
-                                                }
+                                                {uploadHistory.length === 0
+                                                    ? "No hay registros en el historial"
+                                                    : "No hay registros que coincidan con el filtro seleccionado"}
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         filteredHistory.map((item) => (
                                             <TableRow key={item.id}>
-                                                <TableCell className="text-sm">{item.fecha}</TableCell>
+                                                <TableCell className="text-sm">{item.fecha_creacion}</TableCell>
                                                 <TableCell className="font-medium">{item.rut}</TableCell>
-                                                <TableCell>{item.nombre}</TableCell>
-                                                <TableCell>{item.email || '-'}</TableCell>
+                                                <TableCell>{item.nombreCompleto}</TableCell>
                                                 <TableCell>
                                                     {item.status === 'success' ? (
                                                         <Badge className="bg-green-500 text-white">
@@ -1414,10 +1749,12 @@ export const PlayerRecordsModule: React.FC = () => {
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {item.error ? (
-                                                        <span className="text-red-600 text-sm">{item.error}</span>
+                                                    {item.status === 'error' && item.reason ? (
+                                                        <span className="text-red-600 text-sm">{item.reason}</span>
                                                     ) : (
-                                                        <span className="text-green-600 text-sm">Jugador registrado correctamente</span>
+                                                        <span className="text-green-600 text-sm">
+                                                            Jugador registrado correctamente
+                                                        </span>
                                                     )}
                                                 </TableCell>
                                             </TableRow>
@@ -1439,6 +1776,7 @@ export const PlayerRecordsModule: React.FC = () => {
                     </div>
                 </DialogContent>
             </Dialog>
+
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-4">
@@ -1488,9 +1826,13 @@ export const PlayerRecordsModule: React.FC = () => {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex space-x-1">
-                                                        <DialogFormJugador jugador={player} refreshJugadores={fetchJugadores} />
+                                                        <DialogEditJugador jugador={player} refreshJugadores={fetchJugadores} />
                                                         <DialogViewJugador jugador={player} refreshJugadores={fetchJugadores} />
-                                                        <ButtonDeleteJugador rutJugador={player.rut_jugador} refreshJugadores={fetchJugadores} />
+                                                        <ButtonDeleteJugador
+                                                            rutJugador={player.rut_jugador}
+                                                            primerNombre={player.primer_nombre}
+                                                            primerApellido={player.primer_apellido}
+                                                            refreshJugadores={fetchJugadores} />
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -1578,36 +1920,81 @@ export const PlayerRecordsModule: React.FC = () => {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
+                                {/* 🔹 Filtros */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <Select>
+                                    {/* Selección de Club */}
+                                    <Select value={selectedClub} onValueChange={setSelectedClub}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Seleccionar Club" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="1">FC Barcelona Santiago</SelectItem>
-                                            <SelectItem value="2">Real Madrid Chile</SelectItem>
+                                            {clubs.map(club => (
+                                                <SelectItem key={club.id_club} value={club.id_club.toString()}>
+                                                    {club.nombre}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
-                                    <Select>
+
+                                    {/* Selección de Serie */}
+                                    <Select value={selectedSerie || ''} onValueChange={setSelectedSerie} disabled={!selectedClub}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Seleccionar Serie" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="1">Serie A Masculina</SelectItem>
-                                            <SelectItem value="2">Serie Juvenil</SelectItem>
+                                            {series.map(serie => (
+                                                <SelectItem key={serie.id_serie} value={serie.id_serie.toString()}>
+                                                    {serie.nombre_serie}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
-                                    <Button style={{ backgroundColor: '#0000db' }} className="text-white">
+
+                                    {/* Botón de búsqueda */}
+                                    <Button style={{ backgroundColor: '#0000db' }} className="text-white" onClick={buscarFichas}>
                                         <Search className="w-4 h-4 mr-2" />
                                         Buscar Fichas
                                     </Button>
                                 </div>
 
+                                {/* 🔹 Tabla de fichas */}
+                                {fichas.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                        <p>Seleccione un club y serie para ver las fichas de jugadores</p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-auto border rounded-lg">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>RUT</TableHead>
+                                                    <TableHead>Nombre Completo</TableHead>
+                                                    <TableHead>Club</TableHead>
+                                                    <TableHead>Serie</TableHead>
+                                                    <TableHead>Fecha Creación</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {fichas.map(ficha => (
+                                                    <TableRow key={ficha.id_ficha}>
+                                                        <TableCell>{ficha.rut_jugador}</TableCell>
+                                                        <TableCell>
+                                                            {ficha.primer_nombre} {ficha.segundo_nombre || ''} {ficha.primer_apellido} {ficha.segundo_apellido || ''}
+                                                        </TableCell>
+                                                        <TableCell>{ficha.nombre_club}</TableCell>
+                                                        <TableCell>{ficha.nombre_serie}</TableCell>
+                                                        <TableCell>{new Date(ficha.fecha_creacion).toLocaleDateString('es-CL')}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
-
                 <TabsContent value="history" className="space-y-4">
                     <Card>
                         <CardHeader>

@@ -41,3 +41,11 @@ def delete_usuario(rut_usuario: str, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Usuario not found")
     return {"detail": "Usuario Eliminado correctamente"}
+
+
+@router.get("/{rut_usuario}/active", response_model=bool)
+def is_user_active(rut_usuario: str, db: Session = Depends(get_db)):
+    is_active = services.is_user_active(db, rut_usuario)
+    if not is_active:
+        return True
+    raise HTTPException(status_code=404, detail="User not found or inactive")
