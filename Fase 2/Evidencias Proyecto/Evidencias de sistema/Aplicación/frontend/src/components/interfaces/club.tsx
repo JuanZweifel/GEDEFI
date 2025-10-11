@@ -30,18 +30,19 @@ import {
 } from '../../types.tsx';
 
 // Enhanced User & Roles Module (USUARIO, ROL, HISTORIAL_USUARIO)
-
 export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
     const [series, setSeries] = useState<SerieType[]>([])
     const [directiva, SetDirectiva] = useState<UsuarioType[]>([])
     const [jugadores, setJugadores] = useState<JugadorType[]>([])
+    const [activeTab, setActiveTab] = useState("directiva")
 
 
     useEffect(() => {
         if (isDetailsOpen && club) {
             const fetchSeries = async () => {
                 const serieData = await getSeriesClub<serieResponseType>(club.id_club)
+                console.log(serieData)
                 setSeries(serieData.series)
             }
             const fetchDirectiva = async () => {
@@ -61,6 +62,7 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
     return (
         <DialogHandle
             title={`Detalles del club: ${club.nombre_club}`}
+            size='w-3/4'
             trigger={
                 <Button variant="outline" size="sm" className="flex-1">
                     <Eye className="w-4 h-4 mr-1" />
@@ -73,126 +75,124 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
         >
             {() => (
                 <div className="space-y-6">
-                    {/* Información del club */}
-                    <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <Label className="block mb-2">Nombre:</Label>
-                            <Input value={club.nombre_club} disabled />
+                            <Label className="block mb-2">RUT</Label>
+                            <Input value={club.rut_club} disabled />
                         </div>
                         <div>
-                            <Label className="block mb-2">Fecha Fundación:</Label>
+                            <Label className="block mb-2">Fecha fundacion</Label>
                             <Input value={club.fecha_fundacion} disabled />
                         </div>
                         <div>
-                            <Label className="block mb-2">Email:</Label>
+                            <Label className="block mb-2">Nombre</Label>
+                            <Input value={club.nombre_club} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Dirección</Label>
+                            <Input value={club.nombre_club} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Telefono</Label>
+                            <Input value={club.fono_club} disabled />
+                        </div>
+                        <div>
+                            <Label className="block mb-2">Correo Electronico</Label>
                             <Input value={club.email_club} disabled />
                         </div>
                         <div>
-                            <Label className="block mb-2">Teléfono:</Label>
-                            <Input value={club.fono_club} disabled />
-                        </div>
-                        <div className="col-span-2">
-                            <Label className="block mb-2">Dirección:</Label>
-                            <Input value={club.direccion_club} disabled />
-                        </div>
-                        <div>
-                            <Label className="block mb-2">Activo:</Label>
-                            <Input value={club.club_activo ? "Sí" : "No"} disabled />
+                            <Label className="block mb-2">Color primario</Label>
+                            <Input
+                                type='color'
+                                value={club.color_primario}
+                                disabled
+                            />
                         </div>
                         <div>
-                            <Label className="block mb-2">Creado:</Label>
-                            <Input value={club.fecha_creacion} disabled />
+                            <Label className="block mb-2">Color secundario</Label>
+                            <Input
+                                type='color'
+                                value={club.color_secundario}
+                                disabled
+                            />
                         </div>
                         <div>
-                            <Label className="block mb-2">Modificado:</Label>
-                            <Input value={club.fecha_modificacion} disabled />
+                            <Label className="block mb-2">Color respaldo</Label>
+                            <Input
+                                type='color'
+                                value={club.color_respaldo}
+                                disabled
+                            />
                         </div>
-                    </section>
+                        <div>
+                            <Label className="block mb-0">Estado</Label>
+                            <Badge className={club.club_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                                {club.club_activo ? 'Activo' : 'Inactivo'}
+                            </Badge>
+                        </div>
+                    </div>
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="directiva">Directiva</TabsTrigger>
+                            <TabsTrigger value="series">Series</TabsTrigger>
+                            <TabsTrigger value="jugadores">Jugadores</TabsTrigger>
+                        </TabsList>
 
-                    {/* Tabla directiva */}
-                    <section>
-                        <h3 className="font-semibold mb-2">Directiva</h3>
-                        <div className="max-h-40 overflow-y-auto border rounded">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>RUT</TableHead>
-                                        <TableHead>Nombre</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Activo</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {Array.isArray(directiva) && directiva.map((d) => (
-                                        <TableRow key={d.rut_usuario}>
-                                            <TableCell>{d.rut_usuario}</TableCell>
-                                            <TableCell>{`${d.nombre_usuario} ${d.apellido_usuario}`}</TableCell>
-                                            <TableCell>{d.email_usuario}</TableCell>
-                                            <TableCell>{d.usuario_activo ? "Sí" : "No"}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </section>
+                        <TabsContent value="directiva" className="space-y-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Historial de Clubes y Series</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead>Acción</TableHead>
+                                                <TableHead>Club</TableHead>
+                                                <TableHead>Detalle</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                    {/* Tabla series */}
-                    <section>
-                        <h3 className="font-semibold mb-2">Series</h3>
-                        <div className="max-h-40 overflow-y-auto border rounded">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>ID</TableHead>
-                                        <TableHead>Nombre</TableHead>
-                                        <TableHead>Activo</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {Array.isArray(series) && series.map((s) => (
-                                        <TableRow key={s.id_serie}>
-                                            <TableCell>{s.id_serie}</TableCell>
-                                            <TableCell>{s.nombre_serie}</TableCell>
-                                            <TableCell>{s.serie_activa ? "Sí" : "No"}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </section>
-
-                    {/* Tabla jugadores */}
-                    <section>
-                        <h3 className="font-semibold mb-2">Jugadores</h3>
-                        <div className="max-h-40 overflow-y-auto border rounded">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>RUT</TableHead>
-                                        <TableHead>Nombre</TableHead>
-                                        <TableHead>Apellido</TableHead>
-                                        <TableHead>Fono</TableHead>
-                                        <TableHead>Activo</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {Array.isArray(jugadores) && jugadores.map((j) => (
-                                        <TableRow key={j.rut_jugador}>
-                                            <TableCell>{j.rut_jugador}</TableCell>
-                                            <TableCell>{`${j.primer_nombre} ${j.segundo_nombre ?? ""}`}</TableCell>
-                                            <TableCell>{`${j.primer_apellido} ${j.segundo_apellido ?? ""}`}</TableCell>
-                                            <TableCell>{j.fono_jugador}</TableCell>
-                                            <TableCell>{j.jugador_activo ? "Sí" : "No"}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </section>
+                        <TabsContent value="series" className="space-y-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle >Series Registradas</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Nombre Serie</TableHead>
+                                                <TableHead>Jugadores</TableHead>
+                                                <TableHead>Fecha Inicio</TableHead>
+                                                <TableHead>Estado</TableHead>
+                                                <TableHead>Acciones</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {series.map((serie) => (
+                                                <TableRow >
+                                                    <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
+                                                    <TableCell className="font-medium">{serie.cantidad_jugadores}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
                 </div>
             )}
         </DialogHandle>
-    );
+    )
 }
 
 // Enhanced Clubs & Series Module (CLUB, SERIE, DETALLE_CLUB_JUGADOR, FICHA_JUGADOR)
@@ -240,6 +240,7 @@ export const ClubModule: React.FC = () => {
     }
 
     const filteredClubs = (() => {
+        console.log(clubList.length)
         // 1️⃣ Primero filtramos por estado (según el select)
         let baseList = clubList;
 
@@ -307,8 +308,8 @@ export const ClubModule: React.FC = () => {
                         <DialogHandle<ClubType>
                             title="Crear nuevo club"
                             trigger={
-                                <Button style={{ backgroundColor: "#0000db" }} className="text-white" disabled>
-                                    <Plus className="w-4 h-4 mr-2" /> Nuevo Club
+                                <Button style={{ backgroundColor: "#0000db" }} size="sm" className="text-white flex-1" disabled>
+                                    <Plus className="w-2 h-2 mr-2" /> Nuevo Club
                                 </Button>
                             }
                         >
@@ -325,8 +326,8 @@ export const ClubModule: React.FC = () => {
                         <DialogHandle<ClubType>
                             title="Crear nuevo club"
                             trigger={
-                                <Button style={{ backgroundColor: "#0000db" }} className="text-white">
-                                    <Plus className="w-4 h-4 mr-2" /> Nuevo Club
+                                <Button style={{ backgroundColor: "#0000db" }} size="sm" className="text-white flex-1">
+                                    <Plus className="w-2 h-2 mr-2" /> Nuevo Club
                                 </Button>
                             }
                         >
@@ -413,11 +414,11 @@ export const ClubModule: React.FC = () => {
                                                     <div className="grid grid-cols-2 gap-4 text-sm">
                                                         <div>
                                                             <span className="font-medium">Series:</span>
-                                                            <p>{club.series}</p>
+                                                            <p>{club.cantidad_series}</p>
                                                         </div>
                                                         <div>
                                                             <span className="font-medium">Jugadores:</span>
-                                                            <p>{club.jugadores}</p>
+                                                            <p>{club.cantidad_jugadores}</p>
                                                         </div>
                                                     </div>
                                                     <div className="text-sm">
@@ -484,7 +485,7 @@ export const ClubModule: React.FC = () => {
                                     <p>No hay clubes registrados.</p>
                                 </div>
                             }
-                            {filteredClubs.length === 0 && clubList.length >= 0 &&
+                            {filteredClubs.length === 0 && clubList.length > 0 &&
                                 <div className="text-center py-8 text-gray-500">
                                     <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
                                     <p>No se encontraron clubs que coincidan con la busqueda.</p>

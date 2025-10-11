@@ -21,11 +21,17 @@ class SerieCreate(SerieBase):
 class SerieUpdate(SerieBase):
     nombre_serie: Optional[str] = None
 
-
 class SerieRead(SerieBase):
     id_serie: int
     serie_activa: bool
-    id_club: int
+    fecha_creacion: datetime
+    fecha_modificacion: datetime
+    class Config:
+        from_attributes = True
+
+class SerieWithDetails(SerieBase):
+    id_serie: int
+    serie_activa: bool
     nombre_club: str
     jugadores: List[JugadorRead] = Field(default_factory=list)
     cantidad_jugadores: int

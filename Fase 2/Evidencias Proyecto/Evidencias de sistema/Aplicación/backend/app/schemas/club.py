@@ -113,6 +113,8 @@ class ClubList(BaseModel):
 
 class ClubWithDetails(ClubRead):
     directiva: List[UsuarioRead] = Field(default_factory=list)
-    series: int
-    jugadores: int
+    series: list[SerieRead]
+    jugadores: list[JugadorRead]
+    cantidad_series: int
+    cantidad_jugadores: int
 

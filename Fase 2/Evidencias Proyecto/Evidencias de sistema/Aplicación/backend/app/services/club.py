@@ -137,7 +137,7 @@ def get_club_with_details(db: Session) -> list[Club] | None:
         club_with_details = []
 
         for club in db_clubs:
-            directiva = (
+            db_directiva = (
                 db.query(Usuario)
                 .join(
                     DetalleUsuarioClub,
@@ -147,29 +147,44 @@ def get_club_with_details(db: Session) -> list[Club] | None:
                 .all()
             )
 
-            series = db.query(Serie).filter(Serie.id_club == club.id_club).count()
+            db_series = (
+                db.query(Serie).filter(Serie.id_club == club.id_club).all()
+            )
+            
+            db_jugadores = (
+                db.query(Jugador).join(DetalleClubJugador).filter(DetalleClubJugador.id_club == club.id_club).all()
+            )
+            cantidad_series = db.query(Serie).filter(Serie.id_club == club.id_club).count()
 
-            jugadores = (
+            cantidad_jugadores = (
                 db.query(func.count(distinct(Jugador.rut_jugador)))
                 .join(
                     DetalleClubJugador,
                     Jugador.rut_jugador == DetalleClubJugador.rut_jugador,
                 )
-                .filter(DetalleClubJugador.id_club == club.id_club)
-                .scalar()
+                .filter(DetalleClubJugador.id_club == club.id_club).count()
             )
 
             if club.logo_club:
                 club.logo_club = club.logo_club.replace("../images", "http://localhost:8000/images")
-
+            print(db_directiva)
+            print(db_jugadores)
             club_details = ClubWithDetails(
                 **club.__dict__,
                 directiva=[
                     UsuarioRead.model_validate(u, from_attributes=True)
-                    for u in directiva
+                    for u in db_directiva
                 ],
-                series=series,
-                jugadores=jugadores,
+                series=[
+                    SerieRead.model_validate(s, from_attributes=True)
+                    for s in db_series
+                ],
+                jugadores=[
+                    JugadorRead.model_validate(j, from_attributes=True)
+                    for j in db_jugadores
+                ],
+                cantidad_series=cantidad_series,
+                cantidad_jugadores=cantidad_jugadores,
             )
             club_with_details.append(club_details)
         return club_with_details
