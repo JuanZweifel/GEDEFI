@@ -31,19 +31,18 @@ from app.routes import (
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
-#Base.metadata.drop_all(bind=engine)
-#Base.metadata.create_all(bind=engine)
+# Base.metadata.drop_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="API GEDEFI", version="1.0")
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     print("Error de validación:", exc.errors())
     print("Body recibido:", await request.body())
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()}
-    )
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
 
 app.include_router(permiso.router)
 app.include_router(permiso_rol.router)
@@ -68,7 +67,9 @@ app.include_router(serie.router)
 app.include_router(auth.router)
 app.include_router(limpieza_excel_jugadores.router)
 
-app.mount("/images", StaticFiles(directory="../images"), name="images") # Se debe modificar, esto enruta las imagenes del backend como rutas para el frontend
+app.mount(
+    "/images", StaticFiles(directory="../images"), name="images"
+)  # Se debe modificar, esto enruta las imagenes del backend como rutas para el frontend
 
 # Configurar CORS para permitir el frontend
 origins = [

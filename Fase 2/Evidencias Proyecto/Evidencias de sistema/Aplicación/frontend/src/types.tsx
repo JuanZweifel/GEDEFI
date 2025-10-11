@@ -32,27 +32,33 @@ export type SerieType = {
 }
 
 export type UsuarioType = {
-    rut_usuario: string;         
+    rut_usuario: string;
     email_usuario: string;
     pass_usuario?: string;
     nombre_usuario: string;
     apellido_usuario: string;
-    fecha_nacimiento: string;    
+    fecha_nacimiento: string;
     huella_pulgar?: string | null;
     huella_indice?: string | null;
     usuario_activo?: boolean;
     fecha_creacion?: string;
     fecha_modificacion?: string;
+    id_rol: number;
+};
+
+export type UsuarioFormType = UsuarioType & {
+    admin?: boolean;
+    id_club?: number;
 };
 
 export type JugadorType = {
-    rut_jugador: string;              
+    rut_jugador: string;
     primer_nombre: string;
     segundo_nombre?: string | null;
     primer_apellido: string;
     segundo_apellido?: string | null;
-    genero: boolean;                  
-    fecha_nacimiento: string;        
+    genero: boolean;
+    fecha_nacimiento: string;
     enfermedades_cronicas?: string | null;
     fono_jugador?: string | null;
     jugador_activo?: boolean;
@@ -61,7 +67,7 @@ export type JugadorType = {
 };
 
 export type ClubDetailsType = {
-    club:ClubType;
+    club: ClubType;
 }
 
 export type serieResponseType = {
@@ -73,3 +79,10 @@ export type DirectivaResponseType = {
 export type JugadorResponseType = {
     jugadores: JugadorType[]
 }
+
+export type RolType = {
+    id_rol?: number;
+    nombre_rol: string;
+    desc_rol?: string;
+    rol_activo: boolean;
+};
