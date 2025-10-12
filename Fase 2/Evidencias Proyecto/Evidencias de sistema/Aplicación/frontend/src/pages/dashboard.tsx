@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '../components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -15,7 +16,7 @@ import { UserRoleModule } from './user-role.tsx'
 import { ClubModule } from './club.tsx'
 import { MatchesTrainingModule } from '../components/matches-training-module';
 import { EnhancedFieldsModule } from '../components/enhanced-fields-module';
-//import { useAuth } from '../contexts/authContext.tsx';
+import { useAuth } from '../contexts/authContext.tsx';
 import { Login } from './login.tsx'
 import { ResetPassword } from './reset-password'
 import {
@@ -235,7 +236,12 @@ export default function DashboardComponent() {
     const [activeModule, setActiveModule] = useState('dashboard');
     const [resetToken, setResetToken] = useState<string | null>(null);
 
-    //const { token, rol, nombre, club, logout } = useAuth();
+    const { token, rol, nombre, club, logout } = useAuth();
+
+    // Si no tiene token de login, lo redirecciona a la landing page
+    if (!token) {
+        return <Navigate to="/" replace />;
+    }
 
     useEffect(() => {
         // Check URL for reset token
@@ -366,7 +372,7 @@ export default function DashboardComponent() {
                                 </div>
                             </div>
 
-                            {/*<div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-4">
                                 <Badge variant="outline" style={{ borderColor: '#0000db', color: '#0000db' }}>
                                     {rol ? rol : 'N/A'}
                                 </Badge>
@@ -377,10 +383,10 @@ export default function DashboardComponent() {
                                 <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
                                     {mockUser.name.split(' ').map(n => n[0]).join('')}
                                 </div>
-                                <Button variant="outline" size="sm" onClick={handleLogout}>
+                                <Button variant="outline" size="sm" onClick={logout}>
                                     Logout
                                 </Button>
-                            </div>*/}
+                            </div>
                         </div>
                     </header>
 

@@ -49,6 +49,7 @@ def update_rol(db: Session, id_rol: int, rol_update: RolUpdate) -> Rol | None:
                 {"usuario_activo": False}
             )
         # TODO: Revisar esta logica con el equipo, aqui se pierde a los usuarios que anteriormente estaban desactivados
+        # Revisar cuando se vea modulo historial
         else:
             db.query(Usuario).filter(Usuario.id_rol == id_rol).update(
                 {"usuario_activo": True}

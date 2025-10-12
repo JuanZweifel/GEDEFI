@@ -4,8 +4,8 @@ from fastapi import HTTPException, status
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from app.models.usuario import Usuario
+from sqlalchemy.orm import Session, joinedload
+from app.models import Usuario, DetalleUsuarioClub
 from app.models.recuperacion_contrasena import RecuperacionContrasena
 from app.security import verify_password, create_access_token, get_password_hash
 from app.utils.decorators import handle_db_exceptions
@@ -22,7 +22,17 @@ FROM_EMAIL = "no-reply@gedefi.cl"
 
 @handle_db_exceptions
 def authenticate_user(db: Session, email: str, password: str) -> Usuario | None:
-    user: Usuario = db.query(Usuario).filter(Usuario.email_usuario == email).first()
+    user: Usuario = (
+        db.query(Usuario)
+        .filter(Usuario.email_usuario == email)
+        .options(
+            joinedload(Usuario.detalles_usuario_club).joinedload(
+                DetalleUsuarioClub.club
+            )
+        )
+        .first()
+    )
+
     if not user or not verify_password(password, user.pass_usuario):
         return None
 
@@ -41,10 +51,18 @@ def login_for_access_token(db: Session, email: str, password: str) -> dict | Non
     if not user:
         return None
 
+    active_club = None
+    for detalle in user.detalles_usuario_club:
+        if not detalle.fecha_fin or detalle.fecha_fin > datetime.now():
+            active_club = detalle.club
+            break
+
     token_data = {
         "rut": user.rut_usuario,
         "email": user.email_usuario,
         "rol": user.rol.nombre_rol,
+        "club_id": active_club.id_club if active_club else None,
+        "club_nombre": active_club.nombre_club if active_club else None,
         "nombre": f"{user.nombre_usuario} {user.apellido_usuario}",
     }
 

@@ -5,9 +5,6 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Calendar, Trophy, Users, MapPin, Clock, LogIn } from 'lucide-react';
 
-/*interface LandingPageProps {
-  onLogin: () => void;
-}*/
 
 export const LandingPage = () => {
   return (
@@ -23,7 +20,7 @@ export const LandingPage = () => {
                 <p className="text-blue-100">Portal Oficial</p>
               </div>
             </div>
-            <NavLink to="/dashboard">
+            <NavLink to="/login">
               <Button className="bg-[#FF8C00] hover:bg-[#FF7700] text-white flex items-center">
                 <LogIn className="w-4 h-4 mr-2" />
                 Iniciar Sesión

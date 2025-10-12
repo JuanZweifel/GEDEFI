@@ -6,42 +6,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { DialogHandle } from "../components/dialog-component.tsx";
 import { Input } from "../components/ui/input";
-import { Plus, Edit, Eye, Shield, Trash2 } from "lucide-react";
+import { Plus, Edit, Eye, Shield, Trash2, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { getUsers, createUser, updateUser, deleteUser } from "../services/usuarioService.ts";
 import { getRoles, createRole, updateRole, deleteRole } from "../services/rolService.ts";
 import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
 import { validarRut } from "../utils/validacion_rut.tsx";
-
-type User = {
-    rut_usuario: string;
-    email_usuario: string;
-    nombre_usuario: string;
-    apellido_usuario: string;
-    fecha_nacimiento: string;
-    usuario_activo: boolean;
-    id_rol: number;
-    admin: boolean;
-    id_club?: number;
-    pass_usuario: string;
-};
+import { type ClubType, type RolType, type UsuarioType, type UsuarioFormType } from "../types.tsx";
+import { getClubs } from "../services/clubServices.ts";
 
 type UserFormProps = {
-    user?: User;
+    user?: UsuarioType;
     isEdit: boolean;
-    roles: Role[];
+    roles: RolType[];
+    clubs: ClubType[];
     refreshRoles: () => Promise<void>;
     refreshUsers: () => Promise<void>;
     onSuccess: () => void;
 };
 
-export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSuccess }: UserFormProps) {
-    const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUsers, onSuccess }: UserFormProps) {
+    const [availableRoles, setAvailableRoles] = useState<RolType[]>([]);
     const [rutError, setRutError] = useState("");
 
     const [open, setOpen] = useState(false)
-    const [form, setForm] = useState<User>(
+    const [form, setForm] = useState<UsuarioFormType>(
         user || {
             rut_usuario: "",
             email_usuario: "",
@@ -123,7 +113,7 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                         value={form.rut_usuario}
                         onChange={(val) => {
                             setForm({ ...form, rut_usuario: val });
-                            (form.rut_usuario)
+                            console.log(form.rut_usuario)
                             if (val) setRutError("");
                         }}
                         onBlur={() => {
@@ -209,16 +199,21 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
                     </select>
                 </div>
 
-                {!isEdit && (
-                    <InputField
-                        label="ID Club"
-                        type="number"
-                        value={form.id_club ?? ""}
-                        onChange={(val) => setForm({ ...form, id_club: Number(val) })}
-                        min={1}
-                        title="Ingrese un ID de club válido (opcional)"
-                    />
-                )}
+                <div>
+                    <label className="block text-sm font-medium mb-1">Club</label>
+                    <select
+                        value={form.id_club || ""}
+                        onChange={(e) => setForm({ ...form, id_club: Number(e.target.value) })}
+                        className="w-full border rounded p-2"
+                    >
+                        <option value="">Seleccione un club</option>
+                        {clubs.map((club) => (
+                            <option key={club.id_club} value={club.id_club}>
+                                {club.nombre_club}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             <div className="flex space-x-4">
@@ -267,15 +262,8 @@ export function UserForm({ user, isEdit, roles, refreshRoles, refreshUsers, onSu
     );
 }
 
-type Role = {
-    id_rol?: number;
-    nombre_rol: string;
-    desc_rol?: string;
-    rol_activo: boolean;
-};
-
 type RoleFormProps = {
-    role?: Role;
+    role?: RolType;
     isEdit: boolean;
     refreshRoles: () => Promise<void>;
     onSuccess: () => void;
@@ -283,7 +271,7 @@ type RoleFormProps = {
 
 export function RoleForm({ role, isEdit, refreshRoles, onSuccess }: RoleFormProps) {
     const [open, setOpen] = useState(false)
-    const [form, setForm] = useState<Role>(
+    const [form, setForm] = useState<RolType>(
         role || {
             nombre_rol: "",
             desc_rol: "",
@@ -400,19 +388,24 @@ function InputField({ label, value, onChange, type = "text", ...rest }: any) {
 
 export const UserRoleModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState("users");
-    const [users, setUsers] = useState<User[]>([]);
-    const [roles, setRoles] = useState<Role[]>([]);
+    const [users, setUsers] = useState<UsuarioType[]>([]);
+    const [roles, setRoles] = useState<RolType[]>([]);
+    const [clubs, setClubs] = useState<ClubType[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [openSelected, setOpenSelected] = useState<number | null>(null)
+    const [isFetchingUsers, setIsFetchingUsers] = useState(false)
+    const [isFetchingRols, setIsFetchingRols] = useState(false)
+    const [isFetchingClubs, setIsFetchingClubs] = useState(false)
     const [userFilter, setUserFilter] = useState("");
-    const [userStatusFilter, setUserStatusFilter] = useState<"todos" | "activo" | "inactivo">("todos");
     const [rolFilter, setRolFilter] = useState("");
-    const [rolStatusFilter, setRolStatusFilter] = useState<"todos" | "activo" | "inactivo">("todos");
+    const [rolStatusFilter, setRolStatusFilter] = useState<string>("todos");
+    const [userClubFilter, setUserClubFilter] = useState<number | undefined>(undefined);
+    const [userStatusFilter, setUserStatusFilter] = useState<string | undefined>(undefined);
 
     const handleUserDelete = async (rut_usuario: string) => {
         try {
             const response = await deleteUser(rut_usuario);
-            
+            console.log(response)
             toast.success(response.detail)
             setOpenSelected(null)
             fetchUsers();
@@ -422,9 +415,10 @@ export const UserRoleModule: React.FC = () => {
 
     }
 
-    const handleRoleDelete = async (rut_usuario: string) => {
+    const handleRoleDelete = async (id_role: number) => {
         try {
-            const response = await deleteRole(rut_usuario);
+            const response = await deleteRole(id_role);
+            console.log(response)
             toast.success(response.detail)
             setOpenSelected(null)
             fetchRoles();
@@ -435,24 +429,70 @@ export const UserRoleModule: React.FC = () => {
     }
 
     const fetchUsers = async () => {
+        let data: UsuarioType[] = [];
         try {
-            const data = await getUsers();
+            setIsFetchingUsers(true)
+            data = await getUsers();
             setUsers(data);
+            if (data.length === 0) {
+                toast.info("No hay usuarios registrados en la base de datos.")
+            }
         } catch (err: any) {
             setError(err.message || "Error fetching users");
+        } finally {
+            if (data.length === 0) {
+                setUsers([]);
+            }
+            setIsFetchingUsers(false)
         }
     };
 
     const fetchRoles = async () => {
+        let data: RolType[] = []
         try {
-            const data = await getRoles();
+            setIsFetchingRols(true)
+            data = await getRoles();
             setRoles(data);
+            if (data.length === 0) {
+                toast.info("No hay roles registrados en la base de datos.")
+            }
         } catch (err: any) {
-            setError(err.message || "Error fetching roles");
+            toast.warning(String(error))
+        } finally {
+            if (data.length === 0) {
+                setRoles([]);
+            }
+            setIsFetchingRols(false)
         }
     };
 
-    useEffect(() => { fetchUsers(); fetchRoles() }, []);
+    const fetchClubs = async () => {
+        let data: ClubType[] = []
+        try {
+            setIsFetchingClubs(true)
+            data = await getClubs()
+            setClubs(data)
+            if (data.length === 0) {
+                toast.info("No hay clubes registrados en la base de datos.")
+            }
+        } catch (err: any) {
+            toast.warning(String(error))
+        } finally {
+            if (data.length === 0) {
+                setClubs([]);
+            }
+            setIsFetchingClubs(false)
+        }
+    }
+
+    useEffect(() => {
+        const fetchAll = async () => {
+            await fetchUsers();
+            await fetchRoles();
+            await fetchClubs();
+        };
+        fetchAll();
+    }, []);
     useEffect(() => { if (activeTab === "roles") fetchRoles(); if (activeTab === "users") fetchUsers() }, [activeTab]);
 
     const filteredUsers = users.filter((u) => {
@@ -462,11 +502,16 @@ export const UserRoleModule: React.FC = () => {
             u.apellido_usuario.toLowerCase().includes(query) ||
             u.email_usuario.toLowerCase().includes(query) ||
             u.rut_usuario.toLowerCase().includes(query);
+
         const matchesStatus =
-            userStatusFilter === "todos" ||
+            !userStatusFilter || userStatusFilter === "todos" ||
             (userStatusFilter === "activo" && u.usuario_activo) ||
             (userStatusFilter === "inactivo" && !u.usuario_activo);
-        return matchesQuery && matchesStatus;
+
+        const matchesClub =
+            !userClubFilter || userClubFilter === undefined || u.id_club === userClubFilter;
+
+        return matchesQuery && matchesStatus && matchesClub;
     });
 
 
@@ -475,9 +520,9 @@ export const UserRoleModule: React.FC = () => {
         const matchesQuery =
             r.nombre_rol.toLowerCase().includes(query)
         const matchesStatus =
-            userStatusFilter === "todos" ||
-            (userStatusFilter === "activo" && r.rol_activo) ||
-            (userStatusFilter === "inactivo" && !r.rol_activo);
+            rolStatusFilter === "todos" ||
+            (rolStatusFilter === "activo" && r.rol_activo) ||
+            (rolStatusFilter === "inactivo" && !r.rol_activo);
         return matchesQuery && matchesStatus;
     });
 
@@ -485,25 +530,56 @@ export const UserRoleModule: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2>Gestión de Usuarios y Roles</h2>
-                {(activeTab === "users" || activeTab === "roles") && (
-                    <DialogHandle<any>
-                        title={activeTab === "users" ? "Registrar Nuevo Usuario" : "Registrar Nuevo Rol"}
-                        trigger={
-                            <Button style={{ backgroundColor: "#0000db" }} className="text-white">
-                                <Plus className="w-4 h-4 mr-2" />
-                                {activeTab === "users" ? "Nuevo Usuario" : "Nuevo Rol"}
-                            </Button>
-                        }
-                    >
-                        {(close) =>
-                            activeTab === "users" ? (
-                                <UserForm isEdit={false} refreshUsers={fetchUsers} onSuccess={close} roles={roles} refreshRoles={fetchRoles} />
-                            ) : (
-                                <RoleForm isEdit={false} refreshRoles={fetchRoles} onSuccess={close} />
-                            )
-                        }
-                    </DialogHandle>
-                )}
+                <div className="flex space-x-2">
+                    {(activeTab === "users" || activeTab === "roles") && (
+                        <>
+                            {activeTab === "users" && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={fetchUsers}
+                                    disabled={isFetchingUsers}
+                                    className="flex-1"
+                                >
+                                    <RefreshCcw className="w-4 h-4 mr-1" />
+                                    {isFetchingUsers ? "Recargando..." : "Recargar"}
+                                </Button>
+                            )}
+                            {activeTab === "roles" && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={fetchRoles}
+                                    disabled={isFetchingRols}
+                                    className="flex-1"
+                                >
+                                    <RefreshCcw className="w-4 h-4 mr-1" />
+                                    {isFetchingRols ? "Recargando..." : "Recargar"}
+                                </Button>
+                            )}
+                        </>
+                    )}
+
+                    {(activeTab === "users" || activeTab === "roles") && (
+                        <DialogHandle<any>
+                            title={activeTab === "users" ? "Registrar Nuevo Usuario" : "Registrar Nuevo Rol"}
+                            trigger={
+                                <Button style={{ backgroundColor: "#0000db" }} className="text-white">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    {activeTab === "users" ? "Nuevo Usuario" : "Nuevo Rol"}
+                                </Button>
+                            }
+                        >
+                            {(close) =>
+                                activeTab === "users" ? (
+                                    <UserForm isEdit={false} refreshUsers={fetchUsers} onSuccess={close} roles={roles} refreshRoles={fetchRoles} clubs={clubs} />
+                                ) : (
+                                    <RoleForm isEdit={false} refreshRoles={fetchRoles} onSuccess={close} />
+                                )
+                            }
+                        </DialogHandle>
+                    )}
+                </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -518,23 +594,55 @@ export const UserRoleModule: React.FC = () => {
                     <Card>
                         <CardHeader><CardTitle>Usuarios del Sistema</CardTitle></CardHeader>
                         <CardContent>
-                            <div className="flex justify-between mb-4 space-x-2">
+                            <div className="flex justify-between mb-4">
+                                {/* Search input on the left */}
                                 <Input
                                     placeholder="Buscar por nombre, apellido, email o RUT..."
                                     value={userFilter}
                                     onChange={(e) => setUserFilter(e.target.value)}
                                     className="w-1/3"
                                 />
-                                <Select value={userStatusFilter} onValueChange={(value: string) => setUserStatusFilter(value)}>
-                                    <SelectTrigger className="w-48">
-                                        <SelectValue placeholder="Seleccionar estado" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="todos">Todos</SelectItem>
-                                        <SelectItem value="activo">Activo</SelectItem>
-                                        <SelectItem value="inactivo">Inactivo</SelectItem>
-                                    </SelectContent>
-                                </Select>
+
+                                {/* Filters on the right */}
+                                <div className="flex space-x-4">
+                                    <div className="flex flex-col">
+                                        <Select
+                                            value={userClubFilter !== undefined ? userClubFilter.toString() : ""}
+                                            onValueChange={(value: string) =>
+                                                setUserClubFilter(value === "all" ? undefined : Number(value))
+                                            }
+                                        >
+                                            <SelectTrigger className="w-48">
+                                                <SelectValue placeholder="Seleccionar club" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {/* Option to show all clubs */}
+                                                <SelectItem value="all">Todos</SelectItem>
+                                                {clubs.map((club) => (
+                                                    <SelectItem key={club.id_club} value={club.id_club.toString()}>
+                                                        {club.nombre_club}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                        <Select
+                                            value={userStatusFilter ?? ""}
+                                            onValueChange={(value: string) => setUserStatusFilter(value || undefined)}
+                                        >
+                                            <SelectTrigger className="w-48">
+                                                <SelectValue placeholder="Seleccionar estado" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="todos">Todos</SelectItem>
+                                                <SelectItem value="activo">Activo</SelectItem>
+                                                <SelectItem value="inactivo">Inactivo</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
                             </div>
                             {error ? <p className="text-red-500">{error}</p> : (
                                 <Table>
@@ -544,6 +652,7 @@ export const UserRoleModule: React.FC = () => {
                                             <TableHead>Nombre</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Rol</TableHead>
+                                            <TableHead>Club</TableHead>
                                             <TableHead>Estado</TableHead>
                                             <TableHead>Acciones</TableHead>
                                         </TableRow>
@@ -560,19 +669,23 @@ export const UserRoleModule: React.FC = () => {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
+                                                    {clubs.find(c => c.id_club === user.id_club)?.nombre_club || "N/A"}
+                                                </TableCell>
+
+                                                <TableCell>
                                                     <Badge className={user.usuario_activo ? "bg-green-500" : "bg-red-500"}>
                                                         {user.usuario_activo ? "Activo" : "Inactivo"}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex space-x-2">
-                                                        <DialogHandle<User>
+                                                        <DialogHandle<UsuarioType>
                                                             title={`Editar usuario ${user.nombre_usuario}`}
                                                             trigger={<Button variant="outline" size="sm"><Edit className="w-4 h-4" /></Button>}
                                                             initialData={user}
                                                         >
                                                             {(close, initialData) => (
-                                                                <UserForm isEdit={true} user={initialData} refreshUsers={fetchUsers} onSuccess={close} roles={roles} refreshRoles={fetchRoles} />
+                                                                <UserForm isEdit={true} user={initialData} refreshUsers={fetchUsers} onSuccess={close} roles={roles} refreshRoles={fetchRoles} clubs={clubs} />
                                                             )}
                                                         </DialogHandle>
                                                         <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
@@ -639,7 +752,7 @@ export const UserRoleModule: React.FC = () => {
                                         <CardContent>
                                             <p className="text-sm text-gray-600 mb-4">{role.desc_rol}</p>
                                             <div className="flex flex-wrap gap-2">
-                                                <DialogHandle<Role>
+                                                <DialogHandle<RolType>
                                                     title={`Editar rol ${role.nombre_rol}`}
                                                     trigger={
                                                         <Button variant="outline" size="sm">

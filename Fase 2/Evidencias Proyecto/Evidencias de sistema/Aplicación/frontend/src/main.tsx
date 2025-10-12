@@ -6,7 +6,9 @@ import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
+    <AuthProvider>
       <App />
+    </AuthProvider>
   </BrowserRouter>
 );
 
