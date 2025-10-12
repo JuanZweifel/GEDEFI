@@ -1,5 +1,5 @@
 lista_series = [
-    "Segunda infatil",
+    "Segunda infantil",
     "Primera infantil",
     "Juveniles",
     "Super seniors",

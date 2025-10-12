@@ -23,6 +23,7 @@ import { getFichasPorFiltro } from '../services/fichaJugadorService'
 import { getSeries } from '../services/serieService';
 import { AlertDialogHandle } from '../components/alert-dialog-component';
 import { toast } from "sonner";
+import { useAuth } from '../contexts/authContext';
 
 
 type DialogFormJugadorProps = {
@@ -1371,6 +1372,7 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
     onUploadComplete,
     openHistory
 }) => {
+    const { token } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
@@ -1400,19 +1402,24 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
     };
 
     const handleConfirmUpload = async () => {
+        // Validamos que haya archivo y token
         if (!pendingFile) return;
+        if (!token) {
+            toast.error("No se encontró token de autenticación. Por favor inicia sesión.");
+            return;
+        }
 
         try {
+            // ✅ Cast a string para que TypeScript no se queje
             const response = await uploadExcel<{
                 message: string;
                 insertados: number;
                 saltados: number;
                 results: any[];
-            }>(pendingFile); // ✅ especificamos el tipo
+            }>(pendingFile, token);
 
-            const results = response.results ?? []; // ahora sí existe
+            const results = response.results ?? [];
 
-            // Añadimos fecha y nombre completo
             const processedResults = results.map(item => ({
                 ...item,
                 fecha_creacion: new Date().toLocaleString(),
@@ -1420,11 +1427,11 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
                 nombreCompleto: `${item.primer_nombre} ${item.segundo_nombre ?? ''} ${item.primer_apellido} ${item.segundo_apellido ?? ''}`.trim()
             }));
 
-            // Actualizamos historial
             if (onUploadComplete) onUploadComplete(processedResults);
 
             await refreshJugadores();
-            toast.success("Archivo procesado correctamente")
+
+            toast.success("Archivo procesado correctamente");
             if (openHistory) openHistory();
         } catch (error: any) {
             console.error(error);
@@ -1443,6 +1450,7 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
                 style={{ display: "none" }}
                 onChange={handleFileUpload}
             />
+
             <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
