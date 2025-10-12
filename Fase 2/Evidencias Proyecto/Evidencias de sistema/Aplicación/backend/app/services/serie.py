@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, selectinload
-from app.models import Serie, Jugador, FichaJugador
-from app.schemas import SerieCreate, SerieRead, JugadorList, JugadorRead
+from app.models import Serie, Club, Jugador, FichaJugador
+from app.schemas import SerieCreate, SerieWithDetails, JugadorRead
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError, OperationalError, DisconnectionError
 import psycopg2
@@ -59,20 +59,53 @@ def delete_serie(db: Session, id_serie: int) -> bool:
     db.commit()
     return True
 
-
-def get_players_serie(db: Session, id_serie: int) -> JugadorList:
+def get_series_with_details(db: Session) -> list[SerieWithDetails]:
     try:
-        db_serie = get_serie(db, id_serie=id_serie)
-        if db_serie:
-            jugadores = (
+        # Traemos todas las series con su club asociado
+        db_series = db.query(Serie).join(Club).all()
+        
+        series_with_details = []
+
+        for serie in db_series:
+            # Contamos los jugadores asociados a esta serie
+            cantidad_jugadores = (
                 db.query(Jugador)
-                .join(FichaJugador, FichaJugador.rut_jugador == Jugador.rut_jugador)
-                .filter(FichaJugador.id_serie == db_serie.id_serie)
+                .join(FichaJugador)
+                .filter(FichaJugador.id_serie == serie.id_serie)
+                .count()
+            )
+
+            # Obtenemos los jugadores con sus datos básicos
+            db_jugadores = (
+                db.query(Jugador)
+                .join(FichaJugador)
+                .filter(FichaJugador.id_serie == serie.id_serie)
                 .all()
             )
-            jugadores_pydantic = [JugadorRead.model_validate(j) for j in jugadores]
-        return JugadorList(jugadores=jugadores_pydantic)
-    except NoResultFound as e:
+
+            jugadores = [JugadorRead.model_validate(j) for j in db_jugadores]
+
+            # Creamos el objeto SerieWithDetails para esta serie
+            serie_detail = SerieWithDetails(
+                id_serie=serie.id_serie,
+                nombre_serie=serie.nombre_serie,
+                id_club=serie.id_club,
+                serie_activa=serie.serie_activa,
+                fecha_creacion=serie.fecha_creacion,
+                fecha_modificacion=serie.fecha_modificacion,
+                nombre_club=serie.club.nombre_club,
+                cantidad_jugadores=cantidad_jugadores,
+                jugadores=jugadores,
+            )
+
+            series_with_details.append(serie_detail)
+
+        return series_with_details
+    except NoResultFound:
+        raise HTTPException(status_code=404, detail="Serie no encontrada.")
+    except (DisconnectionError, OperationalError):
         raise HTTPException(
-            status_code=400, detail={"details": "Serie no encontrada"}
-        ) from e
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))

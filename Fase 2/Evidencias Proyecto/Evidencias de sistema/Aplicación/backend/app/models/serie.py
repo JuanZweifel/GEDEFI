@@ -10,7 +10,7 @@ class Serie(Base):
 
     id_serie: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     nombre_serie: Mapped[str] = mapped_column(String(100), nullable=False)
-    serie_activa: Mapped[bool] = mapped_column(Boolean, default=True)
+    serie_activa: Mapped[bool] = mapped_column(Boolean, default=False)
     id_club: Mapped[int] = mapped_column(ForeignKey("CLUB.id_club"), nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), nullable=False

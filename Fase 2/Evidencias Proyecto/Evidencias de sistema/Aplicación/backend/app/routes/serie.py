@@ -32,3 +32,10 @@ def delete_serie(id_serie: int, db: Session = Depends(get_db)):
     else:
         raise HTTPException(status_code=500, detail="Error deleting serie.")
 
+@router.get("/", response_model=list[schemas.SerieWithDetails])
+def get_series_with_details(db: Session = Depends(get_db)):
+    try:
+        info = services.get_series_with_details(db)
+        return info
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)

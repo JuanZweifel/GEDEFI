@@ -38,6 +38,14 @@ class SerieForClub(SerieBase):
     class Config: 
         from_attributes = True
 
+class SerieWithDetails(SerieRead):
+    nombre_club: str
+    cantidad_jugadores: int
+    jugadores: list[JugadorRead] = Field(default_factory=list)
+
+    class Config: 
+        from_attributes = True
+
 class SerieList(BaseModel):
     series: List[SerieRead] = Field(default_factory=list)
 
