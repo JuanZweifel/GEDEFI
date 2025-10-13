@@ -47,6 +47,6 @@ def get_series_with_details(db: Session = Depends(get_db)):
 def update_state_serie(id_serie: int, serieUpdate: schemas.SerieUpdate, db:Session = Depends(get_db)):
     try:
         info = services.update_state_serie(db, id_serie, serieUpdate)
-        return {"message": f"Serie {"activada correctamente!" if serieUpdate.state else "desactivada correctamente"}"}
+        return {"message": f"Serie {'activada correctamente!' if serieUpdate.state else 'desactivada correctamente'}"}
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
