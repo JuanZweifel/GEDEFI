@@ -3,6 +3,7 @@ const URL_UPLOAD_EXCEL = "http://localhost:8000/upload_excel/"
 const URL_MODIFICAR_JUGADOR = (rut_jugador: string) => `http://localhost:8000/jugadores/${rut_jugador}`;
 const URL_BASE_LESION = "http://localhost:8000/lesiones/";
 const URL_MODIFICAR_LESION = (id_lesion: number) => `http://localhost:8000/lesiones/${id_lesion}`;
+const URL_BASE_SERIES = "http://localhost:8000/series/";
 
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -26,10 +27,13 @@ export async function getJugadores<T>(): Promise<T> {
 }
 
 
-export async function uploadExcel<T>(formData: FormData): Promise<T> {
+export async function uploadExcel<T>(formData: FormData, token: string): Promise<T> {
     const response = await fetch(`${URL_UPLOAD_EXCEL}`, {
         method: "POST",
         body: formData,
+        headers: {
+            "Authorization": `Bearer ${token}`, // <- aquí enviamos el token
+        },
     });
 
     if (!response.ok) {
@@ -157,4 +161,16 @@ export async function deleteLesion(id_lesion: number): Promise<void> {
     }
 }
 
+
+// Servicio para traer todas las series
+export async function getSeries<T>(): Promise<T> {
+    const response = await fetch(URL_BASE_SERIES, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+
+    return handleResponse<T>(response);
+}
 
