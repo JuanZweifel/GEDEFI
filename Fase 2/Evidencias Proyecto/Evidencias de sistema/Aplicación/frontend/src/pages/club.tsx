@@ -36,7 +36,7 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
 
 
     useEffect(() => {
-        (club.series)
+        console.log(club.series)
         setDirectiva(club.directiva)
         setSeries(club.series)
         setJugadores(club.jugadores)
@@ -204,6 +204,7 @@ export const ClubDetails: React.FC<ClubDetailsType> = ({ club }) => {
                                                 {series.map((serie) => (
                                                     <TableRow >
                                                         <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
+                                                        {/*TODO: Se debe revisar porque llega la serie con una clave cantidad_jugadores pese a que no existe.*/}
                                                         <TableCell className="font-medium">{serie.cantidad_jugadores}</TableCell>
                                                         <TableCell className="font-medium">{serie.fecha_creacion?.split("T")[0]}</TableCell>
                                                         <TableCell className="font-medium">
@@ -511,11 +512,11 @@ export const ClubModule: React.FC = () => {
                                                     <div className="grid grid-cols-2 gap-4 text-sm">
                                                         <div>
                                                             <span className="font-medium">Series:</span>
-                                                            <p>{club.cantidad_series}</p>
+                                                            {<p>{club.series.length}</p>}
                                                         </div>
                                                         <div>
                                                             <span className="font-medium">Jugadores:</span>
-                                                            <p>{club.cantidad_jugadores}</p>
+                                                            <p>{club.jugadores.length}</p>
                                                         </div>
                                                     </div>
                                                     <div className="text-sm">

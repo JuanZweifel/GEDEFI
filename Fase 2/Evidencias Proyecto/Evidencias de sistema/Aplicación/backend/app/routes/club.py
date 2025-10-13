@@ -74,8 +74,7 @@ def get_club(id_club: int, db: Session = Depends(get_db)):
 @router.get("/", response_model=list[schemas.ClubWithDetails])
 def get_club_with_details(db: Session = Depends(get_db)):
     try:
-        info = services.get_club_with_details(db)
-        print(info)
+        info = services.get_club_with_details(db)       
         return info
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -98,7 +97,6 @@ def update_club(
     db: Session = Depends(get_db)
 ):
     try:
-        print(logo_club)
         db_club = services.get_club(db, id_club)
         if not db_club: raise HTTPException(status_code=404, detail=f"No se pudo encontrar al club asociado al ID:{id_club}")
         club = schemas.ClubUpdate(
@@ -116,7 +114,6 @@ def update_club(
         )
         # Guardar archivo localmente
         if logo_club:
-            print("ENTRAMOS")
             filename = str(logo_club.filename)
             upload_dir = "../images/logos"
             os.makedirs(upload_dir, exist_ok=True)

@@ -28,6 +28,7 @@ from app.routes import (
     permiso,
     auth,
 )
+from app.utils.trigger import create_trigger
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
@@ -84,6 +85,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# TODO: CREACIÓN DE TRIGGER, SE DEBE DESCOMENTAR JUNTO A LA ELIMINACION DE TODO EN LA BASE DE DATOS, WARNING DE ARRIBA
+#@app.on_event("startup")
+#def startup_event():
+#    create_trigger()
 
 @app.get("/api")
 def root():

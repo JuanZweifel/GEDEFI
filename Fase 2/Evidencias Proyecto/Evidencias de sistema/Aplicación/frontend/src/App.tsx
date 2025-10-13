@@ -28,7 +28,7 @@ export default function App() {
       <Route
         path="/dashboard/*"
         element={
-          <ProtectedRoute requiredRole="Delegado">
+          <ProtectedRoute>
             <DashboardComponent />
           </ProtectedRoute>
         }

@@ -23,10 +23,12 @@ from app.schemas import (
     ClubUpdate,
     ClubWithDetails,
     UsuarioForClub,
-    SerieForClub,
+    SerieWithDetails,
     JugadorBase,
+    SerieCreate
 )
 from fastapi import HTTPException
+from app.utils.constantes import lista_series
 
 
 def get_club(db: Session, id_club: int) -> Club | None:
@@ -65,9 +67,52 @@ def create_club(db: Session, club: ClubCreate) -> bool:
     try:
         db_club = Club(**club.model_dump())
         db.add(db_club)
+        db.flush()
+        db.refresh(db_club)
+
+        create_massive_series(db, db_club.id_club)
+
         db.commit()
         db.refresh(db_club)
         return True
+    except IntegrityError as e:
+        db.rollback()
+        if isinstance(e.orig, psycopg2.errors.UniqueViolation):
+            detail = (
+                "El RUT ingresado esta asociado a otro club."
+                if "CLUB_rut_club_key" in str(e.orig)
+                else (
+                    "El correo ingresado ya esta asociado a un club."
+                    if "CLUB_email_club_key" in str(e.orig)
+                    else (
+                        "El nombre ingresado se encuentrado asociado a otro club"
+                        if "CLUB_nombre_club_key" in str(e.orig)
+                        else e.orig
+                    )
+                )
+            )
+            raise HTTPException(status_code=400, detail=detail) from e
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Error de integridad en la base de datos"
+            ) from e
+    except (DisconnectionError, OperationalError) as e:
+        raise HTTPException(
+            status_code=500, detail="Problemas de conexión con la base de datos."
+        ) from e
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Error interno del servidor") from e
+
+def create_massive_series(db: Session, id_club: int):
+    try:
+        series = []
+        for serie in lista_series:
+            schema = SerieCreate(nombre_serie=serie, id_club=id_club)
+            db_serie = Serie(**schema.model_dump())
+            db.add(db_serie)
+            series.append(db_serie)
+        return series
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, psycopg2.errors.UniqueViolation):
@@ -129,7 +174,6 @@ def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> bool | No
             status_code=500, detail="Problemas de conexión con la base de datos."
         ) from e
     except SQLAlchemyError as e:
-        print(e)
         db.rollback()
         raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
@@ -140,6 +184,11 @@ def delete_club(db: Session, id_club: int) -> bool:
         db.delete(db_club)
         db.commit()
         return True
+    except AssertionError as e:
+        raise HTTPException(
+            status_code=500,
+            detail="No puedes borrar un club que tenga registros asociados."
+        ) from e
     except IntegrityError as e:
         if isinstance(e.orig, psycopg2.errors.NotNullViolation):
             raise HTTPException(
@@ -152,14 +201,12 @@ def delete_club(db: Session, id_club: int) -> bool:
         raise HTTPException(
             status_code=500, detail="Problemas de conexión con la base de datos."
         ) from e
-    except (SQLAlchemyError, HTTPException) as e:
+    except (SQLAlchemyError) as e:
         db.rollback()
         raise HTTPException(
             status_code=500,
             detail=(
                 "Error interno del servidor"
-                if isinstance(e, SQLAlchemyError)
-                else e.detail
             ),
         ) from e
 
@@ -194,10 +241,6 @@ def get_club_with_details(db: Session) -> list[ClubWithDetails] | None:
                 .filter(DetalleClubJugador.id_club == club.id_club)
                 .all()
             )
-
-            # --- CANTIDADES GLOBALES ---
-            cantidad_series = len(db_series)
-            cantidad_jugadores = len(db_jugadores)
 
             # --- Ajustar logo si existe ---
             if club.logo_club:
@@ -244,19 +287,16 @@ def get_club_with_details(db: Session) -> list[ClubWithDetails] | None:
             series_for_club = []
             for s in db_series:
                 # contar jugadores únicos asociados a esta serie a través de FICHA_JUGADOR
-                cant_jugadores_serie = (
-                    db.query(func.count(func.distinct(FichaJugador.rut_jugador)))
-                    .filter(FichaJugador.id_serie == s.id_serie)
-                    .scalar()
-                )
+                jugadores_serie = db.query(Jugador).join(FichaJugador).filter(FichaJugador.id_serie == s.id_serie).all() # TODO: REVISAR FICHAS INACTIVAS
 
                 serie_dict = {
                     **s.__dict__,
-                    "cantidad_jugadores": cant_jugadores_serie or 0,
+                    "cantidad_jugadores": len(jugadores_serie),
+                    "nombre_club": club.nombre_club
                 }
 
                 series_for_club.append(
-                    SerieForClub.model_validate(serie_dict, from_attributes=True)
+                    SerieWithDetails.model_validate(serie_dict, from_attributes=True)
                 )
 
             # --- Construcción final del objeto ClubWithDetails ---
@@ -268,8 +308,6 @@ def get_club_with_details(db: Session) -> list[ClubWithDetails] | None:
                     JugadorBase.model_validate(j, from_attributes=True)
                     for j in db_jugadores
                 ],
-                cantidad_series=cantidad_series,
-                cantidad_jugadores=cantidad_jugadores,
             )
 
             club_with_details.append(club_details)
@@ -284,99 +322,3 @@ def get_club_with_details(db: Session) -> list[ClubWithDetails] | None:
         )
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-"""def get_series_club(db: Session, id_club: int) -> SerieList:
-    try:
-        db_club = get_club(db, id_club=id_club)
-        if db_club is None:
-            raise HTTPException(
-                status_code=404,
-                detail={"details": f"No se encontro club asociado al id {id_club}"},
-            )
-        series_club = db.query(Serie).filter(Serie.id_club == db_club.id_club).all()
-        series_pydantic = [SerieRead.model_validate(s) for s in series_club]
-        return SerieList(series=series_pydantic)
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Error interno del servidor"
-                if isinstance(e, SQLAlchemyError)
-                else e.detail
-            ),
-        ) from e
-
-
-def get_users_club(db: Session, id_club) -> UsuarioList:
-    try:
-        db_club = get_club(db, id_club=id_club)
-        if db_club is None:
-            raise HTTPException(
-                status_code=404,
-                detail={"details": f"No se encontro club asociado al id {id_club}"},
-            )
-        usuarios_club = (
-            db.query(Usuario)
-            .join(
-                DetalleUsuarioClub,
-                Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
-            )
-            .filter(DetalleUsuarioClub.id_club == db_club.id_club)
-            .all()
-        )
-        usuarios_pydantic = [
-            UsuarioRead.model_validate(u, from_attributes=True) for u in usuarios_club
-        ]
-        return UsuarioList(usuarios=usuarios_pydantic)
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Error interno del servidor"
-                if isinstance(e, SQLAlchemyError)
-                else e.detail
-            ),
-        ) from e
-
-
-def get_players_club(db: Session, id_club) -> JugadorList:
-    try:
-        db_club = get_club(db, id_club=id_club)
-        if db_club is None:
-            raise HTTPException(
-                status_code=404,
-                detail={"details": f"No se encontro club asociado al id {id_club}"},
-            )
-        jugadores_club = (
-            db.query(Jugador)
-            .join(
-                DetalleClubJugador,
-                Jugador.rut_jugador == DetalleClubJugador.rut_jugador,
-            )
-            .filter(DetalleClubJugador.id_club == db_club.id_club)
-            .all()
-        )
-        jugadores_pydantic = [JugadorRead.model_validate(j) for j in jugadores_club]
-        return JugadorList(jugadores=jugadores_pydantic)
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Error interno del servidor"
-                if isinstance(e, SQLAlchemyError)
-                else e.detail
-            ),
-        ) from e"""
