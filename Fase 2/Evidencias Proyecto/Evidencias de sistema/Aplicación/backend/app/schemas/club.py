@@ -3,7 +3,7 @@ from fastapi import UploadFile
 from pydantic import BaseModel, Field, ConfigDict, field_validator, EmailStr
 from typing import Optional, List, Union
 from .orden_pago import OrdenPagoRead
-from .serie import SerieForClub
+from .serie import SerieWithDetails
 from ..utils.validaciones import *
 from .usuario import UsuarioForClub
 from .jugador import JugadorBase
@@ -109,8 +109,6 @@ class ClubList(BaseModel):
 
 class ClubWithDetails(ClubRead):
     directiva: List[UsuarioForClub] = Field(default_factory=list)
-    series: list[SerieForClub] = Field(default_factory=list)
+    series: list[SerieWithDetails] = Field(default_factory=list)
     jugadores: list[JugadorBase] = Field(default_factory=list)
-    cantidad_series: int
-    cantidad_jugadores: int
 

@@ -13,8 +13,9 @@ export type ClubType = {
     club_activo: boolean
     fecha_creacion: string;
     fecha_modificacion: string;
-    series: number
-    jugadores: number;
+    directiva: [UsuarioType];
+    series: [SerieType];
+    jugadores: [JugadorType];
 }
 
 export type SerieType = {
@@ -25,8 +26,12 @@ export type SerieType = {
     nombre_club: string;
     fecha_creacion?: string;
     fecha_modificacion?: string;
+    cantidad_jugadores: number;
     jugadores: [JugadorType]
-    cantidad_jugadores: number
+}
+
+export type SerieDetailsProps = {
+    serie: SerieType;
 }
 
 export type UsuarioType = {
@@ -42,6 +47,7 @@ export type UsuarioType = {
     fecha_creacion?: string;
     fecha_modificacion?: string;
     id_rol: number;
+    nombre_rol: string;
 };
 
 export type UsuarioFormType = UsuarioType & {

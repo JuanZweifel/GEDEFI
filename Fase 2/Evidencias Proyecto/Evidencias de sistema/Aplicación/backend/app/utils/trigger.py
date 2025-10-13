@@ -4,28 +4,6 @@ from app.db import SessionLocal
 
 def create_trigger():
     sql = """
-    CREATE OR REPLACE FUNCTION activar_serie_primer_jugador()
-    RETURNS TRIGGER AS $$
-    BEGIN
-        IF (
-            SELECT COUNT(*) FROM "FICHA_JUGADOR"
-            WHERE id_serie = NEW.id_serie
-        ) = 1 THEN
-            UPDATE "SERIE"
-            SET serie_activa = TRUE
-            WHERE id_serie = NEW.id_serie;
-        END IF;
-        RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-
-    DROP TRIGGER IF EXISTS trigger_activar_serie ON "FICHA_JUGADOR";
-
-    CREATE TRIGGER trigger_activar_serie
-    AFTER INSERT ON "FICHA_JUGADOR"
-    FOR EACH ROW
-    EXECUTE FUNCTION activar_serie_primer_jugador();
-
     CREATE OR REPLACE FUNCTION desactivar_serie_sin_jugadores()
     RETURNS TRIGGER AS $$
     BEGIN

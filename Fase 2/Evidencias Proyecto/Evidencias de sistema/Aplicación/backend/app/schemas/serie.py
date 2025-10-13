@@ -18,8 +18,8 @@ class SerieCreate(SerieBase):
     pass
 
 
-class SerieUpdate(SerieBase):
-    nombre_serie: Optional[str] = None
+class SerieUpdate(BaseModel):
+    state: bool
 
 class SerieRead(SerieBase):
     id_serie: int
@@ -27,15 +27,6 @@ class SerieRead(SerieBase):
     fecha_creacion: datetime
     fecha_modificacion: datetime
     class Config:
-        from_attributes = True
-
-class SerieForClub(SerieBase):
-    id_serie:int
-    cantidad_jugadores: int
-    fecha_creacion: datetime
-    serie_activa: bool
-
-    class Config: 
         from_attributes = True
 
 class SerieWithDetails(SerieRead):
