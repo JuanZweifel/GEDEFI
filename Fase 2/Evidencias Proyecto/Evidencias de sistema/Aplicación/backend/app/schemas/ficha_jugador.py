@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import date, datetime
 
 class FichaJugadorBase(BaseModel):
-    fecha_ini: date
+    fecha_ini: Optional[date] = None
     fecha_fin: Optional[date] = None
     talla_camiseta: Optional[str] = None
     talla_short: Optional[str] = None
@@ -17,6 +17,7 @@ class FichaJugadorBase(BaseModel):
 class FichaJugadorCreate(FichaJugadorBase):
     rut_jugador: str
     id_serie: int
+    fecha_ini: Optional[date] = None
 
 class FichaJugadorRead(FichaJugadorBase):
     rut_jugador: str
