@@ -1,7 +1,7 @@
 from sqlalchemy import Date, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
-from datetime import date
+from datetime import date,datetime, timezone
 from app.db import Base
 from sqlalchemy import ForeignKey
 
@@ -9,7 +9,7 @@ from sqlalchemy import ForeignKey
 class DetalleClubJugador(Base):
     __tablename__ = "DETALLE_CLUB_JUGADOR"
 
-    fecha_ini: Mapped[date] = mapped_column(Date, primary_key=True, nullable=False)
+    fecha_ini: Mapped[date] = mapped_column(Date, default= datetime.now(timezone.utc).date(), primary_key=True, nullable=False)
     fecha_fin: Mapped[date] = mapped_column(Date, nullable=True)
     rut_jugador: Mapped[str] = mapped_column(
         String(10),

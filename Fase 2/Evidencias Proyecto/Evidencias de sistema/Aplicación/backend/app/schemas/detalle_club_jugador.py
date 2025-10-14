@@ -11,6 +11,7 @@ class DetalleClubJugadorBase(BaseModel):
 class DetalleClubJugadorCreate(DetalleClubJugadorBase):
     rut_jugador: str
     id_club: int
+    fecha_ini: Optional[date] = None
 
 
 class DetalleClubJugadorRead(DetalleClubJugadorBase):
