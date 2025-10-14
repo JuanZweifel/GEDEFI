@@ -5,7 +5,7 @@ from io import BytesIO
 import pandas as pd
 from datetime import date
 from app.db import get_db
-from app.models import Jugador, FichaJugador, Serie, Usuario
+from app.models import Jugador, FichaJugador, Serie, Usuario, DetalleClubJugador
 from app.utils.validaciones import validar_rut
 from app.security import get_current_user  # autenticación
 
@@ -49,6 +49,38 @@ def crear_fichas_jugadores(db: Session, rut_jugadores: list[str], id_serie: int)
     return resultados
 
 
+
+def crear_detalle_club_jugadores(
+    db: Session, rut_jugadores: list[str], id_club: int
+):
+    """
+    Crea registros en DetalleClubJugador para los jugadores cuyos RUTs están en rut_jugadores,
+    pertenecientes al club id_club.
+    """
+    resultados = []
+
+    for rut in rut_jugadores:
+        existente = db.query(DetalleClubJugador).filter(
+            DetalleClubJugador.rut_jugador == rut,
+            DetalleClubJugador.id_club == id_club
+        ).first()
+
+        if existente:
+            resultados.append({"rut": rut, "status": "skip", "reason": "Detalle ya existente"})
+            continue
+
+        detalle = DetalleClubJugador(
+            rut_jugador=rut,
+            id_club=id_club,
+        )
+
+        db.add(detalle)
+        resultados.append({"rut": rut, "status": "success"})
+
+    return resultados
+
+
+
 @router.post("/upload_excel")
 async def upload_excel(
     file: UploadFile = File(...),
@@ -56,10 +88,6 @@ async def upload_excel(
     current_user: Usuario = Depends(get_current_user)
 ):
     try:
-        print("CURRENT USER:", current_user)
-        print("CURRENT USER type:", type(current_user))
-        print("CURRENT USER keys/attributes:", dir(current_user))  # útil si es un objeto
-
         id_club = current_user["club_id"]
 
         # Leer archivo Excel
@@ -190,6 +218,20 @@ async def upload_excel(
         fichas_resultado = crear_fichas_jugadores(db, rut_insertados, serie_obj.id_serie)
         db.commit()
         print("✅ Fichas creadas correctamente.")
+
+        # Crear registros en DetalleClubJugador
+        for rut in rut_insertados:
+            detalle = DetalleClubJugador(
+                rut_jugador=rut,
+                id_club=serie_obj.id_club,
+                fecha_ini=date.today(),
+                fecha_fin=None
+            )
+            db.add(detalle)
+
+        db.commit()  # ✅ Aquí se guardan realmente en la base de datos
+        print("✅ DetalleClubJugador creados correctamente.")
+
 
         # Totales finales
         total_procesados = len(df)
