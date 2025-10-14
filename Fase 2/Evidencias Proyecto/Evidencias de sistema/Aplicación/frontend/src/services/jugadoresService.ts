@@ -86,10 +86,16 @@ export async function postJugador<T>(jugador: Record<string, any>): Promise<T> {
 }
 
 
-export async function postLesion<T>(lesion: Record<string, any>): Promise<T> {
+export async function postLesion<T>(
+    lesion: Record<string, any>,
+    token: string
+): Promise<T> {
     const response = await fetch(URL_BASE_LESION, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`, 
+        },
         body: JSON.stringify(lesion),
     });
 
@@ -105,7 +111,6 @@ export async function postLesion<T>(lesion: Record<string, any>): Promise<T> {
         if (response.status === 422 && Array.isArray(data.detail)) {
             throw { status: 422, data: data.detail };
         } else if (response.status === 404) {
-            // Por ejemplo, jugador no encontrado
             throw { status: 404, data };
         } else {
             throw { status: response.status, data };
@@ -116,13 +121,20 @@ export async function postLesion<T>(lesion: Record<string, any>): Promise<T> {
 }
 
 
-export async function getLesiones<T>(): Promise<T> {
+export async function getLesiones<T>(token: string): Promise<T> {
+    const response = await fetch(URL_BASE_LESION, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
 
-    const response = await fetch(URL_BASE_LESION);
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData || "Error cargando lesiones");
     }
+
     return response.json() as Promise<T>;
 }
 
