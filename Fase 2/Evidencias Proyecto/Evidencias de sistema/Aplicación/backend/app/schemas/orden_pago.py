@@ -5,8 +5,9 @@ from ..utils.validaciones import validar_fecha, validar_rut
 
 
 class OrdenPagoBase(BaseModel):
-    tipo_orden: int = Field(..., description="Tipo de orden de pago", ge=0, le=4)
-    tipo_pago: int = Field(..., description="Tipo de pago", ge=0, le=4)
+    tipo_orden: str = Field(..., max_length=10, description="Tipo de orden de pago")
+    tipo_movimiento: str = Field(..., max_length=25, description="Tipo de movimiento [Ingreso, Egreso]")
+    tipo_pago: str = Field(..., max_length=25, description="Tipo de pago Ej: Transferencia, pago en linea, efectivo.")
     monto: float = Field(..., gt=0, description="Monto de la orden de pago")
     metodo_pago: Optional[int] = Field(None, description="Método de pago", ge=0, le=4)
     numero_transaccion: Optional[str] = Field(None, max_length=50, description="Número de transacción.")
@@ -22,14 +23,14 @@ class OrdenPagoBase(BaseModel):
     @classmethod
     def validar_fecha_vencimiento(cls, v):
         if v is not None:
-            return validar_fecha(v, False)
+            return validar_fecha(v, True)
         return v
     
     @field_validator("fecha_pago")
     @classmethod
     def validar_fecha_pago(cls, v):
         if v is not None:
-            return validar_fecha(v, True)
+            return validar_fecha(v, False)
         return v
     
     @field_validator("usuario_emisor", "usuario_pago")
@@ -47,6 +48,7 @@ class OrdenPagoCreate(OrdenPagoBase):
 class OrdenPagoRead(OrdenPagoBase):
     id_orden: int
     fecha_emision: datetime = Field(..., description="Fecha de emisión de la orden de pago.")
+    fecha_modificacion: datetime = Field(..., description="Fecha de la ultima modificación de la orden de pago.")
     model_config = ConfigDict(from_attributes=True)
 
 class OrdenPagoUpdate(BaseModel):

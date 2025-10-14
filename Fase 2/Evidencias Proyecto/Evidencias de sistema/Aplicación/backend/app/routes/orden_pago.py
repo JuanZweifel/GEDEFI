@@ -25,9 +25,9 @@ def get_orden_pago(id_orden: int, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[schemas.OrdenPagoRead])
-def get_ordenes_pago(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_ordenes_pago(db: Session = Depends(get_db)):
     try:
-        return services.get_ordenes_pago(db, skip=skip, limit=limit)
+        return services.get_ordenes_pago(db)
     except HTTPException as e:
         raise e
 

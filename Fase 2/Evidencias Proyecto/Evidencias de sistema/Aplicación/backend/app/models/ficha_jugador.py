@@ -9,7 +9,7 @@ from sqlalchemy import ForeignKey
 class FichaJugador(Base):
     __tablename__ = "FICHA_JUGADOR"
 
-    fecha_ini: Mapped[date] = mapped_column(Date, nullable=False)
+    fecha_ini: Mapped[date] = mapped_column(Date, default= datetime.now(timezone.utc).date(), nullable=False)
     fecha_fin: Mapped[date] = mapped_column(Date, nullable=True)
     talla_camiseta: Mapped[str] = mapped_column(String(5), nullable=True)
     talla_short: Mapped[str] = mapped_column(String(5), nullable=True)

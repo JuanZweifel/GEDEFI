@@ -22,3 +22,25 @@ export async function getFichasPorFiltro<T>(): Promise<T> {
 
     return handleResponse<T>(response);
 }
+
+
+export async function postFichaJugador<T>(fichaData: {
+    rut_jugador: string;
+    id_serie: number;
+}): Promise<T> {
+    const response = await fetch(`${URL_FICHAS}/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(fichaData),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Error al crear ficha del jugador");
+    }
+
+    const data: T = await response.json();
+    return data;
+}

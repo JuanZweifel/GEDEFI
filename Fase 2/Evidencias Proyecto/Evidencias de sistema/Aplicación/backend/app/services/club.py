@@ -1,12 +1,9 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct, asc, desc
+from sqlalchemy import asc, desc
 import psycopg2
 from sqlalchemy.exc import (
     IntegrityError,
     NoResultFound,
-    SQLAlchemyError,
-    OperationalError,
-    DisconnectionError,
 )
 from app.models import (
     Club,
@@ -16,7 +13,7 @@ from app.models import (
     DetalleClubJugador,
     DetalleUsuarioClub,
     FichaJugador,
-    Rol
+    Rol,
 )
 from app.schemas import (
     ClubCreate,
@@ -25,45 +22,105 @@ from app.schemas import (
     UsuarioForClub,
     SerieWithDetails,
     JugadorBase,
-    SerieCreate
+    SerieCreate,
 )
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from app.utils.constantes import lista_series
+from app.utils.decorators import handle_db_exceptions
+from app.security import get_current_user
 
 
-def get_club(db: Session, id_club: int) -> Club | None:
-    try:
-        return db.query(Club).filter(Club.id_club == id_club).first()
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
+@handle_db_exceptions
+def get_club(
+    db: Session, id_club: int, current_user=Depends(get_current_user)
+) -> Club | None:
+    """
+    Obtiene un registro de club desde la base de datos utilizando su identificador único.
 
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail="Error interno del servidor") from e
+    Esta función consulta la base de datos para buscar una instancia del modelo `Club`
+    que coincida con el `id_club` proporcionado. Requiere un usuario autenticado
+    obtenido mediante la dependencia `get_current_user`.
+    Las excepciones de base de datos son manejadas automáticamente por el decorador
+    `handle_db_exceptions`.
+
+    Parámetros
+    ----------
+    db : Session
+        Sesión de base de datos de SQLAlchemy.
+    id_club : int
+        Identificador único del club a recuperar.
+    current_user : User
+        Usuario autenticado obtenido mediante la inyección de dependencias.
+
+    Retorna
+    -------
+    Club o None
+        Instancia del modelo `Club` si se encuentra el registro, de lo contrario `None`.
+
+    Lanza
+    -----
+    HTTPException
+        Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
+    """
+    return db.query(Club).filter(Club.id_club == id_club).first()
 
 
-def get_clubs(db: Session, skip: int = 0, limit: int = 100):
-    try:
-        return (
-            db.query(Club)
-            .offset(skip)
-            .limit(limit)
-            .order_by(
-                desc(Club.club_activo),
-                asc(Club.nombre_club).offset(skip).limit(limit).all(),
-            )
-        )
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
+@handle_db_exceptions
+def get_clubs(db: Session) -> list[Club]:
+    """
+    Obtiene todos los registros de club almacenados en la base de datos
 
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail="Error interno del servidor") from e
+    Esta función consulta la base de datos para buscar todas las instancias de `Club`
+    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Las excepciones de base de datos son manejadas automáticamente por el decorador
+    `handle_db_exceptions`.
+
+    Parámetros
+    ----------
+    db : Session
+        Sesión de base de datos de SQLAlchemy.
+
+    Retorna
+    -------
+    list[Club]
+        Lista de instacias de Club, en caso de no haber clubs en la base de datos la lista vendra vacia.
+
+    Lanza
+    -----
+    HTTPException
+        Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
+    """
+    return db.query(Club).order_by(desc(Club.club_activo), asc(Club.nombre_club)).all()
 
 
-def create_club(db: Session, club: ClubCreate) -> bool:
+@handle_db_exceptions
+def create_club(db: Session, club: ClubCreate, current_user=Depends(get_current_user)) -> bool:
+    """
+    Crea una instancia de `Club` para su posterior almacenamiento en la base datos.
+
+    Esta función crea una instancia de `Club`. La instancia esta validada mediante el schema `ClubCreate` de pydantic.
+    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
+
+
+    Parámetros
+    ----------
+    db : Session
+        Sesión de base de datos de SQLAlchemy.
+    
+    club: ClubCreate
+        Objeto de pydantic con el formato del schema `ClubCreate`
+
+    Retorna
+    -------
+    bool
+        Retorna booleano, True, indicando el correcto almacenamiento.
+
+    Lanza
+    -----
+    HTTPException
+        Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
+    """
     try:
         db_club = Club(**club.model_dump())
         db.add(db_club)
@@ -96,15 +153,49 @@ def create_club(db: Session, club: ClubCreate) -> bool:
             raise HTTPException(
                 status_code=400, detail=f"Error de integridad en la base de datos"
             ) from e
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
-def create_massive_series(db: Session, id_club: int):
+
+@handle_db_exceptions
+def create_massive_series(
+    db: Session, id_club: int, current_user=Depends(get_current_user)) -> list[Serie]:
+    """
+    Crea de manera masiva todos las instancias estandares de `Serie` asociadas a una instancia de `Club`
+
+    Esta funcion crea todas las instancias estandares [
+        "Segunda infantil",
+        "Primera infantil",
+        "Juveniles",
+        "Super seniors",
+        "Segunda adulta",
+        "Primera adulta",
+        "Seniors",
+        "Serie honor",
+        "Femenina",
+        "Años dorados"
+    ]
+    asociadas a una instacia de `Club`, las instancias de `Serie` estan validadas bajo el schema de pydantic `SerieCreate`
+    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
+
+
+    Parámetros
+    ----------
+    db : Session
+        Sesión de base de datos de SQLAlchemy.
+    
+    club: ClubCreate
+        Objeto de pydantic con el formato del schema `ClubCreate`
+
+    Retorna
+    -------
+    bool
+        Retorna booleano, True, indicando el correcto almacenamiento.
+
+    Lanza
+    -----
+    HTTPException
+        Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
+    """
     try:
         series = []
         for serie in lista_series:
@@ -134,16 +225,41 @@ def create_massive_series(db: Session, id_club: int):
             raise HTTPException(
                 status_code=400, detail=f"Error de integridad en la base de datos"
             ) from e
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
 
-def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> bool | None:
+@handle_db_exceptions
+def update_club(
+    db: Session,
+    id_club: int,
+    club_update: ClubUpdate,
+    current_user=Depends(get_current_user),
+):
+    """
+    Actualiza una instancia de `Club`
+
+    Esta función actualiza una instancia de `Club`. La instancia esta validada mediante el schema `ClubUpdate` de pydantic.
+    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
+
+
+    Parámetros
+    ----------
+    db : Session
+        Sesión de base de datos de SQLAlchemy.
+    
+    club: ClubUpdate
+        Objeto de pydantic con el formato del schema `ClubUpdate`
+
+    Retorna
+    -------
+    bool
+        Retorna booleano, True, indicando el correcto almacenamiento.
+
+    Lanza
+    -----
+    HTTPException
+        Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
+    """
     try:
         db_club = get_club(db, id_club)
         if not db_club:
@@ -169,16 +285,10 @@ def update_club(db: Session, id_club: int, club_update: ClubUpdate) -> bool | No
             )
         )
         raise HTTPException(status_code=400, detail=detail) from e
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Error interno del servidor") from e
 
 
-def delete_club(db: Session, id_club: int) -> bool:
+@handle_db_exceptions
+def delete_club(db: Session, id_club: int, current_user=Depends(get_current_user)):
     try:
         db_club = get_club(db, id_club)
         db.delete(db_club)
@@ -187,7 +297,7 @@ def delete_club(db: Session, id_club: int) -> bool:
     except AssertionError as e:
         raise HTTPException(
             status_code=500,
-            detail="No puedes borrar un club que tenga registros asociados."
+            detail="No puedes borrar un club que tenga registros asociados.",
         ) from e
     except IntegrityError as e:
         if isinstance(e.orig, psycopg2.errors.NotNullViolation):
@@ -197,21 +307,35 @@ def delete_club(db: Session, id_club: int) -> bool:
             ) from e
         else:
             raise HTTPException(status_code=500, detail={"error": e.orig.args}) from e
-    except (DisconnectionError, OperationalError) as e:
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        ) from e
-    except (SQLAlchemyError) as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Error interno del servidor"
-            ),
-        ) from e
 
 
-def get_club_with_details(db: Session) -> list[ClubWithDetails] | None:
+@handle_db_exceptions
+def get_club_with_details(
+    db: Session, current_user=Depends(get_current_user)
+) -> list[ClubWithDetails] | None:
+    """
+    Devuelve todas las instancias de `Club` con información extra de las instancias: `Usuario`, `Jugador` y `Serie`
+
+    Esta función retorna todas las instancias de `Club`, con información extra. Estas instancias estan validadas con el schema de pydantic `ClubWithDetails`
+    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
+
+
+    Parámetros
+    ----------
+    db : Session
+        Sesión de base de datos de SQLAlchemy.
+
+    Retorna
+    -------
+    list[ClubWithDetails]
+        Retorna la lista de instancias validadas y formateadas por el schema de `ClubWithDetails`
+
+    Lanza
+    -----
+    HTTPException
+        Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
+    """
     try:
         db_clubs = db.query(Club).all()
         club_with_details: list[ClubWithDetails] = []
@@ -287,12 +411,17 @@ def get_club_with_details(db: Session) -> list[ClubWithDetails] | None:
             series_for_club = []
             for s in db_series:
                 # contar jugadores únicos asociados a esta serie a través de FICHA_JUGADOR
-                jugadores_serie = db.query(Jugador).join(FichaJugador).filter(FichaJugador.id_serie == s.id_serie).all() # TODO: REVISAR FICHAS INACTIVAS
+                jugadores_serie = (
+                    db.query(Jugador)
+                    .join(FichaJugador)
+                    .filter(FichaJugador.id_serie == s.id_serie)
+                    .all()
+                )  # TODO: REVISAR FICHAS INACTIVAS
 
                 serie_dict = {
                     **s.__dict__,
                     "cantidad_jugadores": len(jugadores_serie),
-                    "nombre_club": club.nombre_club
+                    "nombre_club": club.nombre_club,
                 }
 
                 series_for_club.append(
@@ -316,9 +445,3 @@ def get_club_with_details(db: Session) -> list[ClubWithDetails] | None:
 
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Club no encontrado")
-    except (DisconnectionError, OperationalError):
-        raise HTTPException(
-            status_code=500, detail="Problemas de conexión con la base de datos."
-        )
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=str(e))

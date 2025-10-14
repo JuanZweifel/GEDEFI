@@ -1,6 +1,6 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy import String, Integer, DateTime, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, Session
 from sqlalchemy.orm import relationship
 from datetime import date, datetime, timezone
 from app.db import Base
@@ -10,8 +10,9 @@ class OrdenPago(Base):
     __tablename__ = "ORDEN_PAGO"
 
     id_orden_pago: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    tipo_orden: Mapped[int] = mapped_column(Integer, nullable=False)
-    tipo_pago: Mapped[int] = mapped_column(Integer, nullable=False)
+    tipo_orden: Mapped[str] = mapped_column(String(25), nullable=False)
+    tipo_movimiento: Mapped[str] = mapped_column(String(10), nullable=False)
+    tipo_pago: Mapped[str] = mapped_column(String(25), nullable=True)
     monto: Mapped[float] = mapped_column(nullable=False)
     metodo_pago: Mapped[int] = mapped_column(Integer, nullable=True)
     numero_transaccion: Mapped[str] = mapped_column(String(50), nullable=True)
