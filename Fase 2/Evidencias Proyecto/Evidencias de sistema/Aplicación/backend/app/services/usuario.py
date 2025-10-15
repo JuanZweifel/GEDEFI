@@ -22,10 +22,10 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
             db.query(Usuario, Club.id_club)
             .outerjoin(
                 DetalleUsuarioClub,
-                Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
+                (Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario)
+                & (DetalleUsuarioClub.fecha_fin == None),
             )
             .outerjoin(Club, DetalleUsuarioClub.id_club == Club.id_club)
-            .filter(DetalleUsuarioClub.fecha_fin == None)
             .offset(skip)
             .limit(limit)
             .all()
@@ -117,13 +117,22 @@ def update_usuario(
         setattr(db_usuario, key, value)
 
     try:
-        if new_club_ids is not None:
-            end_date = datetime.today()
-            active_relations = (
-                db.query(DetalleUsuarioClub)
-                .filter_by(rut_usuario=rut_usu, fecha_fin=None)
-                .all()
-            )
+        end_date = datetime.today()
+
+        active_relations = (
+            db.query(DetalleUsuarioClub)
+            .filter_by(rut_usuario=rut_usu, fecha_fin=None)
+            .all()
+        )
+
+        if new_club_ids is None:
+            for relation in active_relations:
+                relation.fecha_fin = end_date
+
+        else:
+            if not isinstance(new_club_ids, list):
+                new_club_ids = [new_club_ids]
+
             current_club_ids = {r.id_club for r in active_relations}
 
             for relation in active_relations:
