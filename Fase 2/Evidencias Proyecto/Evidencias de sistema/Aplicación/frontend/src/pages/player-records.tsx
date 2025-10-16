@@ -325,7 +325,7 @@ export const PlayerRecordsModule: React.FC = () => {
                             const updatedPlayers = await fetchJugadoresPorClub(); // devuelve los jugadores filtrados por club
                             setPlayers(updatedPlayers); // 🔹 actualiza el estado
                         }}
-                        onUploadComplete={(result) => setUploadHistory(prev => [...prev, ...result])}
+                        onUploadComplete={(result) => setUploadHistory(result)} // ⚡ reemplaza el historial anterior por el nuevo
                         openHistory={() => setIsUploadHistoryOpen(true)}
                     />
 
@@ -343,7 +343,7 @@ export const PlayerRecordsModule: React.FC = () => {
 
                     {/* 🔹 Nuevo jugador */}
                     <DialogAddJugador refreshJugadores={async () => {
-                        await fetchJugadores();
+                        await fetchJugadoresPorClub();
                     }} />
                 </div>
             </div>

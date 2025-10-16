@@ -109,3 +109,14 @@ export type OrdenPagoType = {
     fecha_emision: string; // ISO string
     fecha_modificacion: string; // ISO string
 };
+
+export type CanchaType = {
+    id_cancha: number;
+    nombre_cancha: string;
+    tipo_cancha: number;
+    direccion?: string;
+    disponibilidad: boolean;
+    cancha_activa: boolean;
+    fecha_creacion: string;
+    fecha_modificacion: string;
+}
