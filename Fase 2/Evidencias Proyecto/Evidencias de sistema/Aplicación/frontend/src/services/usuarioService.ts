@@ -1,31 +1,4 @@
-import { API_BASE_URL } from "../config";
-
-async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-            "Content-Type": "application/json",
-        },
-        ...options,
-    });
-
-    if (!res.ok) {
-        let errorMessage = `${res.status}`;
-        try {
-            const errorData = await res.json();
-            if (errorData.detail) {
-                errorMessage += ` | ${errorData.detail}`;
-            }
-        } catch {
-            // En caso de que la respuesta no sea JSON
-            const text = await res.text();
-            if (text) errorMessage += `: ${text}`;
-        }
-        throw new Error(errorMessage);
-    }
-
-    return res.json() as Promise<T>;
-}
-
+import { fetchAPI } from "../utils/fetchApi";
 
 export const getUsers = <T>(): Promise<T> => fetchAPI<T>("/usuarios/");
 

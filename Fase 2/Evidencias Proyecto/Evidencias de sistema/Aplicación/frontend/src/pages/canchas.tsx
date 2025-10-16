@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { DialogHandle } from "../components/dialog-component.tsx";
+import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -12,48 +14,55 @@ import {
   Plus, Edit, Trash2, MapPin, Calendar, Clock, CheckCircle,
   XCircle, Settings, History, Eye, Activity, AlertTriangle
 } from 'lucide-react';
+import { CanchaForm } from '../forms/canchaForm.tsx';
+import type { CanchaType } from '../types.tsx';
+import { deleteCancha, getCanchas } from '../services/canchaService.ts';
+import { toast } from "sonner";
 
-// Enhanced Soccer Fields Module (CANCHA, HISTORIAL_CANCHA)
 export const CanchasModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('fields');
   const [isCreateFieldOpen, setIsCreateFieldOpen] = useState(false);
+  const [openSelected, setOpenSelected] = useState<number | null>(null)
   const [isEditFieldOpen, setIsEditFieldOpen] = useState(false);
   const [selectedField, setSelectedField] = useState<any>(null);
+  const [isFetchingCanchas, setIsFetchingCanchas] = useState(false);
+  const [canchas, setCanchas] = useState<CanchaType[]>([]);
 
-  const fields = [
-    {
-      id: 1, nombre: "Estadio Nacional", direccion: "Avenida Grecia 2001, Ñuñoa, Santiago",
-      capacidad: 45000, tipo_superficie: "Césped Natural", disponible: true,
-      fecha_construccion: "1938-12-03", ultimo_mantenimiento: "2024-08-15",
-      costo_arriendo: 500000, observaciones: "Campo principal para partidos oficiales",
-      instalaciones: ["Vestuarios", "Iluminación", "Tribunas", "Estacionamiento", "Cafetería", "Enfermería"],
-      estado_actual: "Excelente"
-    },
-    {
-      id: 2, nombre: "Santa Laura", direccion: "Independencia 2024, Santiago",
-      capacidad: 22000, tipo_superficie: "Césped Sintético", disponible: true,
-      fecha_construccion: "1922-05-20", ultimo_mantenimiento: "2024-09-01",
-      costo_arriendo: 300000, observaciones: "Campo histórico con excelente acústica",
-      instalaciones: ["Vestuarios", "Iluminación", "Tribunas", "Estacionamiento"],
-      estado_actual: "Bueno"
-    },
-    {
-      id: 3, nombre: "San Carlos de Apoquindo", direccion: "Las Condes, Santiago",
-      capacidad: 14000, tipo_superficie: "Césped Natural", disponible: false,
-      fecha_construccion: "1988-03-12", ultimo_mantenimiento: "2024-07-20",
-      costo_arriendo: 400000, observaciones: "En mantenimiento por renovación de césped",
-      instalaciones: ["Vestuarios", "Iluminación", "Tribunas", "Estacionamiento", "Cafetería", "Sala VIP"],
-      estado_actual: "En Mantenimiento"
-    },
-    {
-      id: 4, nombre: "Campo de Entrenamiento Norte", direccion: "Pudahuel, Santiago",
-      capacidad: 500, tipo_superficie: "Tierra", disponible: true,
-      fecha_construccion: "2010-06-15", ultimo_mantenimiento: "2024-09-10",
-      costo_arriendo: 50000, observaciones: "Campo para entrenamientos y partidos menores",
-      instalaciones: ["Vestuarios", "Iluminación"],
-      estado_actual: "Regular"
+  useEffect(() => {
+    fetchCanchas();
+  }, [])
+
+  const fetchCanchas = async () => {
+    let data: CanchaType[] = []
+    try {
+      setIsFetchingCanchas(true)
+      data = await getCanchas();
+      setCanchas(data);
+      if (data.length === 0) {
+        toast.info("No hay clubes registrados en la base de datos.")
+      }
+    } catch (err: any) {
+      toast.warning(String(err))
+    } finally {
+      if (data.length === 0) {
+        setCanchas([]);
+      }
+      setIsFetchingCanchas(false)
     }
-  ];
+  };
+
+  const handleDeleteCancha = async (id: number) => {
+    try {
+      const response = await deleteCancha(id);
+      console.log(response)
+      toast.success(response?.detail || "Cancha eliminada correctamente");
+      setOpenSelected(null)
+      fetchCanchas();
+    } catch (error) {
+      console.log(error)
+      toast.error(String(error))
+    }
+  }
 
   const fieldSchedule = [
     {
@@ -104,19 +113,16 @@ export const CanchasModule: React.FC = () => {
     }
   ];
 
-  const handleEditField = (field: any) => {
-    setSelectedField(field);
-    setIsEditFieldOpen(true);
-  };
-
-  const getStatusColor = (estado: string) => {
-    switch (estado) {
-      case 'Excelente': return 'bg-green-500';
-      case 'Bueno': return 'bg-blue-500';
-      case 'Regular': return 'bg-yellow-500';
-      case 'En Mantenimiento': return 'bg-orange-500';
-      case 'Malo': return 'bg-red-500';
-      default: return 'bg-gray-500';
+  const getTipoCancha = (tipo: number) => {
+    switch (tipo) {
+      case 1:
+        return "Césped Natural";
+      case 2:
+        return "Césped Sintético";
+      case 3:
+        return "Tierra";
+      default:
+        return "Desconocido";
     }
   };
 
@@ -125,102 +131,29 @@ export const CanchasModule: React.FC = () => {
       <div className="flex justify-between items-center">
         <h2>Administración de Canchas de Fútbol</h2>
         <div className="flex space-x-2">
-          <Dialog open={isCreateFieldOpen} onOpenChange={setIsCreateFieldOpen}>
-            <DialogTrigger asChild>
-              <Button style={{ backgroundColor: '#0000db' }} className="text-white">
+          <DialogHandle<any>
+            title="Registrar Nueva Cancha"
+            trigger={
+              <Button style={{ backgroundColor: "#0000db" }} className="text-white">
                 <Plus className="w-4 h-4 mr-2" />
-                Registrar Cancha
+                Nueva cancha
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Registrar Nueva Cancha</DialogTitle>
-              </DialogHeader>
-              <form className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-2">Nombre de la Cancha</label>
-                    <Input placeholder="Ej: Estadio Municipal" />
-                  </div>
-                  <div>
-                    <label className="block mb-2">Capacidad</label>
-                    <Input type="number" placeholder="Número de espectadores" />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block mb-2">Dirección Completa</label>
-                    <Input placeholder="Dirección completa de la cancha" />
-                  </div>
-                  <div>
-                    <label className="block mb-2">Tipo de Superficie</label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="natural">Césped Natural</SelectItem>
-                        <SelectItem value="sintetico">Césped Sintético</SelectItem>
-                        <SelectItem value="tierra">Tierra</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block mb-2">Fecha de Construcción</label>
-                    <Input type="date" />
-                  </div>
-                  <div>
-                    <label className="block mb-2">Costo de Arriendo (CLP)</label>
-                    <Input type="number" placeholder="Costo por evento" />
-                  </div>
-                  <div>
-                    <label className="block mb-2">Estado Actual</label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="excelente">Excelente</SelectItem>
-                        <SelectItem value="bueno">Bueno</SelectItem>
-                        <SelectItem value="regular">Regular</SelectItem>
-                        <SelectItem value="malo">Malo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block mb-2">Instalaciones Disponibles</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["Vestuarios", "Iluminación", "Tribunas", "Estacionamiento", "Cafetería", "Enfermería", "Sala VIP", "Tienda", "Sala de Prensa"].map((facility) => (
-                      <div key={facility} className="flex items-center space-x-2">
-                        <input type="checkbox" id={facility} />
-                        <label htmlFor={facility} className="text-sm">{facility}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block mb-2">Observaciones</label>
-                  <Textarea placeholder="Información adicional sobre la cancha" />
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsCreateFieldOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-                    Registrar Cancha
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+            }
+          >
+            {(close) => (
+              <CanchaForm
+                isEdit={false}
+                refreshCanchas={fetchCanchas}
+                onSuccess={close}
+              />
+            )}
+          </DialogHandle>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="fields">Canchas (CANCHA)</TabsTrigger>
+          <TabsTrigger value="fields">Canchas</TabsTrigger>
           <TabsTrigger value="schedule">Programación</TabsTrigger>
           <TabsTrigger value="maintenance">Mantenimiento</TabsTrigger>
           <TabsTrigger value="history">Historial</TabsTrigger>
@@ -228,86 +161,82 @@ export const CanchasModule: React.FC = () => {
 
         <TabsContent value="fields" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {fields.map((field) => (
-              <Card key={field.id}>
+            {canchas.map((cancha) => (
+              <Card key={cancha.id_cancha}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">{field.nombre}</CardTitle>
+                    <CardTitle className="text-lg">{cancha.nombre_cancha}</CardTitle>
                     <div className="flex flex-col space-y-1">
-                      <Badge className={field.disponible ? 'bg-green-500' : 'bg-red-500'}>
-                        {field.disponible ? 'Disponible' : 'No Disponible'}
+                      <Badge className={cancha.disponibilidad ? "bg-green-500" : "bg-red-500"}>
+                        {cancha.disponibilidad ? "Disponible" : "No Disponible"}
                       </Badge>
-                      <Badge className={getStatusColor(field.estado_actual)}>
-                        {field.estado_actual}
+                      <Badge className={cancha.cancha_activa ? "bg-blue-500" : "bg-gray-400"}>
+                        {cancha.cancha_activa ? "Activa" : "Inactiva"}
                       </Badge>
                     </div>
                   </div>
                 </CardHeader>
+
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex items-start">
-                      <MapPin className="w-4 h-4 mr-2 mt-1 text-gray-500" />
-                      <p className="text-sm text-gray-600">{field.direccion}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Capacidad:</span>
-                        <p>{field.capacidad.toLocaleString()} personas</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Superficie:</span>
-                        <p>{field.tipo_superficie}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Arriendo:</span>
-                        <p>${field.costo_arriendo.toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Construida:</span>
-                        <p>{field.fecha_construccion}</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="font-medium text-sm">Último Mantenimiento:</span>
-                      <p className="text-sm text-gray-600">{field.ultimo_mantenimiento}</p>
-                    </div>
-
-                    <div>
-                      <span className="font-medium text-sm">Instalaciones:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {field.instalaciones.map((facility, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">
-                            {facility}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    {field.observaciones && (
-                      <div>
-                        <span className="font-medium text-sm">Observaciones:</span>
-                        <p className="text-sm text-gray-600">{field.observaciones}</p>
+                    {cancha.direccion && (
+                      <div className="flex items-start">
+                        <MapPin className="w-4 h-4 mr-2 mt-1 text-gray-500" />
+                        <p className="text-sm text-gray-600">{cancha.direccion}</p>
                       </div>
                     )}
 
+                    <div className="text-sm space-y-1">
+                      <p>
+                        <span className="font-medium">Tipo de superficie:</span>{" "}
+                        {(getTipoCancha(cancha.tipo_cancha))}
+                      </p>
+                      <p>
+                        <span className="font-medium">Creada:</span>{" "}
+                        {new Date(cancha.fecha_creacion).toLocaleDateString()}
+                      </p>
+                      <p>
+                        <span className="font-medium">Modificada:</span>{" "}
+                        {new Date(cancha.fecha_modificacion).toLocaleDateString()}
+                      </p>
+                    </div>
+
                     <div className="flex space-x-2 pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleEditField(field)}
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Editar
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        Programar
-                      </Button>
                     </div>
                   </div>
+                  <DialogHandle<CanchaType>
+                    title={`Modificar cancha ${cancha.nombre_cancha}`}
+                    trigger={
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Edit className="w-4 h-4 mr-1" /> Editar
+                      </Button>
+                    }
+                  >
+                    {(close) => (
+                      <CanchaForm
+                        cancha={cancha}
+                        isEdit={true}
+                        refreshCanchas={fetchCanchas}
+                        onSuccess={close}
+                      />
+                    )}
+                  </DialogHandle>
+                  <Button onClick={() => setOpenSelected(cancha.id_cancha)} variant="destructive" size="sm" className="flex-1">
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Eliminar
+                  </Button>
+                  <AlertDialogHandle
+                    title={`Eliminacion de cancha ${cancha.nombre_cancha}`}
+                    description={`¿Estas seguro de querer eliminar al cancha ${cancha.nombre_cancha}`}
+                    confirmLabel='Eliminar'
+                    cancelLabel='Cancelar'
+                    onConfirm={() => handleDeleteCancha(cancha.id_cancha)}
+                    open={openSelected === cancha.id_cancha}
+                    onOpenChange={(Open) => {
+                      if (!Open) setOpenSelected(null); // cerrar el dialog
+                    }}
+                  >
+                  </AlertDialogHandle>
                 </CardContent>
               </Card>
             ))}

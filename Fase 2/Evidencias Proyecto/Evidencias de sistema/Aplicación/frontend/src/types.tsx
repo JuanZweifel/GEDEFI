@@ -90,3 +90,14 @@ export type RolType = {
     desc_rol?: string;
     rol_activo: boolean;
 };
+
+export type CanchaType = {
+    id_cancha: number;
+    nombre_cancha: string;
+    tipo_cancha: number;
+    direccion?: string;
+    disponibilidad: boolean;
+    cancha_activa: boolean;
+    fecha_creacion: string;
+    fecha_modificacion: string;
+}

@@ -1,20 +1,4 @@
-import { API_BASE_URL } from "../config";
-
-async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-            "Content-Type": "application/json",
-        },
-        ...options,
-    });
-
-    if (!res.ok) {
-        const errorData = await res.text();
-        throw new Error(`Error ${res.status}: ${errorData}`);
-    }
-
-    return res.json() as Promise<T>;
-}
+import { fetchAPI } from "../utils/fetchApi";
 
 export const getRoles = <T>(): Promise<T> => fetchAPI<T>("/roles/");
 
