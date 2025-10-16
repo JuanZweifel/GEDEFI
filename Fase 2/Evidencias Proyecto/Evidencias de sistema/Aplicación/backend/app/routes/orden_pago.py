@@ -2,16 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
+from app.security import get_current_user
 
 router = APIRouter(prefix="/ordenes-pago", tags=["Orden Pago"])
 
 
-@router.post("/", response_model=schemas.OrdenPagoRead)
+@router.post("/")
 def create_orden_pago(
-    orden_pago: schemas.OrdenPagoCreate, db: Session = Depends(get_db)
+    orden_pago: schemas.OrdenPagoCreate, db: Session = Depends(get_db) #current_user: dict = Depends(get_current_user)
 ):
     try:
-        return services.create_orden_pago(db, orden_pago)
+        flag = services.create_orden_pago(db, orden_pago, {"rut_usuario" : "26836282-7"})
+        return {"message": "¡Orden creada correctamente!"}
     except HTTPException as e:
         raise e
 

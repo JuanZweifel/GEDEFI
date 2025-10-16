@@ -69,8 +69,8 @@ class ClubUpdate(BaseModel):
     direccion_club: Optional[str] = Field(None, max_length=500, min_length=10, description="Dirección del club")
     email_club: Optional[str] = Field(None, max_length=320, description="Email del club")
     logo_club: Optional[str] = Field(None, description="Ruta del archivo del logo.")
-    color_primario: str = Field(..., min_length=7, max_length=7, description="Color principal del club en formato hexadecimal (ej: #ABC123).")
-    color_secundario: str = Field(..., min_length=7, max_length=7, description="Color secundario del club en formato hexadecimal (ej: #ABC123).")
+    color_primario: str = Field(..., min_length=7, max_length=8, description="Color principal del club en formato hexadecimal (ej: #ABC123).")
+    color_secundario: str = Field(..., min_length=7, max_length=8, description="Color secundario del club en formato hexadecimal (ej: #ABC123).")
     color_respaldo: Optional[str] = Field(None, description="Color respaldo del club en formato hexadecimal (ej: #ABC123).")
     club_activo: Optional[bool] = Field(None, description="Club activo")
 

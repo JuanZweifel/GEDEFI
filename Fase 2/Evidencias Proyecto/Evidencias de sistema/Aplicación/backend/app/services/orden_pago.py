@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from app.models import OrdenPago, Usuario
-from app.schemas import OrdenPagoCreate
-from sqlalchemy.exc import SQLAlchemyError, NoResultFound, IntegrityError
+from app.models import OrdenPago, Usuario, Club
+from app.schemas import OrdenPagoCreate, OrdenPagoRead
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, Depends
 
 from app.utils.decorators import handle_db_exceptions
@@ -13,12 +13,27 @@ def get_orden_pago(db: Session, id_orden: int, current_user: Usuario = Depends(g
 
 @handle_db_exceptions
 def get_ordenes_pago(db: Session, current_user: Usuario = Depends(get_current_user)):
-    return db.query(OrdenPago).all()
+    db_ordenes = db.query(OrdenPago).all()
+    if not db_ordenes: raise HTTPException(status_code=404, detail="No hay ordenes de pago registradas.")
+    ordenes = [OrdenPagoRead.model_validate(orden) for orden in db_ordenes]
+
+    for orden in ordenes:
+        if not orden.id_club: 
+            pass
+        db_club = db.query(Club).filter(Club.id_club == orden.id_club).first()
+        orden.nombre_club = db_club.nombre_club
+    return ordenes
 
 @handle_db_exceptions
-def create_orden_pago(db: Session, orden_pago: OrdenPagoCreate, current_user: Usuario = Depends(get_current_user)) -> OrdenPago:
+def create_orden_pago(db: Session, orden_pago: OrdenPagoCreate, current_user: dict) -> OrdenPago:
     try:
+        rut_usuario = current_user["rut_usuario"]
         db_orden_pago = OrdenPago(**orden_pago.model_dump(mode="json"))
+        db_orden_pago.usuario_emisor = rut_usuario
+
+        if orden_pago.id_club:
+            db_club = db.query(Club).filter(Club.id_club == orden_pago.id_club)
+
         db.add(db_orden_pago)
         db.commit()
         db.refresh(db_orden_pago)

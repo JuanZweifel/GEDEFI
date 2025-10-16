@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, and_, or_
 import psycopg2
 from sqlalchemy.exc import (
     IntegrityError,
@@ -24,21 +24,21 @@ from app.schemas import (
     JugadorBase,
     SerieCreate,
 )
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, status
 from app.utils.constantes import lista_series
 from app.utils.decorators import handle_db_exceptions
-from app.security import get_current_user
+from datetime import date
 
 
 @handle_db_exceptions
 def get_club(
-    db: Session, id_club: int, current_user=Depends(get_current_user)
+    db: Session, id_club: int, current_user:dict
 ) -> Club | None:
     """
     Obtiene un registro de club desde la base de datos utilizando su identificador único.
 
     Esta función consulta la base de datos para buscar una instancia del modelo `Club`
-    que coincida con el `id_club` proporcionado. Requiere un usuario autenticado
+    que coincida con el `id_club` proporcionado. Requiere un dict autenticado
     obtenido mediante la dependencia `get_current_user`.
     Las excepciones de base de datos son manejadas automáticamente por el decorador
     `handle_db_exceptions`.
@@ -50,7 +50,7 @@ def get_club(
     id_club : int
         Identificador único del club a recuperar.
     current_user : User
-        Usuario autenticado obtenido mediante la inyección de dependencias.
+        dict autenticado obtenido mediante la inyección de dependencias.
 
     Retorna
     -------
@@ -71,7 +71,7 @@ def get_clubs(db: Session) -> list[Club]:
     Obtiene todos los registros de club almacenados en la base de datos
 
     Esta función consulta la base de datos para buscar todas las instancias de `Club`
-    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.
     Las excepciones de base de datos son manejadas automáticamente por el decorador
     `handle_db_exceptions`.
 
@@ -94,12 +94,14 @@ def get_clubs(db: Session) -> list[Club]:
 
 
 @handle_db_exceptions
-def create_club(db: Session, club: ClubCreate, current_user=Depends(get_current_user)) -> bool:
+def create_club(
+    db: Session, club: ClubCreate, current_user:dict
+) -> bool:
     """
     Crea una instancia de `Club` para su posterior almacenamiento en la base datos.
 
     Esta función crea una instancia de `Club`. La instancia esta validada mediante el schema `ClubCreate` de pydantic.
-    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.
     Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
 
 
@@ -107,7 +109,7 @@ def create_club(db: Session, club: ClubCreate, current_user=Depends(get_current_
     ----------
     db : Session
         Sesión de base de datos de SQLAlchemy.
-    
+
     club: ClubCreate
         Objeto de pydantic con el formato del schema `ClubCreate`
 
@@ -157,7 +159,8 @@ def create_club(db: Session, club: ClubCreate, current_user=Depends(get_current_
 
 @handle_db_exceptions
 def create_massive_series(
-    db: Session, id_club: int, current_user=Depends(get_current_user)) -> list[Serie]:
+    db: Session, id_club: int, current_user=dict
+) -> list[Serie]:
     """
     Crea de manera masiva todos las instancias estandares de `Serie` asociadas a una instancia de `Club`
 
@@ -174,7 +177,7 @@ def create_massive_series(
         "Años dorados"
     ]
     asociadas a una instacia de `Club`, las instancias de `Serie` estan validadas bajo el schema de pydantic `SerieCreate`
-    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.
     Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
 
 
@@ -182,7 +185,7 @@ def create_massive_series(
     ----------
     db : Session
         Sesión de base de datos de SQLAlchemy.
-    
+
     club: ClubCreate
         Objeto de pydantic con el formato del schema `ClubCreate`
 
@@ -232,13 +235,13 @@ def update_club(
     db: Session,
     id_club: int,
     club_update: ClubUpdate,
-    current_user=Depends(get_current_user),
+    current_user:dict,
 ):
     """
     Actualiza una instancia de `Club`
 
     Esta función actualiza una instancia de `Club`. La instancia esta validada mediante el schema `ClubUpdate` de pydantic.
-    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.
     Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
 
 
@@ -246,7 +249,7 @@ def update_club(
     ----------
     db : Session
         Sesión de base de datos de SQLAlchemy.
-    
+
     club: ClubUpdate
         Objeto de pydantic con el formato del schema `ClubUpdate`
 
@@ -261,7 +264,7 @@ def update_club(
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     try:
-        db_club = get_club(db, id_club)
+        db_club = get_club(db, id_club, current_user)
         if not db_club:
             return None
         for key, value in club_update.dict(exclude_unset=True).items():
@@ -288,9 +291,9 @@ def update_club(
 
 
 @handle_db_exceptions
-def delete_club(db: Session, id_club: int, current_user=Depends(get_current_user)):
+def delete_club(db: Session, id_club: int, current_user:dict):
     try:
-        db_club = get_club(db, id_club)
+        db_club = get_club(db, id_club, current_user)
         db.delete(db_club)
         db.commit()
         return True
@@ -310,14 +313,14 @@ def delete_club(db: Session, id_club: int, current_user=Depends(get_current_user
 
 
 @handle_db_exceptions
-def get_club_with_details(
-    db: Session, current_user=Depends(get_current_user)
+def get_clubs_with_details(
+    db: Session, current_user:dict
 ) -> list[ClubWithDetails] | None:
     """
-    Devuelve todas las instancias de `Club` con información extra de las instancias: `Usuario`, `Jugador` y `Serie`
+    Devuelve todas las instancias de `Club` con información extra de las instancias: `dict`, `Jugador` y `Serie`
 
     Esta función retorna todas las instancias de `Club`, con información extra. Estas instancias estan validadas con el schema de pydantic `ClubWithDetails`
-    Requiere un usuario autenticado obtenido mediante la dependencia `get_current_user`.
+    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.
     Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
 
 
@@ -337,6 +340,7 @@ def get_club_with_details(
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     try:
+        hoy = date.today()
         db_clubs = db.query(Club).all()
         club_with_details: list[ClubWithDetails] = []
 
@@ -348,7 +352,15 @@ def get_club_with_details(
                     DetalleUsuarioClub,
                     Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
                 )
-                .filter(DetalleUsuarioClub.id_club == club.id_club)
+                .filter(
+                    and_(
+                        DetalleUsuarioClub.id_club == club.id_club,
+                        or_(
+                            DetalleUsuarioClub.fecha_fin == None,
+                            DetalleUsuarioClub.fecha_fin >= hoy,
+                        ),
+                    )
+                )
                 .all()
             )
 
@@ -445,3 +457,134 @@ def get_club_with_details(
 
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Club no encontrado")
+
+@handle_db_exceptions
+def get_club_with_details(db:Session, current_user: dict, id_club) -> ClubWithDetails:
+    hoy = date.today()
+    id_club = current_user["id_club"]
+    rut_ususario = current_user["rut_usuario"]
+
+    db_detalle = db.query(DetalleUsuarioClub).filter(
+        and_(
+            DetalleUsuarioClub.id_club == id_club,
+            DetalleUsuarioClub.rut_usuario == rut_ususario,
+            or_(
+                DetalleUsuarioClub.fecha_fin == None,
+                DetalleUsuarioClub.fecha_fin >= hoy,
+            ),
+        )
+    ).first()
+    if not db_detalle: raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Cuenta no asociada al club")
+
+    db_club = db.query(Club).filter(Club.id_club == id_club).first()
+
+    if not db_club: raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club no encontrado")
+
+    # --- DIRECTIVA ---
+    db_directiva = (
+        db.query(Usuario)
+        .join(
+            DetalleUsuarioClub,
+            Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
+        )
+        .filter(
+            and_(
+                DetalleUsuarioClub.id_club == db_club.id_club,
+                or_(
+                    DetalleUsuarioClub.fecha_fin == None,
+                    DetalleUsuarioClub.fecha_fin >= hoy,
+                ),
+            )
+        )
+        .all()
+    )
+
+    # --- SERIES ---
+    db_series = db.query(Serie).filter(Serie.id_club == db_club.id_club).all()
+
+    # --- JUGADORES (todos los jugadores del club, por DetalleClubJugador) ---
+    db_jugadores = (
+        db.query(Jugador)
+        .join(
+            DetalleClubJugador,
+            Jugador.rut_jugador == DetalleClubJugador.rut_jugador,
+        )
+        .filter(DetalleClubJugador.id_club == db_club.id_club)
+        .all()
+    )
+
+    # --- Ajustar logo si existe ---
+    if db_club.logo_club:
+        db_club.logo_club = db_club.logo_club.replace(
+            "../images", "http://localhost:8000/images"
+        )
+
+    # --- Construcción de DIRECTIVA con rol incluido ---
+    usuarios_for_club = []
+    for u in db_directiva:
+        role_name = None
+        role_obj = None
+
+        if hasattr(u, "rol"):
+            role_obj = getattr(u, "rol")
+        elif hasattr(u, "role"):
+            role_obj = getattr(u, "role")
+
+        if role_obj is not None:
+            role_name = getattr(role_obj, "nombre_rol", None) or getattr(
+                role_obj, "name", None
+            )
+        else:
+            if getattr(u, "id_rol", None) is not None:
+                rol_db = db.query(Rol).filter(Rol.id_rol == u.id_rol).first()
+                if rol_db:
+                    role_name = getattr(rol_db, "nombre_rol", None) or getattr(
+                        rol_db, "name", None
+                    )
+
+        usuario_dict = {
+            "rut_usuario": getattr(u, "rut_usuario", None),
+            "email_usuario": getattr(u, "email_usuario", None),
+            "nombre_usuario": getattr(u, "nombre_usuario", None),
+            "apellido_usuario": getattr(u, "apellido_usuario", None),
+            "fecha_nacimiento": getattr(u, "fecha_nacimiento", None),
+            "id_rol": getattr(u, "id_rol", None),
+            "nombre_rol": role_name or "",
+        }
+
+        usuarios_for_club.append(UsuarioForClub.model_validate(usuario_dict))
+
+    # --- Construcción de SERIES (con cantidad de jugadores desde FichaJugador) ---
+    series_for_club = []
+    for s in db_series:
+        # contar jugadores únicos asociados a esta serie a través de FICHA_JUGADOR
+        jugadores_serie = (
+            db.query(Jugador)
+            .join(FichaJugador)
+            .filter(FichaJugador.id_serie == s.id_serie)
+            .all()
+        )  # TODO: REVISAR FICHAS INACTIVAS
+
+        serie_dict = {
+            **s.__dict__,
+            "cantidad_jugadores": len(jugadores_serie),
+            "nombre_club": db_club.nombre_club,
+        }
+
+        series_for_club.append(
+            SerieWithDetails.model_validate(serie_dict, from_attributes=True)
+        )
+
+    # --- Construcción final del objeto ClubWithDetails ---
+    club_details = ClubWithDetails(
+        **db_club.__dict__,
+        directiva=usuarios_for_club,
+        series=series_for_club,
+        jugadores=[
+            JugadorBase.model_validate(j, from_attributes=True)
+            for j in db_jugadores
+        ],
+    )
+    return club_details
+
+

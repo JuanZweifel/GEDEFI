@@ -6,6 +6,7 @@ from app import services, schemas
 import os
 import shutil
 from datetime import date, datetime
+from app.security import get_current_user
 
 router = APIRouter(prefix="/clubs", tags=["Club"])
 
@@ -22,6 +23,7 @@ async def create_club(nombre_club: str = Form(...),
     color_respaldo: str = Form(None),
     logo_club: UploadFile = File(...),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     try:
         club = schemas.ClubCreate(
@@ -52,7 +54,7 @@ async def create_club(nombre_club: str = Form(...),
 
         # Llamar al servicio
         club.logo_club = file_path  # asegurar que solo tenga la ruta
-        flag = services.create_club(db, club)
+        flag = services.create_club(db, club, current_user)
 
         if flag:
             return {"message": "¡Club creado exitosamente!"}
@@ -65,16 +67,20 @@ async def create_club(nombre_club: str = Form(...),
 @router.get("/{id_club}", response_model=schemas.ClubRead)
 def get_club(id_club: int, db: Session = Depends(get_db)):
     try:
-        db_club = services.get_club(db, id_club)
+        current_user = {
+            "rut_usuario": "26811934-5",
+            "id_club": 1
+        }
+        db_club = services.get_club_with_details(db, current_user, id_club)
         return db_club
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
 
 @router.get("/", response_model=list[schemas.ClubWithDetails])
-def get_club_with_details(db: Session = Depends(get_db)):
+def get_clubs_with_details(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     try:
-        info = services.get_club_with_details(db)       
+        info = services.get_clubs_with_details(db, current_user)       
         return info
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -94,10 +100,11 @@ def update_club(
     color_respaldo: str = Form(None),
     logo_club: UploadFile = File(None),
     club_activo: bool = Form(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     try:
-        db_club = services.get_club(db, id_club)
+        db_club = services.get_club(db, id_club, current_user)
         if not db_club: raise HTTPException(status_code=404, detail=f"No se pudo encontrar al club asociado al ID:{id_club}")
         club = schemas.ClubUpdate(
             nombre_club=nombre_club,
@@ -133,15 +140,15 @@ def update_club(
             club.logo_club = db_club.logo_club
         else: raise HTTPException(status_code=400, detail=f"Debe enviar un logo valido.")
 
-        if services.update_club(db, id_club, club): return {"message": "¡Club modificado correctamente!"}
+        if services.update_club(db, id_club, club, current_user): return {"message": "¡Club modificado correctamente!"}
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
 
 @router.delete("/{id_club}")
-def delete_club(id_club: int, db: Session = Depends(get_db)):
+def delete_club(id_club: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     try:
-        flag = services.delete_club(db, id_club)
+        flag = services.delete_club(db, id_club, current_user)
         if flag:
             return {"message": "¡Club eliminado correctamente!"}
     except HTTPException as e:

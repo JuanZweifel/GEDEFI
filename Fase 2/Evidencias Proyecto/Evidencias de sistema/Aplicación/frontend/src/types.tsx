@@ -90,3 +90,22 @@ export type RolType = {
     desc_rol?: string;
     rol_activo: boolean;
 };
+
+export type OrdenPagoType = {
+    id_orden_pago: string;
+    tipo_orden: string;
+    tipo_movimiento: string;
+    monto: number;
+    descripcion?: string | null;
+    fecha_vencimiento?: string | null; // ISO string
+    id_club?: number | null;
+    tipo_pago?: string | null;
+    orden_paga: boolean;
+    metodo_pago?: number | null;
+    numero_transaccion?: string | null;
+    orden_activa: boolean;
+    fecha_pago?: string | null; // ISO string
+    nombre_club?: string | null;
+    fecha_emision: string; // ISO string
+    fecha_modificacion: string; // ISO string
+};

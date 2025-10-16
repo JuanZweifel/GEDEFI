@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from './ui/button.tsx';
-import { Label } from './ui/label.tsx';
-import { Input } from './ui/input.tsx';
-import { Separator } from './ui/separator.tsx';
-import { Checkbox } from './ui/checkbox.tsx';
+import { Button } from '../components/ui/button.tsx';
+import { Label } from '../components/ui/label.tsx';
+import { Input } from '../components/ui/input.tsx';
+import { Separator } from '../components/ui/separator.tsx';
+import { Checkbox } from '../components/ui/checkbox.tsx';
 import {
     Plus
 } from 'lucide-react';
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 
 import { createClub, updateClub } from '../services/clubServices.ts';
-import { AlertDialogHandle } from './alert-dialog-component.tsx';
+import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 
 import {
     type ClubType,
@@ -55,8 +55,8 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
             setFonoClub(club.fono_club ?? "")
             setEmailClub(club.email_club ?? "")
             setLogoClub(club.logo_club ?? undefined)
-            setColorPrimario(club?.color_primario ?? "")
-            setColorSecundario(club?.color_secundario ?? "")
+            setColorPrimario(club?.color_primario ?? "#000000")
+            setColorSecundario(club?.color_secundario ?? "#000000")
             setcolorRespaldo(club?.color_respaldo ?? "")
             if (club.color_respaldo) { setCheckedRespaldo(true) }
             setClubActivo(club.club_activo ?? true)
@@ -110,9 +110,9 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                 fono_club: fonoClub,
                 direccion_club: direccionClub,
                 email_club: emailClub,
-                color_primario: colorPrimario,
-                color_secundario: colorSecundario,
-                ...(checkedRespaldo ? { color_respaldo: colorRespaldo } : {}),
+                color_primario: colorPrimario === "" ? "#000000" : colorPrimario,
+                color_secundario: colorSecundario === "" ? "#000000" : colorSecundario,
+                ...(checkedRespaldo ? { color_respaldo: colorRespaldo === "" ? "#000000" : colorRespaldo } : {}),
                 ...(isEdit ? { club_activo: clubActivo } : {}),
             }
 
