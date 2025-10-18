@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../components/ui/button'; 
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { putJugador, postJugador, deleteJugador } from '../services/jugadoresService';
 import { postFichaJugador } from '../services/fichaJugadorService'
 import { postDetalleClubJugador } from '../services/detalleClubJugadorService';
-import { AlertDialogHandle } from '../components/alert-dialog-component'; 
+import { AlertDialogHandle } from '../components/alert-dialog-component';
 import { getSeries } from '../services/serieService';
 import { useAuth } from '../contexts/authContext';
 
@@ -63,6 +63,7 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
     const [genero, setGenero] = useState<string>("");
     const [fechaNacimiento, setFechaNacimiento] = useState("");
     const [enfermedadesCronicas, setEnfermedadesCronicas] = useState("");
+    const [tieneEnfermedades, setTieneEnfermedades] = useState<boolean | null>(null);
     const [fonoJugador, setFonoJugador] = useState("");
     const [jugadorActivo, setJugadorActivo] = useState<string>("true");
 
@@ -71,7 +72,6 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
 
     const { club_id } = useAuth();
 
-    // Traer todas las series y filtrar por club del usuario
     useEffect(() => {
         getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>()
             .then(data => {
@@ -114,6 +114,7 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
         setGenero("");
         setFechaNacimiento("");
         setEnfermedadesCronicas("");
+        setTieneEnfermedades(null);
         setFonoJugador("");
         setJugadorActivo("true");
         setSelectedSerie(null);
@@ -127,7 +128,6 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
     const handleSave = async () => {
         setIsLoading(true);
         try {
-            // Crear jugador y decirle a TS que esto es de tipo Jugador
             const jugadorCreado = await postJugador<Jugador>({
                 rut_jugador: rutJugador,
                 primer_nombre: primerNombreJugador,
@@ -136,12 +136,12 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                 segundo_apellido: segundoApellidoJugador || null,
                 genero: genero === "true",
                 fecha_nacimiento: fechaNacimiento,
-                enfermedades_cronicas: enfermedadesCronicas || null,
+                enfermedades_cronicas:
+                    tieneEnfermedades === true ? enfermedadesCronicas : null,
                 fono_jugador: fonoJugador || null,
                 jugador_activo: jugadorActivo === "true",
             });
 
-            // Crear ficha automáticamente en la serie seleccionada
             if (selectedSerie) {
                 await postFichaJugador({
                     rut_jugador: jugadorCreado.rut_jugador,
@@ -149,7 +149,6 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                 });
             }
 
-            // Crear registro en DetalleClubJugador para asociar jugador con club del usuario logeado
             if (club_id) {
                 await postDetalleClubJugador({
                     rut_jugador: jugadorCreado.rut_jugador,
@@ -161,14 +160,12 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
             await refreshJugadores();
             setIsOpen(false);
             resetForm();
-
         } catch (error: any) {
             if (error?.status) {
                 if (error.status === 409) {
                     toast.error(error.data.detail || "El RUT ingresado ya se encuentra registrado.");
                     return;
                 }
-
                 if (error.status === 422) {
                     const firstError = Array.isArray(error.data) ? error.data[0] : error.data;
                     if (firstError?.loc?.includes("rut_jugador")) {
@@ -178,7 +175,6 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                     }
                     return;
                 }
-
                 toast.error(error.data.detail || "Error al crear jugador");
             } else {
                 toast.error(error.message || "Ocurrió un error inesperado al agregar el jugador.");
@@ -191,17 +187,17 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
         <>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                    <Button style={{ backgroundColor: '#0000db' }} className="text-white">
+                    <Button style={{ backgroundColor: "#0000db" }} className="text-white">
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Jugador
                     </Button>
                 </DialogTrigger>
+
                 <DialogContent className="max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>Agregar Jugador</DialogTitle>
                     </DialogHeader>
 
-                    {/* Contenedor principal vertical */}
                     <form onSubmit={handleAlert} className="flex flex-col gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Rut Jugador */}
@@ -212,12 +208,10 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setRutJugador(value);
-
-                                        // Validación con tu función
                                         if (!validarRut(value)) {
                                             e.currentTarget.setCustomValidity("RUT inválido. Verifica el formato y dígito verificador.");
                                         } else {
-                                            e.currentTarget.setCustomValidity(""); // limpio el mensaje si es válido
+                                            e.currentTarget.setCustomValidity("");
                                         }
                                     }}
                                     required
@@ -275,11 +269,7 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                             {/* Género */}
                             <div className="flex flex-col">
                                 <label className="block mb-1">Género *</label>
-                                <Select
-                                    value={genero}
-                                    onValueChange={(value: string) => setGenero(value)}
-                                    required
-                                >
+                                <Select value={genero} onValueChange={(value: string) => setGenero(value)} required>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione Género" />
                                     </SelectTrigger>
@@ -298,19 +288,54 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                                     value={fechaNacimiento}
                                     onChange={(e) => setFechaNacimiento(e.target.value)}
                                     required
-                                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 80)).toISOString().split("T")[0]}
+                                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 80))
+                                        .toISOString()
+                                        .split("T")[0]}
                                     max={new Date().toISOString().split("T")[0]}
                                 />
                             </div>
 
-                            {/* Enfermedades Crónicas */}
+                            {/* ✅ Pregunta Enfermedades Crónicas */}
                             <div className="col-span-2 flex flex-col">
-                                <label className="block mb-1">Enfermedades Crónicas</label>
-                                <Input
-                                    value={enfermedadesCronicas}
-                                    onChange={(e) => setEnfermedadesCronicas(e.target.value)}
-                                />
+                                <label className="block mb-1">¿El jugador tiene enfermedades crónicas?</label>
+                                <div className="flex gap-6 mt-1">
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="enfermedades"
+                                            value="si"
+                                            checked={tieneEnfermedades === true}
+                                            onChange={() => setTieneEnfermedades(true)}
+                                        />
+                                        Sí
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="enfermedades"
+                                            value="no"
+                                            checked={tieneEnfermedades === false}
+                                            onChange={() => {
+                                                setTieneEnfermedades(false);
+                                                setEnfermedadesCronicas("");
+                                            }}
+                                        />
+                                        No
+                                    </label>
+                                </div>
                             </div>
+
+                            {/* ✅ Campo solo si elige "Sí" */}
+                            {tieneEnfermedades && (
+                                <div className="col-span-2 flex flex-col">
+                                    <label className="block mb-1">Enfermedades Crónicas</label>
+                                    <Input
+                                        value={enfermedadesCronicas}
+                                        onChange={(e) => setEnfermedadesCronicas(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            )}
 
                             {/* Teléfono */}
                             <div className="col-span-2 flex flex-col">
@@ -320,13 +345,11 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setFonoJugador(value);
-
                                         try {
-                                            // Validación con tu función
                                             validarCelularChile(value);
-                                            e.currentTarget.setCustomValidity(""); // limpio el mensaje si es válido
+                                            e.currentTarget.setCustomValidity("");
                                         } catch (error: any) {
-                                            e.currentTarget.setCustomValidity(error.message); // mensaje de error
+                                            e.currentTarget.setCustomValidity(error.message);
                                         }
                                     }}
                                     pattern="^(\+569\d{8}|9\d{8}|41\d{8})$"
@@ -335,6 +358,7 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                             </div>
                         </div>
 
+                        {/* Serie */}
                         <div className="col-span-2 flex flex-col">
                             <label className="block mb-1">Serie *</label>
                             <Select
@@ -343,7 +367,7 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                                 required
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione Serie" required />
+                                    <SelectValue placeholder="Seleccione Serie" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {series.map((s) => (
@@ -353,9 +377,8 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {/* Párrafo debajo del seleccionar serie */}
                             <p className="text-sm text-gray-600 mt-2">
-                                Los campos marcados con (*) son campos obligatorios
+                                Los campos marcados con (*) son obligatorios
                             </p>
                         </div>
 
@@ -372,7 +395,9 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                             >
                                 Cancelar
                             </Button>
-                            <Button type="submit">Guardar</Button>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? "Guardando..." : "Guardar"}
+                            </Button>
                         </div>
                     </form>
                 </DialogContent>
@@ -414,6 +439,16 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
     const [isEditFormOpen, setIsEditFormOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+    // ✅ Función para validar número de celular chileno
+    const validarCelularChile = (numero: string): string => {
+        const tel = numero.trim();
+        const patrones = [/^\+569\d{8}$/, /^9\d{8}$/, /^41\d{8}$/]; // +569XXXXXXXX, 9XXXXXXXX, 41XXXXXXXX
+        if (!patrones.some((p) => p.test(tel))) {
+            throw new Error("Número de celular inválido");
+        }
+        return tel;
+    };
 
     // ✅ Cargar datos cuando se abra el diálogo
     useEffect(() => {
@@ -477,7 +512,9 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
             await putJugador(jugador.rut_jugador, updatedData);
             toast.success("El jugador fue modificado correctamente");
             await refreshJugadores();
-            setIsEditFormOpen(false);
+
+            // 🔹 Espera un instante antes de cerrar para asegurar re-render
+            setTimeout(() => setIsEditFormOpen(false), 100);
         } catch (error: any) {
             console.error("❌ Error al modificar jugador:", error);
             toast.error(error.message || "Ocurrió un error al modificar el jugador");
@@ -559,7 +596,9 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
                                     value={fechaNacimiento}
                                     onChange={(e) => setFechaNacimiento(e.target.value)}
                                     required
-                                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 80)).toISOString().split("T")[0]}
+                                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 80))
+                                        .toISOString()
+                                        .split("T")[0]}
                                     max={new Date().toISOString().split("T")[0]}
                                 />
                             </div>
@@ -574,13 +613,25 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
                                 <label className="block mb-1">Teléfono</label>
                                 <Input
                                     value={fonoJugador}
-                                    onChange={(e) => setFonoJugador(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setFonoJugador(value);
+                                        try {
+                                            validarCelularChile(value);
+                                            e.currentTarget.setCustomValidity("");
+                                        } catch (error: any) {
+                                            e.currentTarget.setCustomValidity(error.message);
+                                        }
+                                    }}
+                                    pattern="^(\+569\d{8}|9\d{8}|41\d{8})$"
+                                    title="Ingrese un número de celular chileno válido (+569XXXXXXXX, 9XXXXXXXX o 41XXXXXXXX)"
                                 />
-                                <p className="text-sm text-gray-600 mt-2">
-                                    Los campos marcados con (*) son obligatorios
-                                </p>
                             </div>
                         </div>
+
+                        <p className="text-sm text-gray-600 mt-2">
+                            Los campos marcados con (*) son obligatorios
+                        </p>
 
                         <div className="flex justify-end space-x-2">
                             <Button

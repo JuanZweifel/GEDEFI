@@ -24,10 +24,17 @@ class Entrenamiento(Base):
     )
     rut_usuario: Mapped[str] = mapped_column(String(10), ForeignKey("USUARIO.rut_usuario"), nullable=False)
     id_cancha:Mapped[int] = mapped_column(Integer, ForeignKey("CANCHA.id_cancha"), nullable=False)
+    id_serie:Mapped[int] = mapped_column(Integer, ForeignKey("SERIE.id_serie"), nullable=False)
 
     # Relaciones
     usuario: Mapped["Usuario"] = relationship(
         "Usuario", back_populates="entrenamientos"
     )
-    # rendimientos_entrenamiento: Mapped[list["RendimientoEntrenamiento"]] = relationship("RendimientoEntrenamiento", back_populates="entrenamiento", cascade="all, delete-orphan")
-    # cancha: Mapped["Cancha"] = relationship("Cancha", back_populates="entrenamientos")
+
+    rendimientos_entrenamiento: Mapped[list["RendimientoEntrenamiento"]] = relationship(
+        "RendimientoEntrenamiento", back_populates="entrenamiento"
+        )
+    
+    cancha: Mapped["Cancha"] = relationship("Cancha", back_populates="entrenamientos")
+
+    serie: Mapped["Serie"] = relationship("Serie", back_populates="entrenamientos")

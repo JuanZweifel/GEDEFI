@@ -13,9 +13,13 @@ class RendimientoEntrenamiento(Base):
     duracion_recorrido:Mapped[int] = mapped_column(Integer, nullable=False)
     nivel_oxigeno:Mapped[int] = mapped_column(Integer,  nullable=False)
     rut_jugador:Mapped[str] = mapped_column(String(10), ForeignKey("JUGADOR.rut_jugador"), primary_key=True, nullable=False)
-    #id_entrenamiento:Mapped[int] = mapped_column(Integer, ForeignKey("ENTRENAMIENTO.id_entrenamiento"), primary_key=True, nullable=False, index=True)
+    id_entrenamiento:Mapped[int] = mapped_column(Integer, ForeignKey("ENTRENAMIENTO.id_entrenamiento"), primary_key=True, nullable=False, index=True)
 
     #Relaciones
     jugador: Mapped["Jugador"] = relationship(
         "Jugador", back_populates="rendimientos_entrenamiento"
+    )
+
+    entrenamiento: Mapped["Entrenamiento"] = relationship(
+        "Entrenamiento", back_populates="rendimientos_entrenamiento"
     )

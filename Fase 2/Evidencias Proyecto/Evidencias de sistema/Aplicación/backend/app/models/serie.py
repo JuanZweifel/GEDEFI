@@ -39,3 +39,5 @@ class Serie(Base):
     fichas_jugador: Mapped[list["FichaJugador"]] = relationship(
         "FichaJugador", back_populates="serie", passive_deletes=False
     )
+
+    entrenamientos: Mapped["Entrenamiento"] = relationship("Entrenamiento", back_populates="serie")
