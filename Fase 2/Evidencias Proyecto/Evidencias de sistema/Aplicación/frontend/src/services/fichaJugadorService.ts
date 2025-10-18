@@ -1,4 +1,4 @@
-const URL_FICHAS = "http://localhost:8000/fichas_jugador"; 
+const URL_FICHAS = "http://localhost:8000/fichas_jugador";
 
 async function handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
@@ -9,14 +9,13 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return data;
 }
 
-/**
- * Obtiene todas las fichas sin filtrar.
- */
-export async function getFichasPorFiltro<T>(): Promise<T> {
+
+export async function getFichasPorFiltro<T>(token?: string): Promise<T> {
     const response = await fetch(URL_FICHAS, {
         method: "GET",
         headers: {
             "content-type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
     });
 
@@ -43,4 +42,31 @@ export async function postFichaJugador<T>(fichaData: {
 
     const data: T = await response.json();
     return data;
+}
+
+
+export async function putFichaJugador<T>(rut_jugador: string, id_serie: number, fichaUpdate: Record<string, any>, token?: string): Promise<T> {
+    const response = await fetch(`${URL_FICHAS}/${rut_jugador}/${id_serie}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(fichaUpdate),
+    });
+
+    return handleResponse<T>(response);
+}
+
+
+export async function deleteFichaJugador<T>(rut_jugador: string, id_serie: number, token?: string): Promise<T> {
+    const response = await fetch(`${URL_FICHAS}/${rut_jugador}/${id_serie}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+    });
+
+    return handleResponse<T>(response);
 }

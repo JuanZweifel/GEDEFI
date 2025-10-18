@@ -34,7 +34,7 @@ type Lesion = {
     id_lesion: number;
     rut_jugador: string;
     nombre_lesion: string;
-    tipo_lesion: boolean; // true = Grave, false = Leve
+    tipo_lesion: boolean; 
     descripcion?: string;
     fecha_lesion: string;
     tiempo_recuperacion: string;
@@ -53,7 +53,7 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
 
     const [rutJugador, setRutJugador] = useState("");
     const [nombreLesion, setNombreLesion] = useState("");
-    const [tipoLesion, setTipoLesion] = useState<boolean>(false);
+    const [tipoLesion, setTipoLesion] = useState<boolean | null>(null);
     const [descripcion, setDescripcion] = useState("");
     const [fechaLesion, setFechaLesion] = useState("");
     const [tiempoRecuperacion, setTiempoRecuperacion] = useState("");
@@ -99,6 +99,13 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
     const handleSave = async () => {
         if (!token) {
             toast.error("No se encontró token. Por favor inicia sesión.");
+            return;
+        }
+
+        // Validación: fecha de lesión no puede ser futura
+        const hoy = new Date().toISOString().split("T")[0];
+        if (fechaLesion > hoy) {
+            toast.error("La fecha de la lesión no puede ser futura.");
             return;
         }
 
@@ -184,15 +191,16 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
                             <div className="flex flex-col">
                                 <label className="block mb-1">Tipo de Lesión *</label>
                                 <Select
-                                    value={String(tipoLesion)}
+                                    value={tipoLesion !== null ? String(tipoLesion) : undefined}
                                     onValueChange={(v: string) => setTipoLesion(v === "true")}
+                                    required
                                 >
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Seleccione tipo de lesión" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="true">Grave</SelectItem>
-                                        <SelectItem value="false">Leve</SelectItem>
+                                        <SelectItem value="true">Fuera del club</SelectItem>
+                                        <SelectItem value="false">Dentro del club</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -204,6 +212,7 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
                                     type="date"
                                     value={fechaLesion}
                                     onChange={(e) => setFechaLesion(e.target.value)}
+                                    max={new Date().toISOString().split("T")[0]}
                                     required
                                 />
                             </div>
@@ -517,20 +526,20 @@ export const DialogViewLesion: React.FC<DialogViewLesionProps> = ({ lesion }) =>
                         {/* RUT del Jugador */}
                         <div className="flex flex-col">
                             <label className="block mb-1">RUT del Jugador</label>
-                            <Input value={rutJugador} disabled className="w-full border p-2 rounded text-black" />
+                            <Input value={rutJugador} disabled style={{ color: 'black', WebkitTextFillColor: 'black', opacity: 1 }}  />
                         </div>
 
                         {/* Nombre Lesión */}
                         <div className="flex flex-col">
                             <label className="block mb-1">Nombre de la Lesión</label>
-                            <Input value={nombreLesion} disabled className="w-full border p-2 rounded text-black" />
+                            <Input value={nombreLesion} disabled style={{ color: 'black', WebkitTextFillColor: 'black', opacity: 1 }} />
                         </div>
 
                         {/* Tipo de Lesión */}
                         <div className="flex flex-col">
                             <label className="block mb-1">Tipo de Lesión</label>
                             <Select value={tipoLesion ? "true" : "false"} disabled>
-                                <SelectTrigger className="w-full bg-gray-100 cursor-not-allowed text-black">
+                                <SelectTrigger style={{ color: 'black', WebkitTextFillColor: 'black', opacity: 1 }}>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -543,25 +552,25 @@ export const DialogViewLesion: React.FC<DialogViewLesionProps> = ({ lesion }) =>
                         {/* Fecha de Lesión */}
                         <div className="flex flex-col">
                             <label className="block mb-1">Fecha de Lesión</label>
-                            <Input type="date" value={fechaLesion} disabled className="w-full border p-2 rounded text-black" />
+                            <Input type="date" value={fechaLesion} disabled style={{ color: 'black', WebkitTextFillColor: 'black', opacity: 1 }} />
                         </div>
 
                         {/* Tiempo de Recuperación */}
                         <div className="flex flex-col">
                             <label className="block mb-1">Tiempo de Recuperación (semanas)</label>
-                            <Input type="number" value={tiempoRecuperacion} disabled className="w-full border p-2 rounded text-black" />
+                            <Input type="number" value={tiempoRecuperacion} disabled style={{ color: 'black', WebkitTextFillColor: 'black', opacity: 1 }} />
                         </div>
 
                         {/* Fecha Fin Lesión */}
                         <div className="flex flex-col">
                             <label className="block mb-1">Fecha Fin de Lesión</label>
-                            <Input type="date" value={fechaFinLesion} disabled className="w-full border p-2 rounded text-black" />
+                            <Input type="date" value={fechaFinLesion} disabled style={{ color: 'black', WebkitTextFillColor: 'black', opacity: 1 }} />
                         </div>
 
                         {/* Descripción */}
                         <div className="col-span-1 md:col-span-2 flex flex-col">
                             <label className="block mb-1">Descripción</label>
-                            <textarea value={descripcion} disabled className="w-full border p-2 rounded text-black" />
+                            <textarea value={descripcion} disabled style={{ color: 'black', WebkitTextFillColor: 'black', opacity: 1 }} />
                         </div>
                     </div>
 

@@ -21,11 +21,6 @@ class LesionBase(BaseModel):
     def validar_fecha_lesion(cls, v) -> date:
         return validar_fecha(v, True)
 
-    @field_validator("fecha_fin_lesion")
-    @classmethod
-    def validar_fecha_fin_lesion(cls, v) -> date:
-        return validar_fecha(v, False)
-
 
 class LesionCreate(LesionBase):
     rut_jugador: str

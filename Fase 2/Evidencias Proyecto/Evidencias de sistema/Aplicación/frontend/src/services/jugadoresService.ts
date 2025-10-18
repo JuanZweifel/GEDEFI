@@ -16,23 +16,24 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 
-export async function getJugadores<T>(): Promise<T> {
+export async function getJugadores<T>(token?: string): Promise<T> {
     const response = await fetch(`${URL_BASE}`, {
         method: 'GET',
         headers: {
-            'content-type': 'application/json'
+            'content-type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         }
     })
     return handleResponse<T>(response);
 }
 
 
-export async function uploadExcel<T>(formData: FormData, token: string): Promise<T> {
+export async function uploadExcel<T>(formData: FormData, token?: string): Promise<T> {
     const response = await fetch(`${URL_UPLOAD_EXCEL}`, {
         method: "POST",
         body: formData,
         headers: {
-            "Authorization": `Bearer ${token}`, // <- aquí enviamos el token
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
     });
 
@@ -46,21 +47,27 @@ export async function uploadExcel<T>(formData: FormData, token: string): Promise
 }
 
 
-export async function putJugador<T>(rut_jugador: string, jugador: Record<string, any>): Promise<T> {
+export async function putJugador<T>(rut_jugador: string, jugador: Record<string, any>, token?: string): Promise<T> {
 
     const response = await fetch(URL_MODIFICAR_JUGADOR(rut_jugador), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(jugador),
     });
     return handleResponse<T>(response);
 }
 
 
-export async function postJugador<T>(jugador: Record<string, any>): Promise<T> {
+export async function postJugador<T>(jugador: Record<string, any>, token?: string): Promise<T> {
     const response = await fetch(URL_BASE, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(jugador),
     });
 
@@ -86,15 +93,12 @@ export async function postJugador<T>(jugador: Record<string, any>): Promise<T> {
 }
 
 
-export async function postLesion<T>(
-    lesion: Record<string, any>,
-    token: string
-): Promise<T> {
+export async function postLesion<T>(lesion: Record<string, any>, token: string): Promise<T> {
     const response = await fetch(URL_BASE_LESION, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`, 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(lesion),
     });
@@ -121,12 +125,12 @@ export async function postLesion<T>(
 }
 
 
-export async function getLesiones<T>(token: string): Promise<T> {
+export async function getLesiones<T>(token?: string): Promise<T> {
     const response = await fetch(URL_BASE_LESION, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
     });
 
@@ -139,20 +143,26 @@ export async function getLesiones<T>(token: string): Promise<T> {
 }
 
 
-export async function putLesion<T>(id_lesion: number, lesion: Record<string, any>): Promise<T> {
+export async function putLesion<T>(id_lesion: number, lesion: Record<string, any>, token?: string): Promise<T> {
 
     const response = await fetch(URL_MODIFICAR_LESION(id_lesion), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(lesion),
     });
     return handleResponse<T>(response);
 }
 
 
-export async function deleteJugador(rut_jugador: string) {
+export async function deleteJugador(rut_jugador: string, token?: string) {
     const response = await fetch(`${URL_BASE}${rut_jugador}`, {
         method: "DELETE",
+        headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
     });
 
     if (!response.ok) {
@@ -162,9 +172,12 @@ export async function deleteJugador(rut_jugador: string) {
 }
 
 
-export async function deleteLesion(id_lesion: number): Promise<void> {
+export async function deleteLesion(id_lesion: number, token?: string): Promise<void> {
     const response = await fetch(`${URL_BASE_LESION}${id_lesion}`, {
         method: "DELETE",
+        headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
     });
 
     if (!response.ok) {
@@ -175,11 +188,12 @@ export async function deleteLesion(id_lesion: number): Promise<void> {
 
 
 // Servicio para traer todas las series
-export async function getSeries<T>(): Promise<T> {
+export async function getSeries<T>(token?: string): Promise<T> {
     const response = await fetch(URL_BASE_SERIES, {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         }
     });
 

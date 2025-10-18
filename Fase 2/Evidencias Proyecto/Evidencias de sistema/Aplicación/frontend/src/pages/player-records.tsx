@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useAuth } from '../contexts/authContext';
 import { DialogAddJugador, DialogEditJugador, DialogViewJugador, ButtonDeleteJugador } from '../forms/players-form';
 import { DialogAddLesion, DialogEditLesion, DialogViewLesion, ButtonDeleteLesion } from '../forms/lesion-form';
+import { DialogEditFichaJugador, DialogViewFichaJugador, DialogDeleteFichaJugador } from '../forms/ficha-jugador-form';
 import { Input } from '../components/ui/input';
 
 
@@ -239,6 +240,11 @@ export const PlayerRecordsModule: React.FC = () => {
                 .map((s) => ({ id_serie: s.id_serie, nombre_serie: s.nombre_serie }));
 
             setSeries(filtered);
+
+            // 👇 Aquí se preselecciona automáticamente la primera serie
+            if (filtered.length > 0 && !selectedSerie) {
+                setSelectedSerie(filtered[0].id_serie.toString());
+            }
         }
     }, [club_id, allSeries]);
 
@@ -277,9 +283,9 @@ export const PlayerRecordsModule: React.FC = () => {
 
             setFichas(filtered);
 
-            // 🔹 Limpiar select solo si no hay fichas
-            if (filtered.length === 0) {
-                setSelectedSerie(null);
+            // 🔹 Si no hay fichas, selecciona automáticamente la primera serie disponible
+            if (filtered.length === 0 && series.length > 0) {
+                setSelectedSerie(series[0].id_serie.toString());
             }
         } catch (error) {
             console.error("Error al obtener fichas:", error);
@@ -557,7 +563,13 @@ export const PlayerRecordsModule: React.FC = () => {
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex space-x-1">
-                                                            <DialogEditJugador jugador={player} refreshJugadores={async () => { await fetchJugadores(); }} />
+                                                            <DialogEditJugador
+                                                                jugador={player}
+                                                                refreshJugadores={async () => {
+                                                                    const updatedPlayers = await fetchJugadoresPorClub()
+                                                                    setPlayers(updatedPlayers)
+                                                                }}
+                                                            />
                                                             <DialogViewJugador jugador={player} refreshJugadores={async () => { await fetchJugadores(); }} />
                                                             <ButtonDeleteJugador
                                                                 rutJugador={player.rut_jugador}
@@ -728,6 +740,7 @@ export const PlayerRecordsModule: React.FC = () => {
                                                     <TableHead>Club</TableHead>
                                                     <TableHead>Serie</TableHead>
                                                     <TableHead>Fecha Creación</TableHead>
+                                                    <TableHead>Acciones</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -758,6 +771,27 @@ export const PlayerRecordsModule: React.FC = () => {
                                                                 <TableCell>{serieCompleta?.nombre_serie || "Serie no encontrada"}</TableCell>
                                                                 <TableCell>
                                                                     {new Date(ficha.fecha_creacion).toLocaleDateString('es-CL')}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex space-x-1">
+                                                                        <DialogEditFichaJugador
+                                                                            ficha={ficha}
+                                                                            refreshFichas={buscarFichas}
+                                                                            jugador={players.find(j => j.rut_jugador === ficha.rut_jugador)}
+                                                                        />
+                                                                        <DialogViewFichaJugador
+                                                                            ficha={ficha}
+                                                                            jugador={players.find(j => j.rut_jugador === ficha.rut_jugador)}
+                                                                        />
+                                                                        <DialogDeleteFichaJugador
+                                                                            fichaRut={ficha.rut_jugador}       
+                                                                            fichaIdSerie={ficha.id_serie}      
+                                                                            refreshFichas={buscarFichas}        
+                                                                        />
+
+
+
+                                                                    </div>
                                                                 </TableCell>
                                                             </TableRow>
                                                         );

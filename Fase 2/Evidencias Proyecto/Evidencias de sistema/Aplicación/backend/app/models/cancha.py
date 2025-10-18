@@ -20,3 +20,5 @@ class Cancha(Base):
     partido: Mapped[list["Partido"]] = relationship(
         "Partido", back_populates="cancha"
     )
+
+    entrenamientos: Mapped["Entrenamiento"] = relationship("Entrenamiento", back_populates="cancha")
