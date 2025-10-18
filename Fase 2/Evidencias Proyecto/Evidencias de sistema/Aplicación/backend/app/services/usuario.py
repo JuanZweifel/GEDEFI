@@ -1,6 +1,7 @@
 from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from psycopg2.errors import ForeignKeyViolation
 from app.models import Usuario, DetalleUsuarioClub, Club
 from app.schemas import UsuarioCreate, UsuarioUpdate
 from app.security import get_password_hash
@@ -85,8 +86,12 @@ def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
 
     except IntegrityError as e:
         db.rollback()
-        constraint = getattr(e.orig.diag, "constraint_name", "")
-        if constraint == "USUARIO_rut_usuario_key":
+
+        orig = getattr(e, "orig", None)
+        constraint = getattr(getattr(orig, "diag", None), "constraint_name", "")
+        if isinstance(orig, ForeignKeyViolation):
+            detail = "El rol o club asociado no existe en el sistema."
+        elif constraint == "USUARIO_rut_usuario_key":
             detail = f"El RUT {usuario.rut_usuario} ya está registrado."
         elif constraint == "USUARIO_email_usuario_key":
             detail = f"El email {usuario.email_usuario} ya está registrado."
