@@ -62,11 +62,24 @@ def get_club(
     HTTPException
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
+    hoy = date.today()
+    db_detalle = db.query(DetalleUsuarioClub).filter(
+        and_(
+            DetalleUsuarioClub.id_club == current_user["id_club"], 
+            DetalleUsuarioClub.rut_usuario == current_user["rut_usuario"],
+            or_(
+                DetalleUsuarioClub.fecha_fin == None,
+                DetalleUsuarioClub.fecha_fin >= hoy,
+            ),
+        )
+    ).first()
+
+    if not db_detalle or id_club != current_user["id_club"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
     return db.query(Club).filter(Club.id_club == id_club).first()
 
 
 @handle_db_exceptions
-def get_clubs(db: Session) -> list[Club]:
+def get_clubs(db: Session, current_user: dict) -> list[Club]:
     """
     Obtiene todos los registros de club almacenados en la base de datos
 
@@ -90,6 +103,8 @@ def get_clubs(db: Session) -> list[Club]:
     HTTPException
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
+    
+    if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
     return db.query(Club).order_by(desc(Club.club_activo), asc(Club.nombre_club)).all()
 
 
@@ -124,6 +139,7 @@ def create_club(
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     try:
+        if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permito para crear un club")
         db_club = Club(**club.model_dump())
         db.add(db_club)
         db.flush()
@@ -264,6 +280,7 @@ def update_club(
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     try:
+        if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para actualizar la información de un club")
         db_club = get_club(db, id_club, current_user)
         if not db_club:
             return None
@@ -293,6 +310,7 @@ def update_club(
 @handle_db_exceptions
 def delete_club(db: Session, id_club: int, current_user:dict):
     try:
+        if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para borrar un club.")
         db_club = get_club(db, id_club, current_user)
         db.delete(db_club)
         db.commit()
@@ -340,6 +358,7 @@ def get_clubs_with_details(
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     try:
+        if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
         hoy = date.today()
         db_clubs = db.query(Club).all()
         club_with_details: list[ClubWithDetails] = []
@@ -474,7 +493,7 @@ def get_club_with_details(db:Session, current_user: dict, id_club) -> ClubWithDe
             ),
         )
     ).first()
-    if not db_detalle: raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Cuenta no asociada al club")
+    if not db_detalle: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
 
     db_club = db.query(Club).filter(Club.id_club == id_club).first()
 

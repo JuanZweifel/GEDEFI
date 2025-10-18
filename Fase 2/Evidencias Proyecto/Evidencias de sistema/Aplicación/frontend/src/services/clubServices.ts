@@ -11,12 +11,23 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return data
 }
 
-export async function getClubs<T>(): Promise<T> {
+export async function getClubs<T>(token: string | null): Promise<T> {
     const response = await fetch(URL_BASE, {
         method: 'GET',
         headers: {
-            'content-type': 'application/json'
+            'content-type': 'application/json',
+            'Authorization': `Bearer ${token}`
         }
+    })
+    return handleResponse<T>(response);
+}
+
+export async function getClub<T>(id_club: number): Promise<T> {
+    const response = await fetch(`${URL_BASE}${id_club}`, {
+        method: 'GET',
+        headers: {
+            'content-type': 'application/json'
+        },
     })
     return handleResponse<T>(response);
 }

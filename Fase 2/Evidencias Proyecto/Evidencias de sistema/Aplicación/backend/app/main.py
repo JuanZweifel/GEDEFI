@@ -29,6 +29,7 @@ from app.routes import (
     auth,
 )
 from app.utils.trigger import create_trigger
+from app.utils.ejecutar_sql import insertar_ordenes_demo, insertar_egresos_demo
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
@@ -88,6 +89,8 @@ app.add_middleware(
 # TODO: CREACIÓN DE TRIGGER, SE DEBE DESCOMENTAR JUNTO A LA ELIMINACION DE TODO EN LA BASE DE DATOS, WARNING DE ARRIBA
 #@app.on_event("startup")
 #def startup_event():
+#    insertar_egresos_demo()
+#    insertar_ordenes_demo()
 #    create_trigger()
 
 @app.get("/api")

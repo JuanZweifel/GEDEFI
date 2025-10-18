@@ -8,12 +8,13 @@ import { LandingPage } from '../components/landing-page';
 import { PlayerDetails } from '../components/player-details';
 import { MeetingsModule } from '../components/meetings-module';
 import { ClubManagement } from '../components/club-management';
-import { EnhancedFinanceModule, AnalyticsModule, FingerprintModule, UserPermissionsModule } from '../components/enhanced-modules';
+import { AnalyticsModule, FingerprintModule, UserPermissionsModule } from '../components/enhanced-modules';
 import { PenaltiesModule } from '../components/additional-modules';
 import { AuditModule } from './auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA Y SEPARAR EN UN POSIBLE MODULO DIFERENTE
 import { PlayerRecordsModule } from './player-records.tsx'
 import { UserRoleModule } from './user-role.tsx'
 import { ClubModule } from './club.tsx'
+import { FincanceModule } from './financiero.tsx';
 import { MatchesTrainingModule } from '../components/matches-training-module';
 import { EnhancedFieldsModule } from '../components/enhanced-fields-module';
 import { useAuth } from '../contexts/authContext.tsx';
@@ -305,7 +306,7 @@ export default function DashboardComponent() {
         { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
         { id: 'fields', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
-        { id: 'finances', label: 'Finanzas', icon: DollarSign, component: EnhancedFinanceModule, permission: 'finances' },
+        { id: 'finances', label: 'Finanzas', icon: DollarSign, component: FincanceModule, permission: 'finances' },
         { id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
         { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
         { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: FingerprintModule, permission: 'fingerprint' },

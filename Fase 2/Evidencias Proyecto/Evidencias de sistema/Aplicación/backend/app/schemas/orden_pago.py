@@ -72,3 +72,12 @@ class OrdenPagoUpdate(BaseModel):
 
 class OrdenPagoList(BaseModel):
     ordenes_pago: list[OrdenPagoRead]
+
+
+class IngresosMes(BaseModel):
+    total_ingresos: str      # ejemplo: "2.245.000"
+    variacion: str           # ejemplo: "+12% vs mes anterior"
+
+class EgresosMes(BaseModel):
+    total_egresos: str
+    variacion: str

@@ -9,10 +9,10 @@ router = APIRouter(prefix="/ordenes-pago", tags=["Orden Pago"])
 
 @router.post("/")
 def create_orden_pago(
-    orden_pago: schemas.OrdenPagoCreate, db: Session = Depends(get_db) #current_user: dict = Depends(get_current_user)
+    orden_pago: schemas.OrdenPagoCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)
 ):
     try:
-        flag = services.create_orden_pago(db, orden_pago, {"rut_usuario" : "26836282-7"})
+        flag = services.create_orden_pago(db, orden_pago,  current_user)
         return {"message": "¡Orden creada correctamente!"}
     except HTTPException as e:
         raise e
@@ -40,3 +40,17 @@ def delete_orden_pago(id_orden: int, db: Session = Depends(get_db)):
         return services.delete_orden_pago(db, id_orden)
     except HTTPException as e:
         raise e
+
+@router.get("/ingresos/mes", response_model=schemas.IngresosMes)
+def obtener_ingresos_mes(
+    db: Session = Depends(get_db),
+    #current_user: dict = Depends(get_current_user)
+):
+    return services.get_ingresos(db) #current_user)
+
+@router.get("/egresos/mes", response_model=schemas.EgresosMes)
+def obtener_egresos_mes(
+    db: Session = Depends(get_db),
+    #current_user: dict = Depends(get_current_user)
+):
+    return services.get_egresos(db) #current_user)
