@@ -13,160 +13,153 @@ import {
 } from 'lucide-react';
 
 import { toast } from 'sonner';
-import { type SerieType, type SerieDetailsProps } from '../types.tsx';
+import { type SerieType, type SerieDetailsProps, type JugadorType } from '../types.tsx';
 import { getSeries, updateStateSerie, deleteSerie } from '../services/serieService.ts';
 import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { NavLink, useLocation, useNavigate, useParams } from 'react-router';
+import { useAuth } from '../contexts/authContext.tsx';
 
-export const SerieDetails: React.FC<SerieDetailsProps> = ({ serie }) => {
-    const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+export const SerieDetailsContent: React.FC<SerieDetailsProps> = ({ serie }) => {
     const [activeTab, setActiveTab] = useState("jugadores")
+    const [jugadores, setJugadores] = useState<JugadorType[]>([])
+    // TODO: Se utilizaran los partidos y entrenamientos cuando esten sus modulos listos
+    const [partidos, setPartidos] = useState([])
+    const [entrenamientos, setEntrenamientos] = useState([])
 
+    useEffect(() => {
+        setJugadores(serie.jugadores)
+    }, [serie])
     return (
-        <DialogHandle
-            title={`${serie.nombre_club} - ${serie.nombre_serie}`}
-            size='w-3/4'
-            trigger={
-                <Button variant="outline" size="sm">
-                    <Eye className="w-4 h-4" />
-                </Button>
-            }
-            open={isDetailsOpen}
-            onOpenChange={setIsDetailsOpen}
-            initialData={serie}
-        >
-            {() => (
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <Label className="block mb-2">Nombre</Label>
-                            <Input value={`${serie.nombre_club} - ${serie.nombre_serie}`} disabled />
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <Label className="block mb-2">Nombre</Label>
+                    <Input value={`${serie.nombre_club} - ${serie.nombre_serie}`} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Fecha fundacion</Label>
+                    <Input value={serie.fecha_creacion?.split("T")[0]} disabled />
+                </div>
+                <div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className='block mb-2'>
+                            <Label className="block mb-0">Estado</Label>
+                            <Badge className={serie.serie_activa ? 'bg-green-500' : 'bg-gray-500'}>
+                                {serie.serie_activa ? 'Activo' : 'Inactivo'}
+                            </Badge>
                         </div>
-                        <div>
-                            <Label className="block mb-2">Fecha fundacion</Label>
-                            <Input value={serie.fecha_creacion?.split("T")[0]} disabled />
+                        <div className='block mb-2'>
+                            <Label className="block mb-0">Jugadores</Label>
+                            <Badge className={serie.cantidad_jugadores > 0 ? 'bg-blue-500' : 'bg-gray-500'}>
+                                {serie.cantidad_jugadores}
+                            </Badge>
                         </div>
-                        <div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                <div className='block mb-2'>
-                                    <Label className="block mb-0">Estado</Label>
-                                    <Badge className={serie.serie_activa ? 'bg-green-500' : 'bg-gray-500'}>
-                                        {serie.serie_activa ? 'Activo' : 'Inactivo'}
-                                    </Badge>
-                                </div>
-                                <div className='block mb-2'>
-                                    <Label className="block mb-0">Jugadores</Label>
-                                    <Badge className={serie.cantidad_jugadores > 0 ? 'bg-blue-500' : 'bg-gray-500'}>
-                                        {serie.cantidad_jugadores}
-                                    </Badge>
-                                </div>
-                                <div className='block mb-2'>
-                                    <Label className="block mb-0">Partidos jugados</Label>
-                                    <Badge className={false ? 'bg-green-500' : 'bg-gray-500'}>
-                                        0
-                                    </Badge>
-                                </div>
-                                <div className='block mb-2'>
-                                    <Label className="block mb-0">Sanciones</Label>
-                                    <Badge className={false ? 'bg-red-500' : 'bg-gray-500'}>
-                                        0
-                                    </Badge>
-                                </div>
-                            </div>
+                        <div className='block mb-2'>
+                            <Label className="block mb-0">Partidos jugados</Label>
+                            <Badge className={false ? 'bg-green-500' : 'bg-gray-500'}>
+                                0
+                            </Badge>
+                        </div>
+                        <div className='block mb-2'>
+                            <Label className="block mb-0">Sanciones</Label>
+                            <Badge className={false ? 'bg-red-500' : 'bg-gray-500'}>
+                                0
+                            </Badge>
                         </div>
                     </div>
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="jugadores">Jugadores</TabsTrigger>
-                            <TabsTrigger value="partidos">Partidos</TabsTrigger>
-                            <TabsTrigger value="sanciones">Sanciones</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="jugadores" className="space-y-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className='font-medium'>Usuarios directivos</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {serie.cantidad_jugadores > 0 &&
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>RUT</TableHead>
-                                                    <TableHead>Nombre completo</TableHead>
-                                                    <TableHead>Genero</TableHead>
-                                                    <TableHead>Fecha nacimiento</TableHead>
-                                                    <TableHead>Enfermedades cronicas</TableHead>
-                                                    <TableHead>Telefono</TableHead>
-                                                    <TableHead>Estado</TableHead>
-                                                    <TableHead>Acciones</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {serie.jugadores.map((j) => (
-                                                    <TableRow >
-                                                        <TableCell className="font-medium">{j.rut_jugador}</TableCell>
-                                                        <TableCell className="font-medium">{j.primer_nombre} {j.segundo_nombre} {j.primer_apellido} {j.segundo_apellido}</TableCell>
-                                                        <TableCell className="font-medium">{j.genero ? "Masculino" : "Femenino"}</TableCell>
-                                                        <TableCell className="font-medium">{j.fecha_nacimiento}</TableCell>
-                                                        <TableCell className="font-medium">{j.enfermedades_cronicas}</TableCell>
-                                                        <TableCell className="font-medium">{j.fono_jugador}</TableCell>
-                                                        <TableCell className="font-medium">
-                                                            <Badge className={j.jugador_activo ? 'bg-green-500' : 'bg-gray-500'}>
-                                                                {j.jugador_activo ? 'Activo' : 'Inactivo'}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell className="font-medium">
-                                                            <Button variant="outline" size="sm">
-                                                                <Eye className="w-4 h-4" />
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    }
-                                    {serie.cantidad_jugadores === 0 &&
-                                        <div className="text-center py-8 text-gray-500">
-                                            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                            <p>La serie no tiene jugadores inscritos.</p>
-                                        </div>
-                                    }
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="partidos" className="space-y-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className='font-medium'>Partidos jugados</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-center py-8 text-gray-500">
-                                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                        <p>EN DESARROLLO</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="sanciones" className="space-y-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className='font-medium'>Historial de sanciones</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-center py-8 text-gray-500">
-                                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                        <p>EN DESARROLLO</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
                 </div>
-            )}
-        </DialogHandle>
+            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="jugadores">Jugadores</TabsTrigger>
+                    <TabsTrigger value="partidos">Partidos</TabsTrigger>
+                    <TabsTrigger value="entrenamientos">Entrenamientos</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="jugadores" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='font-medium'>Usuarios directivos</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {serie.cantidad_jugadores > 0 &&
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>RUT</TableHead>
+                                            <TableHead>Nombre completo</TableHead>
+                                            <TableHead>Genero</TableHead>
+                                            <TableHead>Fecha nacimiento</TableHead>
+                                            <TableHead>Enfermedades cronicas</TableHead>
+                                            <TableHead>Telefono</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Acciones</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {jugadores.map((j) => (
+                                            <TableRow >
+                                                <TableCell className="font-medium">{j.rut_jugador}</TableCell>
+                                                <TableCell className="font-medium">{j.primer_nombre} {j.segundo_nombre} {j.primer_apellido} {j.segundo_apellido}</TableCell>
+                                                <TableCell className="font-medium">{j.genero ? "Masculino" : "Femenino"}</TableCell>
+                                                <TableCell className="font-medium">{j.fecha_nacimiento}</TableCell>
+                                                <TableCell className="font-medium">{j.enfermedades_cronicas}</TableCell>
+                                                <TableCell className="font-medium">{j.fono_jugador}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Badge className={j.jugador_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                                                        {j.jugador_activo ? 'Activo' : 'Inactivo'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Button variant="outline" size="sm">
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            }
+                            {serie.cantidad_jugadores === 0 &&
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>La serie no tiene jugadores inscritos.</p>
+                                </div>
+                            }
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="partidos" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='font-medium'>Partidos jugados</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-center py-8 text-gray-500">
+                                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                <p>EN DESARROLLO</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="entrenamientos" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='font-medium'>Historial de entrenamientos</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-center py-8 text-gray-500">
+                                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                <p>EN DESARROLLO</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
     )
 }
 
@@ -179,6 +172,22 @@ export const SerieModule: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedEstado, setSelectedEstado] = useState<string | undefined>("0");
+
+    // auth
+    const { token, logout } = useAuth()
+
+    // logica de router y dialog
+    const [selectedSerie, setSelectedSerie] = useState<SerieType | null>(null)
+    const [action, setAction] = useState<string>("")
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const navigate = useNavigate();
+    const location = useLocation();
+    const params = useParams();
+
+    const handleCloseDialog = (open: boolean) => {
+        if (!open) navigate("/dashboard/series");
+    };
+
 
     // Filtro de series por estado y nombre
     const filteredSeries = (() => {
@@ -203,13 +212,15 @@ export const SerieModule: React.FC = () => {
         let data: SerieType[] = []
         try {
             setIsFetching(true)
-            data = await getSeries<SerieType[]>();
+            data = await getSeries<SerieType[]>(token);
             setSerieList(data);
             if (data.length === 0) {
                 toast.info("No hay series registradas en la base de datos.")
             }
         } catch (error: any) {
-            toast.warning(String(error.detail))
+            console.log(error.message)
+            if(error.message === "Token inválido" || error.message === "Usuario no encontrado") logout()
+            toast.warning(String(error))
         } finally {
             if (data.length === 0) {
                 setSerieList([])
@@ -217,9 +228,52 @@ export const SerieModule: React.FC = () => {
             setIsFetching(false)
         }
     }
+
+    // TODO: Revisar los useEffect, hay 3 y deben ser analizados correctamente
     useEffect(() => {
         fetchSeries();
     }, [])
+
+    useEffect(() => {
+        switch (true) {
+            case location.pathname.endsWith("/edit") && !params.id:
+                console.warn("Intento de acceder a /edit sin ID válido.");
+                navigate("/dashboard/series"); // o mostrar un toast de error
+                break;
+            case location.pathname.endsWith("/edit") && !!params.id:
+                setAction("edit");
+                setIsDialogOpen(true);
+                break;
+            case !!params.id:
+                setAction("view");
+                setIsDialogOpen(true);
+                break;
+
+            default:
+                setAction("");
+                setIsDialogOpen(false);;
+                break;
+        }
+
+    }, [location.pathname, params.id])
+
+    // REVISAR
+    useEffect(() => {
+        if (!params.id) return; // no hay id
+        if (isFetching) return; // todavía cargando
+        if (serieList.length === 0) return; // aún no se ha traído nada
+
+        const serieEncontrada = serieList.find(
+            (s) => s.id_serie === Number(params.id)
+        );
+
+        if (serieEncontrada) {
+            setSelectedSerie(serieEncontrada);
+        } else {
+            toast.warning("La serie solicitada no existe.");
+            navigate("/dashboard/series");
+        }
+    }, [params.id, isFetching, serieList]);
 
     const handleDesactivate = async (id_serie: number) => {
         let data: { message: string }
@@ -354,10 +408,14 @@ export const SerieModule: React.FC = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    <SerieDetails serie={serie} />
 
                                                     {!isLoading &&
                                                         <>
+                                                            <NavLink to={`/dashboard/series/${serie.id_serie}/`} onClick={() => setSelectedSerie(serie)}>
+                                                                <Button variant="outline" size="sm" className="flex items-center">
+                                                                    <Eye className="w-4 h-4" />
+                                                                </Button>
+                                                            </NavLink>
                                                             <Button
                                                                 onClick={() => {
                                                                     setIsSelected(serie.id_serie);
@@ -418,6 +476,9 @@ export const SerieModule: React.FC = () => {
                                                     }
                                                     {isLoading &&
                                                         <>
+                                                            <Button variant="outline" size="sm" className="flex items-center" disabled>
+                                                                <Eye className="w-4 h-4 mr-1" />
+                                                            </Button>
                                                             <Button
                                                                 variant="destructive"
                                                                 size="sm"
@@ -482,6 +543,30 @@ export const SerieModule: React.FC = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* DIALOGS DE RUTA*/}
+            {action === "view" && (
+                <DialogHandle
+                    title={selectedSerie ? `Detalles de la serie: ${selectedSerie.nombre_serie}` : "Cargando..."}
+                    trigger={<div />}
+                    open={isDialogOpen}
+                    onOpenChange={handleCloseDialog}
+                    initialData={selectedSerie}
+                    size='w-full'
+                >
+                    {() => {
+                        if (!selectedSerie) {
+                            return (
+                                <div className="p-6 flex items-center justify-center">
+                                    <span>Cargando detalles de la serie...</span>
+                                </div>
+                            );
+                        }
+
+                        return <SerieDetailsContent serie={selectedSerie} />;
+                    }}
+                </DialogHandle>
+            )}
         </div >
     );
 };

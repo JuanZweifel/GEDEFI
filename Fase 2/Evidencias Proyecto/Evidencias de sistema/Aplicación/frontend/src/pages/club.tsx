@@ -25,7 +25,7 @@ import {
     type ClubDetailsType,
 } from '../types.tsx';
 import { useAuth } from '../contexts/authContext.tsx';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate, NavLink } from 'react-router';
 
 export const ClubDetailsContent: React.FC<ClubDetailsType> = ({ club }) => {
     const [series, setSeries] = useState<SerieType[]>([])
@@ -195,9 +195,11 @@ export const ClubDetailsContent: React.FC<ClubDetailsType> = ({ club }) => {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="font-medium">
-                                                    <Button variant="outline" size="sm">
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
+                                                    <NavLink to={`/dashboard/series/${serie.id_serie}`}>
+                                                        <Button variant="outline" size="sm">
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                    </NavLink>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -419,6 +421,7 @@ export const ClubModule: React.FC = () => {
                     open={isViewOpen}
                     onOpenChange={handleCloseViewDialog}
                     initialData={selectedClub}
+                    size='w-full'
                 >
                     {() => {
                         if (!selectedClub) {
@@ -477,7 +480,7 @@ export const ClubModule: React.FC = () => {
                                     onChange={e => setSearchTerm(e.target.value)}
                                     className="w-64"
                                 />
-                                <Select value={selectedEstado} onValueChange={v => setSelectedEstado(v)}>
+                                <Select value={selectedEstado} onValueChange={(v: string) => setSelectedEstado(v)}>
                                     <SelectTrigger className="w-48">
                                         <SelectValue placeholder="Seleccionar estado" />
                                     </SelectTrigger>
@@ -491,93 +494,93 @@ export const ClubModule: React.FC = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredClubs.map((club) => (
-                                <Card key={club.id_club}>
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between">
-                                            <CardTitle>
-                                                <div>{club.nombre_club}</div>
+                                    <Card key={club.id_club}>
+                                        <CardHeader>
+                                            <div className="flex items-start justify-between">
+                                                <CardTitle>
+                                                    <div>{club.nombre_club}</div>
+                                                    <div>
+                                                        <span className="text-gray-400 text-sm">{club.rut_club}</span>
+                                                    </div>
+                                                </CardTitle>
+                                                <Badge className={club.club_activo ? "bg-green-500" : "bg-gray-500"}>
+                                                    {club.club_activo ? "Activo" : "Inactivo"}
+                                                </Badge>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {/* Club info */}
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
                                                 <div>
-                                                    <span className="text-gray-400 text-sm">{club.rut_club}</span>
+                                                    <span className="font-medium">Fecha fundacion:</span>
+                                                    <p>{club.fecha_fundacion}</p>
                                                 </div>
-                                            </CardTitle>
-                                            <Badge className={club.club_activo ? "bg-green-500" : "bg-gray-500"}>
-                                                {club.club_activo ? "Activo" : "Inactivo"}
-                                            </Badge>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {/* Club info */}
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span className="font-medium">Fecha fundacion:</span>
-                                                <p>{club.fecha_fundacion}</p>
+                                                <div>
+                                                    <span className="font-medium">Telefono:</span>
+                                                    <p>{club.fono_club}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span className="font-medium">Telefono:</span>
-                                                <p>{club.fono_club}</p>
+                                            <div className="text-sm">
+                                                <span className="font-medium">Correo Electronico:</span>
+                                                <p>{club.email_club}</p>
                                             </div>
-                                        </div>
-                                        <div className="text-sm">
-                                            <span className="font-medium">Correo Electronico:</span>
-                                            <p>{club.email_club}</p>
-                                        </div>
 
-                                        {/* Series & Players */}
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span className="font-medium">Series:</span>
-                                                <p>{club.series.length}</p>
+                                            {/* Series & Players */}
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <span className="font-medium">Series:</span>
+                                                    <p>{club.series.length}</p>
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium">Jugadores:</span>
+                                                    <p>{club.jugadores.length}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span className="font-medium">Jugadores:</span>
-                                                <p>{club.jugadores.length}</p>
+
+                                            {/* Logo */}
+                                            <div className="text-sm">
+                                                <img
+                                                    src={
+                                                        typeof club.logo_club === "string"
+                                                            ? club.logo_club
+                                                            : club.logo_club instanceof File
+                                                                ? URL.createObjectURL(club.logo_club)
+                                                                : undefined
+                                                    }
+                                                    alt="Preview logo"
+                                                    className="mt-2 h-32 w-32 object-contain border rounded"
+                                                    style={{ width: "1000px", height: "250px", objectFit: "contain" }}
+                                                />
                                             </div>
-                                        </div>
 
-                                        {/* Logo */}
-                                        <div className="text-sm">
-                                            <img
-                                                src={
-                                                    typeof club.logo_club === "string"
-                                                        ? club.logo_club
-                                                        : club.logo_club instanceof File
-                                                            ? URL.createObjectURL(club.logo_club)
-                                                            : undefined
-                                                }
-                                                alt="Preview logo"
-                                                className="mt-2 h-32 w-32 object-contain border rounded"
-                                                style={{ width: "1000px", height: "250px", objectFit: "contain" }}
-                                            />
-                                        </div>
-
-                                        {/* Buttons */}
-                                        <div className="flex space-x-2 pt-2">
-                                            <ClubDetailsButton club={club} />
-                                            <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClub(club.id_club)}>
-                                                <Edit className="w-4 h-4 mr-1" /> Editar
-                                            </Button>
-                                        </div>
-                                        <div className="flex space-x-2 pt-2">
-                                            <Button
-                                                onClick={() => setOpenSelected(club.id_club)}
-                                                variant="destructive"
-                                                size="sm"
-                                                className="flex-1"
-                                            >
-                                                <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                                            </Button>
-                                            <AlertDialogHandle
-                                                title={`Eliminacion de club ${club.nombre_club}`}
-                                                description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}?`}
-                                                confirmLabel="Eliminar"
-                                                cancelLabel="Cancelar"
-                                                onConfirm={() => handleDelete(club.id_club)}
-                                                open={openSelected === club.id_club}
-                                                onOpenChange={open => !open && setOpenSelected(null)}
-                                            />
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                            {/* Buttons */}
+                                            <div className="flex space-x-2 pt-2">
+                                                <ClubDetailsButton club={club} />
+                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClub(club.id_club)}>
+                                                    <Edit className="w-4 h-4 mr-1" /> Editar
+                                                </Button>
+                                            </div>
+                                            <div className="flex space-x-2 pt-2">
+                                                <Button
+                                                    onClick={() => setOpenSelected(club.id_club)}
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    className="flex-1"
+                                                >
+                                                    <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                                                </Button>
+                                                <AlertDialogHandle
+                                                    title={`Eliminacion de club ${club.nombre_club}`}
+                                                    description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}?`}
+                                                    confirmLabel="Eliminar"
+                                                    cancelLabel="Cancelar"
+                                                    onConfirm={() => handleDelete(club.id_club)}
+                                                    open={openSelected === club.id_club}
+                                                    onOpenChange={open => !open && setOpenSelected(null)}
+                                                />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 ))}
                             </div>
                             {clubList.length === 0 &&

@@ -389,7 +389,11 @@ export default function DashboardComponent() {
                             <Route path="dashboard" element={<Dashboard />} />
                             <Route path="users-roles" element={<UserRoleModule />} />
                             <Route path="clubs/*" element={<ClubModule />} />
-                            <Route path="series" element={<SerieModule />} />
+                            <Route path="series" element={<SerieModule />}>
+                                <Route index element={<SerieModule />} />
+                                <Route path=":id" element={<SerieModule />} />
+                                <Route path=":id/edit" element={<SerieModule />} />
+                            </Route>
                             <Route path="players-records" element={<PlayerRecordsModule />} />
                             <Route path="matches-training" element={<MatchesTrainingModule />} />
                             <Route path="scoreboard" element={<Scoreboard />} />

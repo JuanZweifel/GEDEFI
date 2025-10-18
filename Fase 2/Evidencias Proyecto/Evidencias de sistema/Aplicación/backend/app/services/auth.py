@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
+from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload
 from app.models import Usuario, DetalleUsuarioClub
 from app.models.recuperacion_contrasena import RecuperacionContrasena
@@ -24,7 +25,7 @@ FROM_EMAIL = "no-reply@gedefi.cl"
 def authenticate_user(db: Session, email: str, password: str) -> Usuario | None:
     user: Usuario = (
         db.query(Usuario)
-        .filter(Usuario.email_usuario == email)
+        .filter(and_(Usuario.email_usuario == email, Usuario.usuario_activo == True))
         .options(
             joinedload(Usuario.detalles_usuario_club).joinedload(
                 DetalleUsuarioClub.club

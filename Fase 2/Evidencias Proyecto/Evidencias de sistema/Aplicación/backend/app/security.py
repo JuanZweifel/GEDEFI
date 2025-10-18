@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 from app.db import get_db
 from app.models.usuario import Usuario
 
@@ -55,7 +56,7 @@ def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
             )
 
-        user = db.query(Usuario).filter(Usuario.rut_usuario == rut_usuario).first()
+        user = db.query(Usuario).filter(and_(Usuario.rut_usuario == rut_usuario, Usuario.usuario_activo == True)).first()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado"

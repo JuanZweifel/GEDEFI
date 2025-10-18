@@ -10,7 +10,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return data
 }
 
-export async function getClubs<T>(token?: string): Promise<T> {
+export async function getClubs<T>(token?: string | null): Promise<T> {
     const response = await fetch(URL_BASE, {
         method: "GET",
         headers: {
