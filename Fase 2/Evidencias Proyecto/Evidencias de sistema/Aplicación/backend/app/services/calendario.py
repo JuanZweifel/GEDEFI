@@ -1,46 +1,63 @@
 import random
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, date, time
-from app.models import Serie
-from app.models import Partido, Cancha
+from app.models import Partido, Cancha, Club
 
 
 def generate_year_fixture(db, total_jornadas=17):
-    # Obtener series activas
-    series = db.query(Serie).filter(Serie.activa == True).all()
-    series_ids = [s.id_serie for s in series]
+    # Obtener clubs activos
+    clubs = db.query(Club).filter(Club.club_activo == True).all()
 
-    n = len(series_ids)
+    # Mapeo id → nombre para facilitar acceso
+    club_map = {c.id_club: c.nombre_club for c in clubs}
+    club_ids = list(club_map.keys())
+
+    n = len(club_ids)
     is_odd = n % 2 != 0
 
     if is_odd:
-        series_ids.append(None)  # Valor dummy
+        club_ids.append(None)  # Valor dummy para manejar el descanso
         n += 1
 
     half = n // 2
     fixture = []
 
-    current_list = series_ids[:]
+    current_list = club_ids[:]
+    used_pairs = set()  # Global, para evitar repeticiones en todo el torneo
 
     for jornada in range(1, total_jornadas + 1):
-        pairs = []
-        used_pairs = set()
+        matches = []
+        resting_clubs = []
 
         for i in range(half):
             home = current_list[i]
             away = current_list[n - 1 - i]
 
-            if home is None or away is None:
+            # Identifica al club que descansa
+            if home is None:
+                resting_clubs.append({"id": away, "nombre": club_map.get(away)})
+                continue
+            if away is None:
+                resting_clubs.append({"id": home, "nombre": club_map.get(home)})
                 continue
 
-            # Previene repiticion de partidos
+            # Previene repetición de partidos
             if (home, away) in used_pairs or (away, home) in used_pairs:
                 continue
 
-            pairs.append((home, away, jornada))
+            matches.append(
+                {
+                    "casa": {"id": home, "nombre": club_map[home]},
+                    "visitante": {"id": away, "nombre": club_map[away]},
+                    "jornada": jornada,
+                }
+            )
             used_pairs.add((home, away))
 
-        fixture.extend(pairs)
+        fixture.append(
+            {"jornada": jornada, "partidos": matches, "descansa": resting_clubs}
+        )
+
         # Rota para la siguiente fecha/jornada
         current_list = [current_list[0]] + current_list[-1:] + current_list[1:-1]
 

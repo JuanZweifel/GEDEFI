@@ -39,7 +39,7 @@ export const CanchasModule: React.FC = () => {
       data = await getCanchas();
       setCanchas(data);
       if (data.length === 0) {
-        toast.info("No hay clubes registrados en la base de datos.")
+        toast.info("No hay canchas registradas en la base de datos.")
       }
     } catch (err: any) {
       toast.warning(String(err))
