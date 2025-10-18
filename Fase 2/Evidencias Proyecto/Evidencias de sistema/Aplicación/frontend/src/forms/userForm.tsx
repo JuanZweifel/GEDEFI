@@ -7,6 +7,7 @@ import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
 import { Input } from "../components/ui/input";
 import { validarRut } from "../utils/validacion_rut.tsx";
 import { type ClubType, type RolType, type UsuarioType, type UsuarioFormType } from "../types.tsx";
+import { useAuth } from "../contexts/authContext.tsx";
 
 type UserFormProps = {
   user?: UsuarioType;
@@ -54,6 +55,7 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
     }
   );
   const [isLoading, setIsLoading] = useState(false);
+  const { token } = useAuth()
 
   const ensureRoles = async () => {
     if (!roles || roles.length === 0) {
@@ -90,10 +92,10 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
     setIsLoading(true);
     try {
       if (isEdit) {
-        await updateUser(form.rut_usuario, form);
+        await updateUser(form.rut_usuario, form, token);
         toast.success("Usuario modificado correctamente!");
       } else {
-        await createUser(form);
+        await createUser(form, token);
         toast.success("Usuario registrado correctamente!");
       }
       await refreshUsers();

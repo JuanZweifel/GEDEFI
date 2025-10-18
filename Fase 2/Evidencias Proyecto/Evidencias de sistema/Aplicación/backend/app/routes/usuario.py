@@ -2,17 +2,26 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
+from app.security import get_current_user
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 
 @router.post("/", response_model=schemas.UsuarioRead)
-def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
+def create_usuario(
+    usuario: schemas.UsuarioCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
     return services.create_usuario(db, usuario)
 
 
 @router.get("/{rut_usuario}", response_model=schemas.UsuarioRead)
-def get_usuario(rut_usuario: str, db: Session = Depends(get_db)):
+def get_usuario(
+    rut_usuario: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
     db_usuario = services.get_usuario(db, rut_usuario)
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario not found")
@@ -20,14 +29,22 @@ def get_usuario(rut_usuario: str, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[schemas.UsuarioRead])
-def get_usuarios(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_usuarios(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
     usuarios = services.get_usuarios(db, skip=skip, limit=limit)
     return usuarios
 
 
 @router.put("/{rut_usuario}", response_model=schemas.UsuarioRead)
 def update_usuario(
-    rut_usuario: str, usuario: schemas.UsuarioUpdate, db: Session = Depends(get_db)
+    rut_usuario: str,
+    usuario: schemas.UsuarioUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     db_usuario = services.update_usuario(db, rut_usuario, usuario)
     if db_usuario is None:
@@ -36,7 +53,11 @@ def update_usuario(
 
 
 @router.delete("/{rut_usuario}", response_model=dict)
-def delete_usuario(rut_usuario: str, db: Session = Depends(get_db)):
+def delete_usuario(
+    rut_usuario: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
     success = services.delete_usuario(db, rut_usuario)
     if not success:
         raise HTTPException(status_code=404, detail="Usuario not found")
@@ -44,7 +65,11 @@ def delete_usuario(rut_usuario: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{rut_usuario}/active", response_model=bool)
-def is_user_active(rut_usuario: str, db: Session = Depends(get_db)):
+def is_user_active(
+    rut_usuario: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
     is_active = services.is_user_active(db, rut_usuario)
     if not is_active:
         return True

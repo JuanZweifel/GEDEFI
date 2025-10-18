@@ -1,6 +1,6 @@
 import bcrypt
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
+from jose import JWTError, jwt, ExpiredSignatureError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -46,23 +46,29 @@ def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         rut_usuario: str = payload.get("rut")
-        email: str = payload.get("email")
-        rol: str = payload.get("rol")
-        club_id: int = payload.get("club_id")
-        admin: bool = payload.get("admin")
 
         if rut_usuario is None:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido o sin información de usuario",
             )
 
         user = db.query(Usuario).filter(and_(Usuario.rut_usuario == rut_usuario, Usuario.usuario_activo == True)).first()
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado"
-            )
+            raise HTTPException(status_code=401, detail="Usuario no encontrado")
 
-        return {"rut_usuario": rut_usuario, "email": email, "rol": rol, "club_id":club_id, "admin": admin}
+        return {
+            "rut_usuario": rut_usuario,
+            "email": payload.get("email"),
+            "rol": payload.get("rol"),
+            "club_id": payload.get("club_id"),
+            "admin": payload.get("admin"),
+        }
+
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="El token ha expirado"
+        )
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"

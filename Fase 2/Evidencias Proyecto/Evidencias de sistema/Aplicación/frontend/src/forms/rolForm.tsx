@@ -5,6 +5,7 @@ import { createRole, updateRole } from "../services/rolService.ts";
 import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
 import { Input } from "../components/ui/input";
 import { type RolType } from "../types.tsx";
+import { useAuth } from "../contexts/authContext.tsx";
 
 type RoleFormProps = {
   role?: RolType;
@@ -38,6 +39,7 @@ export function RoleForm({ role, isEdit, refreshRoles, onSuccess }: RoleFormProp
     }
   );
   const [isLoading, setIsLoading] = useState(false);
+  const { token } = useAuth();
 
   useEffect(() => {
     if (isEdit && role) setForm(role);
@@ -57,10 +59,10 @@ export function RoleForm({ role, isEdit, refreshRoles, onSuccess }: RoleFormProp
     setIsLoading(true);
     try {
       if (isEdit && form.id_rol) {
-        await updateRole(form.id_rol, form);
+        await updateRole(form.id_rol, form, token);
         toast.success("Rol modificado correctamente!");
       } else {
-        await createRole(form);
+        await createRole(form, token);
         toast.success("Rol registrado correctamente!");
       }
       refreshRoles();

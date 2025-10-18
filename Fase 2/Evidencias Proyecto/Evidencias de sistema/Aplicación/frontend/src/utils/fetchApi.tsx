@@ -1,23 +1,28 @@
 import { API_BASE_URL } from "../config";
 
 // TODO: Revisar si los cambios a esta funcion afectan a usuario y rol
-export async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export async function fetchAPI<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  token?: string
+): Promise<T> {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers, // allow overriding headers if needed
+  };
+
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-    },
     ...options,
+    headers,
   });
 
   if (!res.ok) {
     let errorMessage = `${res.status}`;
     try {
       const errorData = await res.json();
-      if (errorData.detail) {
-        errorMessage += ` | ${errorData.detail}`;
-      }
+      if (errorData.detail) errorMessage += ` | ${errorData.detail}`;
     } catch {
-      // En caso de que la respuesta no sea JSON
       const text = await res.text();
       if (text) errorMessage += `: ${text}`;
     }
@@ -29,9 +34,5 @@ export async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): 
   }
 
   const text = await res.text();
-  if (!text) {
-    return null as unknown as T;
-  }
-
-  return JSON.parse(text) as T;
+  return text ? (JSON.parse(text) as T) : (null as unknown as T);
 }

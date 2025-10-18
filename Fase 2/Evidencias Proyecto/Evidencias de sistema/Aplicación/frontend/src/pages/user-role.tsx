@@ -16,6 +16,7 @@ import { type ClubType, type RolType, type UsuarioType } from "../types.tsx";
 import { getClubs } from "../services/clubServices.ts";
 import { UserForm } from "../forms/userForm.tsx";
 import { RoleForm } from "../forms/rolForm.tsx";
+import { useAuth } from "../contexts/authContext.tsx";
 
 
 export const UserRoleModule: React.FC = () => {
@@ -32,10 +33,11 @@ export const UserRoleModule: React.FC = () => {
     const [rolStatusFilter, setRolStatusFilter] = useState<string>("todos");
     const [userClubFilter, setUserClubFilter] = useState<number | undefined>(undefined);
     const [userStatusFilter, setUserStatusFilter] = useState<string | undefined>(undefined);
+    const { token } = useAuth();
 
     const handleUserDelete = async (rut_usuario: string) => {
         try {
-            const response = await deleteUser(rut_usuario);
+            const response = await deleteUser(rut_usuario, token);
             console.log(response)
             toast.success(response.detail)
             setOpenSelected(null)
@@ -48,7 +50,7 @@ export const UserRoleModule: React.FC = () => {
 
     const handleRoleDelete = async (id_role: number) => {
         try {
-            const response = await deleteRole(id_role);
+            const response = await deleteRole(id_role, token);
             console.log(response)
             toast.success(response.detail)
             setOpenSelected(null)
@@ -63,7 +65,7 @@ export const UserRoleModule: React.FC = () => {
         let data: UsuarioType[] = [];
         try {
             setIsFetchingUsers(true)
-            data = await getUsers();
+            data = await getUsers(token);
             setUsers(data);
             if (data.length === 0) {
                 toast.info("No hay usuarios registrados en la base de datos.")
@@ -82,13 +84,13 @@ export const UserRoleModule: React.FC = () => {
         let data: RolType[] = []
         try {
             setIsFetchingRols(true)
-            data = await getRoles();
+            data = await getRoles(token);
             setRoles(data);
             if (data.length === 0) {
                 toast.info("No hay roles registrados en la base de datos.")
             }
         } catch (err: any) {
-            toast.warning(String(error))
+            toast.warning(String(err))
         } finally {
             if (data.length === 0) {
                 setRoles([]);
@@ -101,13 +103,13 @@ export const UserRoleModule: React.FC = () => {
         let data: ClubType[] = []
         try {
             setIsFetchingClubs(true)
-            data = await getClubs()
+            data = await getClubs(token)
             setClubs(data)
             if (data.length === 0) {
                 toast.info("No hay clubes registrados en la base de datos.")
             }
         } catch (err: any) {
-            toast.warning(String(error))
+            toast.warning(String(err))
         } finally {
             if (data.length === 0) {
                 setClubs([]);
