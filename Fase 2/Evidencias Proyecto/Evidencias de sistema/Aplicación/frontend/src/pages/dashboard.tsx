@@ -14,7 +14,6 @@ import { AuditModule } from './auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA
 import { PlayerRecordsModule } from './player-records.tsx'
 import { UserRoleModule } from './user-role.tsx'
 import { ClubModule } from './club.tsx'
-import { FincanceModule } from './financiero.tsx';
 import { MatchesTrainingModule } from '../components/matches-training-module';
 import { EnhancedFieldsModule } from '../components/enhanced-fields-module';
 import { useAuth } from '../contexts/authContext.tsx';
@@ -45,7 +44,7 @@ import {
 } from 'lucide-react';
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
-import { FincanceModule } from './financiero.tsx';
+import { FinanceModule } from './financiero.tsx';
 
 
 
@@ -293,7 +292,7 @@ export default function DashboardComponent() {
         { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
         { id: 'fields', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
-        { id: 'finances', label: 'Finanzas', icon: DollarSign, component: FincanceModule, permission: 'finances' },
+        { id: 'finances', label: 'Finanzas', icon: DollarSign, component: FinanceModule, permission: 'finances' },
         { id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
         { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
         { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: FingerprintModule, permission: 'fingerprint' },
@@ -396,7 +395,7 @@ export default function DashboardComponent() {
                             <Route path="scoreboard" element={<Scoreboard />} />
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="fields" element={<CanchasModule />} />
-                            <Route path="finances" element={<FincanceModule />} />
+                            <Route path="finances" element={<FinanceModule />} />
                             <Route path="analytics" element={<AnalyticsModule />} />
                             <Route path="audit" element={<AuditModule />} />
                             <Route path="fingerprint" element={<FingerprintModule />} />

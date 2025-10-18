@@ -490,103 +490,108 @@ export const ClubModule: React.FC = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredClubs.length > 0 ? (
-                                    filteredClubs.map(club => (
-                                        <Card key={club.id_club}>
-                                            <CardHeader>
-                                                <div className="flex items-start justify-between">
-                                                    <CardTitle>
-                                                        <div>{club.nombre_club}</div>
-                                                        <div>
-                                                            <span className="text-gray-400 text-sm">{club.rut_club}</span>
-                                                        </div>
-                                                    </CardTitle>
-                                                    <Badge className={club.club_activo ? "bg-green-500" : "bg-gray-500"}>
-                                                        {club.club_activo ? "Activo" : "Inactivo"}
-                                                    </Badge>
+                                {filteredClubs.map((club) => (
+                                <Card key={club.id_club}>
+                                    <CardHeader>
+                                        <div className="flex items-start justify-between">
+                                            <CardTitle>
+                                                <div>{club.nombre_club}</div>
+                                                <div>
+                                                    <span className="text-gray-400 text-sm">{club.rut_club}</span>
                                                 </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {/* Club info */}
-                                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                                    <div>
-                                                        <span className="font-medium">Fecha fundacion:</span>
-                                                        <p>{club.fecha_fundacion}</p>
-                                                    </div>
-                                                    <div>
-                                                        <span className="font-medium">Telefono:</span>
-                                                        <p>{club.fono_club}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-sm">
-                                                    <span className="font-medium">Correo Electronico:</span>
-                                                    <p>{club.email_club}</p>
-                                                </div>
+                                            </CardTitle>
+                                            <Badge className={club.club_activo ? "bg-green-500" : "bg-gray-500"}>
+                                                {club.club_activo ? "Activo" : "Inactivo"}
+                                            </Badge>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {/* Club info */}
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="font-medium">Fecha fundacion:</span>
+                                                <p>{club.fecha_fundacion}</p>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium">Telefono:</span>
+                                                <p>{club.fono_club}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm">
+                                            <span className="font-medium">Correo Electronico:</span>
+                                            <p>{club.email_club}</p>
+                                        </div>
 
-                                                {/* Series & Players */}
-                                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                                    <div>
-                                                        <span className="font-medium">Series:</span>
-                                                        <p>{club.series.length}</p>
-                                                    </div>
-                                                    <div>
-                                                        <span className="font-medium">Jugadores:</span>
-                                                        <p>{club.jugadores.length}</p>
-                                                    </div>
-                                                </div>
+                                        {/* Series & Players */}
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="font-medium">Series:</span>
+                                                <p>{club.series.length}</p>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium">Jugadores:</span>
+                                                <p>{club.jugadores.length}</p>
+                                            </div>
+                                        </div>
 
-                                                {/* Logo */}
-                                                <div className="text-sm">
-                                                    <img
-                                                        src={
-                                                            typeof club.logo_club === "string"
-                                                                ? club.logo_club
-                                                                : club.logo_club instanceof File
-                                                                    ? URL.createObjectURL(club.logo_club)
-                                                                    : undefined
-                                                        }
-                                                        alt="Preview logo"
-                                                        className="mt-2 h-32 w-32 object-contain border rounded"
-                                                        style={{ width: "1000px", height: "250px", objectFit: "contain" }}
-                                                    />
-                                                </div>
+                                        {/* Logo */}
+                                        <div className="text-sm">
+                                            <img
+                                                src={
+                                                    typeof club.logo_club === "string"
+                                                        ? club.logo_club
+                                                        : club.logo_club instanceof File
+                                                            ? URL.createObjectURL(club.logo_club)
+                                                            : undefined
+                                                }
+                                                alt="Preview logo"
+                                                className="mt-2 h-32 w-32 object-contain border rounded"
+                                                style={{ width: "1000px", height: "250px", objectFit: "contain" }}
+                                            />
+                                        </div>
 
-                                                {/* Buttons */}
-                                                <div className="flex space-x-2 pt-2">
-                                                    <ClubDetailsButton club={club} />
-                                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClub(club.id_club)}>
-                                                        <Edit className="w-4 h-4 mr-1" /> Editar
-                                                    </Button>
-                                                </div>
-                                                <div className="flex space-x-2 pt-2">
-                                                    <Button
-                                                        onClick={() => setOpenSelected(club.id_club)}
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        className="flex-1"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                                                    </Button>
-                                                    <AlertDialogHandle
-                                                        title={`Eliminacion de club ${club.nombre_club}`}
-                                                        description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}?`}
-                                                        confirmLabel="Eliminar"
-                                                        cancelLabel="Cancelar"
-                                                        onConfirm={() => handleDelete(club.id_club)}
-                                                        open={openSelected === club.id_club}
-                                                        onOpenChange={open => !open && setOpenSelected(null)}
-                                                    />
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-8 text-gray-500">
-                                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                        <p>{clubList.length === 0 ? "No hay clubes registrados." : "No se encontraron clubs que coincidan con la busqueda."}</p>
-                                    </div>
-                                )}
+                                        {/* Buttons */}
+                                        <div className="flex space-x-2 pt-2">
+                                            <ClubDetailsButton club={club} />
+                                            <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClub(club.id_club)}>
+                                                <Edit className="w-4 h-4 mr-1" /> Editar
+                                            </Button>
+                                        </div>
+                                        <div className="flex space-x-2 pt-2">
+                                            <Button
+                                                onClick={() => setOpenSelected(club.id_club)}
+                                                variant="destructive"
+                                                size="sm"
+                                                className="flex-1"
+                                            >
+                                                <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                                            </Button>
+                                            <AlertDialogHandle
+                                                title={`Eliminacion de club ${club.nombre_club}`}
+                                                description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}?`}
+                                                confirmLabel="Eliminar"
+                                                cancelLabel="Cancelar"
+                                                onConfirm={() => handleDelete(club.id_club)}
+                                                open={openSelected === club.id_club}
+                                                onOpenChange={open => !open && setOpenSelected(null)}
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                ))}
                             </div>
+                            {clubList.length === 0 &&
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>No hay clubes registrados.</p>
+                                </div>
+                            }
+                            {filteredClubs.length === 0 && clubList.length > 0 &&
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>No se encontraron clubs que coincidan con la busqueda.</p>
+                                </div>
+                            }
                         </CardContent>
                     </Card>
                 </TabsContent>

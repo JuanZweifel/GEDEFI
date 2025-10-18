@@ -11,6 +11,7 @@ class TokenData(BaseModel):
     rut_usuario: Optional[str] = None
     email: Optional[str] = None
     rol: Optional[str] = None
+    admin: Optional[bool] = None
 
 
 class LoginRequest(BaseModel):

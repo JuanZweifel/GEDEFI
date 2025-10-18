@@ -48,6 +48,7 @@ def get_current_user(
         email: str = payload.get("email")
         rol: str = payload.get("rol")
         club_id: int = payload.get("club_id")
+        admin: bool = payload.get("admin")
 
         if rut_usuario is None:
             raise HTTPException(
@@ -60,7 +61,7 @@ def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado"
             )
 
-        return {"rut_usuario": rut_usuario, "email": email, "rol": rol, "club_id":club_id}
+        return {"rut_usuario": rut_usuario, "email": email, "rol": rol, "club_id":club_id, "admin": admin}
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"

@@ -63,7 +63,7 @@ def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
     hashed_password = get_password_hash(usuario.pass_usuario)
 
     db_usuario = Usuario(
-        **usuario.dict(exclude={"pass_usuario", "admin", "id_club"}),
+        **usuario.dict(exclude={"pass_usuario", "id_club"}),
         pass_usuario=hashed_password,
     )
 

@@ -8,7 +8,7 @@ import { getOrdenesPago } from '../services/ordenPagoServices';
 import type { OrdenPagoType } from '../types';
 import { toast } from 'sonner';
 
-export const FincanceModule: React.FC = () => {
+export const FinanceModule: React.FC = () => {
     const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
     const [ordenesList, setOrdenesList] = useState<OrdenPagoType[]>([])
 
