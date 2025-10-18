@@ -17,6 +17,7 @@ import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 import {
     type ClubType,
 } from '../types.tsx';
+import { useAuth } from '../contexts/authContext.tsx';
 
 // Enhanced User & Roles Module (USUARIO, ROL, HISTORIAL_USUARIO)
 
@@ -45,6 +46,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
     const [clubActivo, setClubActivo] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
     const [open, setOpen] = useState(false)
+    const { token } = useAuth()
 
     useEffect(() => {
         if (isEdit && club) {
@@ -117,10 +119,10 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
             }
 
             if (isEdit && club?.id_club) {
-                const response = await updateClub<any>(clubObject, club.id_club, logoClub)
+                const response = await updateClub<any>(clubObject, club.id_club, logoClub, token)
                 toast.success(response.message)
             } else {
-                const response = await createClub<any>(clubObject, logoClub)
+                const response = await createClub<any>(clubObject, logoClub, token)
                 toast.success(response.message)
             }
 

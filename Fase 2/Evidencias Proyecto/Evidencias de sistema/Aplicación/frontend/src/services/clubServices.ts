@@ -1,4 +1,3 @@
-
 const URL_BASE = "http://localhost:8000/clubs/"
 
 
@@ -11,28 +10,18 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return data
 }
 
-export async function getClubs<T>(token: string | null): Promise<T> {
+export async function getClubs<T>(token?: string): Promise<T> {
     const response = await fetch(URL_BASE, {
-        method: 'GET',
+        method: "GET",
         headers: {
-            'content-type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         }
-    })
+    });
     return handleResponse<T>(response);
 }
 
-export async function getClub<T>(id_club: number): Promise<T> {
-    const response = await fetch(`${URL_BASE}${id_club}`, {
-        method: 'GET',
-        headers: {
-            'content-type': 'application/json'
-        },
-    })
-    return handleResponse<T>(response);
-}
-
-export async function createClub<T>(club: Record<string, any>, logo_club?: File): Promise<T> {
+export async function createClub<T>(club: Record<string, any>, logo_club?: File, token): Promise<T> {
     const formData = new FormData();
     formData.append("nombre_club", club.nombre_club);
     formData.append("rut_club", club.rut_club);
@@ -50,13 +39,16 @@ export async function createClub<T>(club: Record<string, any>, logo_club?: File)
     }
     const response = await fetch(URL_BASE, {
         method: "POST",
-        body: formData
+        body: formData,
+        headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        }
     })
 
     return handleResponse(response);
 }
 
-export async function updateClub<T>(club: Record<string, any>, id_club: number, logo_club?: File): Promise<T> {
+export async function updateClub<T>(club: Record<string, any>, id_club: number, logo_club?: File, token): Promise<T> {
     const formData = new FormData();
     formData.append("nombre_club", club.nombre_club);
     formData.append("rut_club", club.rut_club);
@@ -75,7 +67,10 @@ export async function updateClub<T>(club: Record<string, any>, id_club: number, 
     formData.append("club_activo", club.club_activo)
     const response = await fetch(`${URL_BASE}${id_club}`, {
         method: "PUT",
-        body: formData
+        body: formData,
+        headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        }
     })
     return handleResponse(response)
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router';
+import { Navigate, NavLink, Routes, useNavigate, Outlet, Route } from 'react-router';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '../components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
+import { FincanceModule } from './financiero.tsx';
 
 
 
@@ -255,20 +256,6 @@ export default function DashboardComponent() {
         }
     }, []);
 
-    /*const handleLogout = () => {
-        logout();
-        window.location.reload();
-    }
-
-    if (!token) {
-        return (
-            <Login
-                onSuccess={() => setShowLanding(false)}
-                onCancel={() => setShowLanding(true)}
-            />
-        );
-    }*/
-
     const handleShowPlayerDetails = () => {
         setAppState(prev => ({ ...prev, showPlayerDetails: true }));
     };
@@ -343,14 +330,17 @@ export default function DashboardComponent() {
                                 const Icon = module.icon;
                                 return (
                                     <SidebarMenuItem key={module.id}>
-                                        <SidebarMenuButton
-                                            onClick={() => setActiveModule(module.id)}
-                                            isActive={activeModule === module.id}
-                                            className={activeModule === module.id ? 'bg-[#0000db] text-white' : ''}
+                                        <NavLink
+                                            to={`/dashboard/${module.id}`}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-2 px-3 py-2 rounded-lg ${isActive ? "bg-[#0000db] text-white" : ""
+                                                }`
+                                            }
                                         >
-                                            <Icon className="w-4 h-4" />
+                                            <Icon className='w-4 h-4' />
                                             <span>{module.label}</span>
-                                        </SidebarMenuButton>
+                                        </NavLink>
+
                                     </SidebarMenuItem>
                                 );
                             })}
@@ -394,7 +384,28 @@ export default function DashboardComponent() {
                     </header>
 
                     <main className="flex-1 p-6 bg-gray-50">
-                        <ActiveComponent />
+                        <Routes>
+                            <Route index element={<Dashboard />} />
+
+                            <Route path="dashboard" element={<Dashboard />} />
+                            <Route path="users-roles" element={<UserRoleModule />} />
+                            <Route path="clubs/*" element={<ClubModule />} />
+                            <Route path="series" element={<SerieModule />} />
+                            <Route path="players-records" element={<PlayerRecordsModule />} />
+                            <Route path="matches-training" element={<MatchesTrainingModule />} />
+                            <Route path="scoreboard" element={<Scoreboard />} />
+                            <Route path="meetings" element={<MeetingsModule />} />
+                            <Route path="fields" element={<CanchasModule />} />
+                            <Route path="finances" element={<FincanceModule />} />
+                            <Route path="analytics" element={<AnalyticsModule />} />
+                            <Route path="audit" element={<AuditModule />} />
+                            <Route path="fingerprint" element={<FingerprintModule />} />
+                            <Route path="penalties" element={<PenaltiesModule />} />
+                            <Route path="calendar" element={<CalendarioModule />} />
+                            <Route path="admin" element={<div>Panel Administrativo</div>} />
+
+                            <Route path="*" element={<Dashboard />} />
+                        </Routes>
                     </main>
                 </div>
                 <Toaster />
