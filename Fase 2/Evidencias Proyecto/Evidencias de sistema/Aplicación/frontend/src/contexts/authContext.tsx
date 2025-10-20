@@ -7,7 +7,7 @@ interface TokenPayload {
   email?: string;
   rol?: string;
   nombre?: string;
-  club_id?: string;
+  id_club?: string;
   club_nombre?: string;
   exp?: number;
 }
@@ -19,7 +19,7 @@ interface AuthContextType {
   email: string | null;
   nombre: string | null;
   club_nombre: string | null;
-  club_id: string | null;
+  id_club: string | null;
   login: (accessToken: string) => void;
   logout: () => void;
 }
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setEmail(payload.email || null);
         setNombre(payload.nombre || null);
         setClubNombre(payload.club_nombre || null);
-        setClubId(payload.club_id || null);
+        setClubId(payload.id_club || null);
 
         if (payload.exp && Date.now() >= payload.exp * 1000) {
           logout();
@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setEmail(payload.email || null);
     setNombre(payload.nombre || null);
     setClubNombre(payload.club_nombre || null);
-    setClubId(payload.club_id || null);
+    setClubId(payload.id_club || null);
 
     navigate('/dashboard', { replace: true });
   };

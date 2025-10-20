@@ -62,7 +62,7 @@ def login_for_access_token(db: Session, email: str, password: str) -> dict | Non
         "rut": user.rut_usuario,
         "email": user.email_usuario,
         "rol": user.rol.nombre_rol,
-        "club_id": active_club.id_club if active_club else None,
+        "id_club": active_club.id_club if active_club else None,
         "club_nombre": active_club.nombre_club if active_club else None,
         "nombre": f"{user.nombre_usuario} {user.apellido_usuario}",
         "admin": user.admin

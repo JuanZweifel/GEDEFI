@@ -74,7 +74,7 @@ def get_club(
         )
     ).first()
 
-    if not db_detalle or id_club != current_user["id_club"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
+    if not db_detalle and not current_user["admin"] or id_club != current_user["id_club"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
     return db.query(Club).filter(Club.id_club == id_club).first()
 
 
@@ -251,28 +251,43 @@ def update_club(
     db: Session,
     id_club: int,
     club_update: ClubUpdate,
-    current_user:dict,
+    current_user: dict,
 ):
     """
-    Actualiza una instancia de `Club`
+    Actualiza una instancia de `Club`.
 
-    Esta función actualiza una instancia de `Club`. La instancia esta validada mediante el schema `ClubUpdate` de pydantic.
-    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.
+    Esta función actualiza una instancia existente de `Club` en la base de datos, validando los datos
+    mediante el schema `ClubUpdate` de Pydantic.  
+    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.  
+
+    El comportamiento de actualización depende del nivel de privilegio del usuario autenticado:
+    
+    - Si `current_user["admin"]` es **True**, puede modificar **todos los campos** del club.  
+    - Si `current_user["admin"]` es **False**, solo puede modificar los campos:
+        `logo_club`, `color_primario`, `color_secundario` y `color_respaldo`.  
+    
     Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
-
 
     Parámetros
     ----------
     db : Session
         Sesión de base de datos de SQLAlchemy.
-
-    club: ClubUpdate
-        Objeto de pydantic con el formato del schema `ClubUpdate`
+    
+    id_club : int
+        Identificador único del club a actualizar.
+    
+    club_update : ClubUpdate
+        Objeto de Pydantic con el formato del schema `ClubUpdate`, que contiene los
+        campos a modificar en la entidad `Club`.
+    
+    current_user : dict
+        Diccionario con la información del usuario autenticado, incluyendo su nivel de privilegio (`admin`).
 
     Retorna
     -------
     bool
-        Retorna booleano, True, indicando el correcto almacenamiento.
+        Retorna `True` indicando que la actualización fue realizada exitosamente.
+        Retorna `None` si no se encontró el club correspondiente.
 
     Lanza
     -----
@@ -280,27 +295,39 @@ def update_club(
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     try:
-        if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para actualizar la información de un club")
         db_club = get_club(db, id_club, current_user)
         if not db_club:
             return None
+
+        # Determinar campos permitidos según permisos
+        if current_user.get("admin", False):
+            # Admin puede actualizar todo
+            campos_permitidos = set(club_update.dict(exclude_unset=True).keys())
+        else:
+            # No admin solo puede actualizar logo y colores
+            campos_permitidos = {"logo_club", "color_primario", "color_secundario", "color_respaldo"}
+
+        # Actualizar solo los campos permitidos
         for key, value in club_update.dict(exclude_unset=True).items():
-            setattr(db_club, key, value)
+            if key in campos_permitidos:
+                setattr(db_club, key, value)
+
         db.commit()
         db.refresh(db_club)
         return True
+
     except IntegrityError as e:
         db.rollback()
         detail = (
-            "El RUT ingresado esta asociado a otro club."
+            "El RUT ingresado está asociado a otro club."
             if "CLUB_rut_club_key" in str(e.orig)
             else (
-                "El correo ingresado ya esta asociado a un club."
+                "El correo ingresado ya está asociado a un club."
                 if "CLUB_email_club_key" in str(e.orig)
                 else (
-                    "El nombre ingresado se encuentrado asociado a otro club"
+                    "El nombre ingresado se encuentra asociado a otro club."
                     if "CLUB_nombre_club_key" in str(e.orig)
-                    else e.orig
+                    else str(e.orig)
                 )
             )
         )
@@ -358,9 +385,14 @@ def get_clubs_with_details(
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     try:
-        if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
         hoy = date.today()
-        db_clubs = db.query(Club).all()
+        if not current_user.get("admin") and current_user.get("id_club") != None:
+            db_clubs = db.query(Club).filter(Club.id_club == current_user["id_club"])
+        elif current_user.get("admin", True):
+            db_clubs = db.query(Club).all()
+        else:
+            print("Llegamos al else")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
         club_with_details: list[ClubWithDetails] = []
 
         for club in db_clubs:
@@ -479,6 +511,7 @@ def get_clubs_with_details(
 
 @handle_db_exceptions
 def get_club_with_details(db:Session, current_user: dict, id_club) -> ClubWithDetails:
+    print(current_user)
     hoy = date.today()
     id_club = current_user["id_club"]
     rut_ususario = current_user["rut_usuario"]

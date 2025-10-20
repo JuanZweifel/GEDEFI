@@ -46,7 +46,9 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
     const [clubActivo, setClubActivo] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
     const [open, setOpen] = useState(false)
-    const { token } = useAuth()
+    const { token, club_id } = useAuth()
+
+    console.log(club_id)
 
     useEffect(() => {
         if (isEdit && club) {
@@ -157,6 +159,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                         required
                         pattern="^\d{7,8}-[0-9Kk]$"
                         title="Ingrese un RUT válido (ej: 12345678-9)"
+                        disabled={club_id? true : false}
                     />
                 </div>
                 <div>
@@ -167,6 +170,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                         onChange={(e) => setFechaFundacion(e.target.value)}
                         required
                         max={new Date().toISOString().split("T")[0]}
+                        disabled={club_id? true : false}
                     />
                 </div>
                 <div className='col-span-2'>
@@ -179,6 +183,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                         maxLength={120}
                         minLength={4}
                         pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$"
+                        disabled={club_id? true : false}
                     />
                 </div>
                 <div className="col-span-2">
@@ -190,6 +195,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                         required
                         minLength={10}
                         maxLength={500}
+                        disabled={club_id? true : false}
                     />
                 </div>
                 <div>
@@ -200,6 +206,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                         onChange={(e) => setFonoClub(e.target.value)}
                         required
                         pattern="^[0-9]{9}$"
+                        disabled={club_id? true : false}
                     />
                 </div>
                 <div>
@@ -210,6 +217,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                         value={emailClub}
                         onChange={(e) => setEmailClub(e.target.value)}
                         required
+                        disabled={club_id? true : false}
                     />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -249,7 +257,7 @@ export function ClubForm({ club, isEdit, refreshClub, onSuccess }: ClubFormProps
                 }
                 {isEdit && (
                     <div className="col-span-2 flex items-center space-x-2">
-                        <Checkbox className="CheckBoxRoot" checked={clubActivo} onCheckedChange={() => setClubActivo(!clubActivo)} />
+                        <Checkbox className="CheckBoxRoot" checked={clubActivo} disabled={club_id? true : false} onCheckedChange={() => setClubActivo(!clubActivo)} />
                         <Label htmlFor="club-activo" className="text-sm">
                             Club activo
                         </Label>

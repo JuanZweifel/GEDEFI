@@ -61,7 +61,7 @@ def get_current_user(
             "rut_usuario": rut_usuario,
             "email": payload.get("email"),
             "rol": payload.get("rol"),
-            "club_id": payload.get("club_id"),
+            "id_club": payload.get("id_club"),
             "admin": payload.get("admin"),
         }
 
