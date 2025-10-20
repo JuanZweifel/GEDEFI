@@ -254,6 +254,7 @@ export default function DashboardComponent() {
         if (tokenParam) {
             setResetToken(tokenParam);
         }
+        setActiveModule("dashboard")
     }, []);
 
     const handleShowPlayerDetails = () => {
@@ -286,7 +287,7 @@ export default function DashboardComponent() {
     const modules = [
         { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
         { id: 'users-roles', label: 'Usuarios y Roles', icon: Users, component: UserRoleModule, permission: 'users' },
-        { id: 'clubs', label: 'Clubes', icon: Building, component: ClubModule, permission: 'clubs' },
+        { id: 'clubes', label: 'Clubes', icon: Building, component: ClubModule, permission: 'clubs' },
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
         { id: 'matches-training', label: 'Partidos y Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
@@ -308,6 +309,8 @@ export default function DashboardComponent() {
 
     const ActiveComponent = modules.find(m => m.id === activeModule)?.component || Dashboard;
 
+    // esto lo hice recien (lucho)
+    const navigate = useNavigate()
     return (
         <SidebarProvider>
             <div className="flex min-h-screen w-full">
@@ -329,18 +332,16 @@ export default function DashboardComponent() {
                             {filteredModules.map((module) => {
                                 const Icon = module.icon;
                                 return (
-                                    <SidebarMenuItem key={module.id}>
-                                        <NavLink
-                                            to={`/dashboard/${module.id}`}
-                                            className={({ isActive }) =>
-                                                `flex items-center gap-2 px-3 py-2 rounded-lg ${isActive ? "bg-[#0000db] text-white" : ""
-                                                }`
-                                            }
+                                    <SidebarMenuItem key={module.id} onClick={
+                                        () => navigate(module.id !== "dashboard" ? `/dashboard/${module.id}` : `/${module.id}`, {replace: true})}>
+                                        <SidebarMenuButton
+                                            onClick={() => setActiveModule(module.id)}
+                                            isActive={activeModule === module.id}
+                                            className={activeModule === module.id ? 'bg-[#0000db] text-white' : ''}
                                         >
-                                            <Icon className='w-4 h-4' />
+                                            <Icon className="w-4 h-4" />
                                             <span>{module.label}</span>
-                                        </NavLink>
-
+                                        </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 );
                             })}
@@ -389,7 +390,13 @@ export default function DashboardComponent() {
 
                             <Route path="dashboard" element={<Dashboard />} />
                             <Route path="users-roles" element={<UserRoleModule />} />
-                            <Route path="clubs/*" element={<ClubModule />} />
+                            <Route path="clubes" element={<ClubModule />}>
+                                <Route index element={<ClubModule />} />
+                                <Route path="new" element={<ClubModule />} />
+                                <Route path=":id_club" element={<ClubModule />} />
+                                <Route path=":id_club/edit" element={<ClubModule />} />
+                                <Route path="historial" element={<ClubModule />} />
+                            </Route>
                             <Route path="series" element={<SerieModule />}>
                                 <Route index element={<SerieModule />} />
                                 <Route path=":id" element={<SerieModule />} />

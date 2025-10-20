@@ -15,7 +15,7 @@ interface TokenPayload {
 interface AuthContextType {
   token: string | null;
   rol: string | null;
-  permisos: string | null;
+  permisos?: string | null; //<- Se debe cambiar quitando la opcionalidad "?"
   email: string | null;
   nombre: string | null;
   club_nombre: string | null;
@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ token, rol, email, nombre, club_id: clubId, club_nombre: clubNombre, login, logout }}>
+    <AuthContext.Provider value={{ token, rol, email, nombre, id_club: clubId, club_nombre: clubNombre, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

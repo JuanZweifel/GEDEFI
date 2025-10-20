@@ -25,7 +25,7 @@ import {
     type ClubDetailsType,
 } from '../types.tsx';
 import { useAuth } from '../contexts/authContext.tsx';
-import { useLocation, useNavigate, NavLink } from 'react-router';
+import { useLocation, useNavigate, NavLink, useParams } from 'react-router';
 
 export const ClubDetailsContent: React.FC<ClubDetailsType> = ({ club }) => {
     const [series, setSeries] = useState<SerieType[]>([])
@@ -274,61 +274,69 @@ export const ClubDetailsContent: React.FC<ClubDetailsType> = ({ club }) => {
     );
 };
 
-export const ClubDetailsButton: React.FC<{ club: ClubType }> = ({ club }) => {
-    const navigate = useNavigate();
-    return (
-        <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubs/${club.id_club}/view`)}>
-            <Eye className="w-4 h-4 mr-1" /> Ver Detalles
-        </Button>
-    );
-};
-
 export const ClubModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
     const [clubList, setClubList] = useState<ClubType[]>([]);
-    const [openSelected, setOpenSelected] = useState<number | null>(null);
     const [isFetching, setIsFetching] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedEstado, setSelectedEstado] = useState<string | undefined>(undefined);
-
+    const [selectedClub, setSelectedClub] = useState<ClubType | undefined>()
+    const [selectedDelete, setSelectedDelete] = useState<number | null>(null)
+    const [action, setAction] = useState<string>("")
+    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
     const location = useLocation();
     const navigate = useNavigate();
+    const params = useParams();
     const { token } = useAuth();
 
-    // Parsea los segmentos despues de /dashboard/clubs
-    const segments = location.pathname.split('/').filter(Boolean); // e.g. ['dashboard','clubs','1','view']
-    const clubsIndex = segments.indexOf('clubs');
-    let parsedId: string | undefined = undefined;
-    let parsedAction: string | undefined = undefined;
-    if (clubsIndex !== -1) {
-        const next = segments[clubsIndex + 1];
-        const next2 = segments[clubsIndex + 2];
-        if (next === 'new') {
-            parsedAction = 'new';
-        } else if (next && next2) {
-            parsedId = next;
-            parsedAction = next2;
-        } else if (next && !next2) {
-            parsedId = next;
+    useEffect(() => {
+        fetchClubs();
+    }, []);
+
+
+    useEffect(() => {
+        if (!params.id_club) return; // no hay id
+        if (isFetching) return; // todavía cargando
+        if (clubList.length === 0) return; // aún no se ha traído nada
+
+        const clubEncontrado = clubList.find(
+            (c) => c.id_club === Number(params.id_club)
+        );
+
+        if (clubEncontrado) {
+            setSelectedClub(clubEncontrado);
+        } else {
+            toast.warning("La serie solicitada no existe.");
+            navigate("/dashboard/series");
         }
-    }
+    }, [params.id_club, isFetching, clubList]);
 
-    const id = parsedId;
-    const action = parsedAction;
+    useEffect(() => {
+        const path = location.pathname;
 
-    const selectedClub = id ? clubList.find((c) => c.id_club === Number(id)) : undefined;
-    const isDialogOpen = action === "new" || (action === "edit" && !!selectedClub);
-    const isViewOpen = action === "view";
+        switch (true) {
+            case path.endsWith("/new"):
+                setAction("new");
+                setIsDialogOpen(true);
+                break;
 
-    const handleNewClub = () => navigate("/dashboard/clubs/new");
-    const handleEditClub = (clubId: number) => navigate(`/dashboard/clubs/${clubId}/edit`);
-    const handleCloseDialog = (open: boolean) => {
-        if (!open) navigate("/dashboard/clubs");
-    };
+            case path.endsWith("/edit") && !!params.id_club:
+                setAction("edit");
+                setIsDialogOpen(true);
+                break;
 
-    const handleCloseViewDialog = (open: boolean) => {
-        if (!open) navigate('/dashboard/clubs');
-    };
+            case !!params.id_club:
+                setAction("view");
+                setIsDialogOpen(true);
+                break;
+
+            default:
+                setAction("");
+                setIsDialogOpen(false);
+                fetchClubs()
+                break;
+        }
+    }, [location.pathname, params.id_club]);
 
     const fetchClubs = async () => {
         let data: ClubType[] = [];
@@ -345,21 +353,15 @@ export const ClubModule: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        fetchClubs();
-    }, []);
-
-    useEffect(() => {
-        if ((action === 'view' || action === 'edit') && id && !selectedClub) {
-            fetchClubs();
-        }
-    }, [action, id]);
+    const handleCloseDialog = (open: boolean) => {
+        if (!open) navigate("/dashboard/clubes");
+    };
 
     const handleDelete = async (id_club: number) => {
         try {
             const response = await deleteClub<any>(id_club);
             toast.success(response.message);
-            setOpenSelected(null);
+            setSelectedClub(undefined);
             fetchClubs();
         } catch (error) {
             toast.error(String(error));
@@ -404,7 +406,7 @@ export const ClubModule: React.FC = () => {
                                 style={{ backgroundColor: "#0000db" }}
                                 size="sm"
                                 className="text-white flex-1"
-                                onClick={handleNewClub}
+                                onClick={() => navigate("/dashboard/clubes/new", { replace: true })}
                             >
                                 <Plus className="w-2 h-2 mr-2" /> Nuevo Club
                             </Button>
@@ -412,53 +414,6 @@ export const ClubModule: React.FC = () => {
                     )}
                 </div>
             </div>
-
-            {/* URL-based dialogs */}
-            {action === "view" && (
-                <DialogHandle<ClubType>
-                    title={selectedClub ? `Detalles del club: ${selectedClub.nombre_club}` : 'Detalles del club'}
-                    trigger={<div />}
-                    open={isViewOpen}
-                    onOpenChange={handleCloseViewDialog}
-                    initialData={selectedClub}
-                    size='w-full'
-                >
-                    {() => {
-                        if (!selectedClub) {
-                            return (
-                                <div className="p-6 flex items-center justify-center">
-                                    <span>Cargando detalles del club...</span>
-                                </div>
-                            );
-                        }
-
-                        return <ClubDetailsContent club={selectedClub} />;
-                    }}
-                </DialogHandle>
-            )}
-
-            {action === "new" && (
-                <DialogHandle<ClubType>
-                    title="Crear nuevo club"
-                    trigger={<div />}
-                    open={isDialogOpen}
-                    onOpenChange={handleCloseDialog}
-                >
-                    {(close) => <ClubForm isEdit={false} refreshClub={fetchClubs} onSuccess={close} />}
-                </DialogHandle>
-            )}
-
-            {id && action === "edit" && selectedClub && (
-                <DialogHandle<ClubType>
-                    title={`Modificar club ${selectedClub.nombre_club}`}
-                    trigger={<div />}
-                    open={isDialogOpen}
-                    onOpenChange={handleCloseDialog}
-                >
-                    {(close) => <ClubForm club={selectedClub} isEdit={true} refreshClub={fetchClubs} onSuccess={close} />}
-                </DialogHandle>
-            )}
-
             {/* === Tabs === */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2">
@@ -555,14 +510,16 @@ export const ClubModule: React.FC = () => {
 
                                             {/* Buttons */}
                                             <div className="flex space-x-2 pt-2">
-                                                <ClubDetailsButton club={club} />
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClub(club.id_club)}>
+                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${club.id_club}`, {replace:true})}>
+                                                    <Eye className="w-4 h-4 mr-1" /> Ver Detalles
+                                                </Button>
+                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${club.id_club}/edit`, {replace: true})}>
                                                     <Edit className="w-4 h-4 mr-1" /> Editar
                                                 </Button>
                                             </div>
                                             <div className="flex space-x-2 pt-2">
                                                 <Button
-                                                    onClick={() => setOpenSelected(club.id_club)}
+                                                    onClick={() => setSelectedDelete(club.id_club)}
                                                     variant="destructive"
                                                     size="sm"
                                                     className="flex-1"
@@ -575,8 +532,8 @@ export const ClubModule: React.FC = () => {
                                                     confirmLabel="Eliminar"
                                                     cancelLabel="Cancelar"
                                                     onConfirm={() => handleDelete(club.id_club)}
-                                                    open={openSelected === club.id_club}
-                                                    onOpenChange={open => !open && setOpenSelected(null)}
+                                                    open={selectedDelete === club.id_club}
+                                                    onOpenChange={open => !open && setSelectedDelete(null)}
                                                 />
                                             </div>
                                         </CardContent>
@@ -631,6 +588,61 @@ export const ClubModule: React.FC = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {action === "view" && (
+                <DialogHandle<ClubType>
+                    title={selectedClub ? `Detalles del club: ${selectedClub.nombre_club}` : 'Detalles del club'}
+                    trigger={<div />}
+                    open={isDialogOpen}
+                    onOpenChange={handleCloseDialog}
+                    initialData={selectedClub}
+                    size='w-full'
+                >
+                    {() => {
+                        if (!selectedClub) {
+                            return (
+                                <div className="p-6 flex items-center justify-center">
+                                    <span>Cargando detalles del club...</span>
+                                </div>
+                            );
+                        }
+
+                        return <ClubDetailsContent club={selectedClub} />;
+                    }}
+                </DialogHandle>
+            )}
+
+            {action === "new" && (
+                <DialogHandle<ClubType>
+                    title="Crear nuevo club"
+                    trigger={<div />}
+                    open={isDialogOpen}
+                    onOpenChange={handleCloseDialog}
+                >
+                    {() => <ClubForm isEdit={false} onSuccess={handleCloseDialog} />}
+                </DialogHandle>
+            )}
+
+            {action === "edit" && (
+                <DialogHandle<ClubType>
+                    title={selectedClub ? `Modificar club ${selectedClub.nombre_club}` : "Cargando..."}
+                    trigger={<div />}
+                    open={isDialogOpen}
+                    onOpenChange={handleCloseDialog}
+                >
+                    {() => {
+                        if (!selectedClub) {
+                            return (
+                                <div className="p-6 flex items-center justify-center">
+                                    <span>Cargando detalles de la serie...</span>
+                                </div>
+                            );
+                        }
+
+                        return <ClubForm club={selectedClub} isEdit={true} onSuccess={handleCloseDialog} />
+                    }}
+                </DialogHandle>
+            )}
         </div>
     );
 };
