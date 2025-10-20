@@ -1,7 +1,24 @@
 import random
 from sqlalchemy.orm import Session
+from sqlalchemy import extract
+from typing import List
 from datetime import datetime, timedelta, date, time
-from app.models import Partido, Cancha, Club
+from app.models import Partido, Cancha, Club, Serie
+
+SERIES_SABADO = ["Segunda Infantil", "Primera Infantil", "Juveniles", "Super Seniors"]
+SERIES_DOMINGO = ["Segunda Adulta", "Primera Adulta", "Seniors", "Serie Honor"]
+
+
+def saturday_of_week(d: date) -> date:
+    days_until_sat = (5 - d.weekday()) % 7
+    return d + timedelta(days=days_until_sat)
+
+
+def calendar_exists_for_year(db: Session, year: int) -> bool:
+    existing = (
+        db.query(Partido).filter(extract("year", Partido.fecha_partido) == year).first()
+    )
+    return existing is not None
 
 
 def generate_year_fixture(db, total_jornadas=17):
@@ -11,6 +28,11 @@ def generate_year_fixture(db, total_jornadas=17):
     # Mapeo id → nombre para facilitar acceso
     club_map = {c.id_club: c.nombre_club for c in clubs}
     club_ids = list(club_map.keys())
+
+    # Mezcla aleatoriamente los clubs para variar el fixture
+    # De momento se usa una semilla fija para reproducibilidad
+    random.seed(12)
+    random.shuffle(club_ids)
 
     n = len(club_ids)
     is_odd = n % 2 != 0
@@ -64,35 +86,67 @@ def generate_year_fixture(db, total_jornadas=17):
     return fixture
 
 
-def generate_calendar_for_fixture(db, fixture, start_date: date):
-    while start_date.weekday() != 5:
-        start_date += timedelta(days=1)
-
-    fields = db.query(Cancha).filter(Cancha.disponible == True).all()
-    hours = [time(10, 0), time(12, 0), time(14, 0), time(16, 0)]
-
+def generate_calendar_for_fixture(
+    db, fixture: List[dict], start_date: date
+) -> List[Partido]:
     partidos = []
 
-    for local_id, visitante_id, jornada in fixture:
-        # Jornada = start + (jornada-1)
-        base_date = start_date + timedelta(weeks=jornada - 1)
-        match_date = base_date + timedelta(
-            days=random.choice([0, 1])
-        )  # Sabado o Domingo
-        cancha = random.choice(fields)
-        match_time = random.choice(hours)
+    start_saturday = saturday_of_week(start_date)
 
-        partido = Partido(
-            fecha_partido=datetime.combine(match_date, match_time),
-            goles_local=None,
-            goles_visita=None,
-            partido_activo=True,
-            id_cancha=cancha.id_cancha,
-            id_serie_local=local_id,
-            id_serie_visitante=visitante_id,
-        )
-        db.add(partido)
-        partidos.append(partido)
+    for jornada_info in fixture:
+        jornada = jornada_info["jornada"]
+        partidos_info = jornada_info["partidos"]
 
-    db.commit()
+        # Sábado y domingo de la jornada
+        saturday_date = start_saturday + timedelta(weeks=jornada - 1)
+        sunday_date = saturday_date + timedelta(days=1)
+
+        for m in partidos_info:
+            home_club_id = m["casa"]["id"]
+            away_club_id = m["visitante"]["id"]
+
+            # Cargar solo series activas de cada club
+            home_series = (
+                db.query(Serie)
+                .filter(Serie.id_club == home_club_id, Serie.serie_activa == True)
+                .all()
+            )
+            away_series = (
+                db.query(Serie)
+                .filter(Serie.id_club == away_club_id, Serie.serie_activa == True)
+                .all()
+            )
+
+            # Mapeo por nombre_serie
+            home_map = {s.nombre_serie: s for s in home_series}
+            away_map = {s.nombre_serie: s for s in away_series}
+
+            # Crear partidos del sábado
+            for serie_name in SERIES_SABADO:
+                hs = home_map.get(serie_name)
+                as_ = away_map.get(serie_name)
+                if hs and as_:
+                    partido = Partido(
+                        fecha_partido=saturday_date,
+                        partido_activo=True,
+                        id_cancha=0,  # placeholder
+                        id_serie_local=hs.id_serie,
+                        id_serie_visitante=as_.id_serie,
+                    )
+                    partidos.append(partido)
+
+            # Crear partidos del domingo
+            for serie_name in SERIES_DOMINGO:
+                hs = home_map.get(serie_name)
+                as_ = away_map.get(serie_name)
+                if hs and as_:
+                    partido = Partido(
+                        fecha_partido=sunday_date,
+                        partido_activo=True,
+                        id_cancha=0,  # placeholder
+                        id_serie_local=hs.id_serie,
+                        id_serie_visitante=as_.id_serie,
+                    )
+                    partidos.append(partido)
+
     return partidos

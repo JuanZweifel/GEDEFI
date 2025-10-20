@@ -47,8 +47,8 @@ export const UsuarioRolModule: React.FC = () => {
     const params = useParams<{ id?: string }>();
 
     // Deteccion de rutas de edicion
-    const isUserEditRoute = /\/dashboard\/usuarios-roles\/usuarios\/edit\/[^/]+\/?$/.test(location.pathname);
-    const isRoleEditRoute = /\/dashboard\/usuarios-roles\/roles\/edit\/[^/]+\/?$/.test(location.pathname);
+    const isUserEditRoute = /\/dashboard\/usuarios-roles\/usuarios\/[^/]+\/edit$/.test(location.pathname);
+    const isRoleEditRoute = /\/dashboard\/usuarios-roles\/roles\/[^/]+\/edit$/.test(location.pathname);
 
     // Deteccion de rutas de creacion
     const isUserNewRoute = /\/dashboard\/usuarios-roles\/usuarios\/new/.test(location.pathname);
@@ -394,7 +394,7 @@ export const UsuarioRolModule: React.FC = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex space-x-2">
-                                                    <NavLink to={`/dashboard/usuarios-roles/usuarios/edit/${user.rut_usuario}`}>
+                                                    <NavLink to={`/dashboard/usuarios-roles/usuarios/${user.rut_usuario}/edit`}>
                                                         <Button variant="outline" size="sm">
                                                             <Pen className="w-4 h-4" />
                                                         </Button>
