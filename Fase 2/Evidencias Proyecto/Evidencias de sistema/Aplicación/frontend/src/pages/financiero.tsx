@@ -4,13 +4,14 @@ import { Button } from '../components/ui/button';
 import {
     Plus
 } from 'lucide-react';
-import { getOrdenesPago } from '../services/ordenPagoServices';
-import type { OrdenPagoType } from '../types';
+import { getIngresos, getOrdenesPago, getEgresos, getBalanceAnual } from '../services/ordenPagoServices';
+import type { OrdenPagoType, BalanceType } from '../types';
 import { toast } from 'sonner';
 
 export const FinanceModule: React.FC = () => {
     const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
     const [ordenesList, setOrdenesList] = useState<OrdenPagoType[]>([])
+    const [balances, setBalances] = useState<BalanceType[]>([])
 
     const fetchOrdenes = async () => {
         let data: OrdenPagoType[]
@@ -27,9 +28,34 @@ export const FinanceModule: React.FC = () => {
             // aqui va los loadings
         }
     }
+
+    const fetchBalances = async () => {
+        let data: BalanceType[] = []
+        try {
+            const ingresos = await getIngresos<any>();
+            const egresos = await getEgresos<any>();
+            const balanceAnual = ingresos.total_ingresos - egresos.total_egresos;
+            data.push(
+                { tipo: "Ingresos", balance: ingresos.total_ingresos, variacion: ingresos.variacion },
+                { tipo: "Egresos", balance: egresos.total_egresos, variacion: egresos.variacion },
+                { tipo: "Balance", balance: balanceAnual}
+            )
+            setBalances(data)
+            if (data.length === 0) {
+                setBalances([])
+            }
+        } catch (error) {
+            console.log(error)
+            toast.warning(String(error))
+        }
+    }
     useEffect(() => {
+        // TODO: simular permiso (se debe modificar)
+        if (true) {
+            fetchBalances();
+        }
         fetchOrdenes();
-    })
+    }, [])
 
     return (
         <div className="space-y-6">
@@ -43,35 +69,24 @@ export const FinanceModule: React.FC = () => {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-green-600">Ingresos del Mes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-medium">$2,450,000</div>
-                        <p className="text-sm text-muted-foreground">+12% vs mes anterior</p>
-                    </CardContent>
-                </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-red-600">Egresos del Mes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-medium">$1,890,000</div>
-                        <p className="text-sm text-muted-foreground">-5% vs mes anterior</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-[#0000db]">Balance</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-medium">$560,000</div>
-                        <p className="text-sm text-muted-foreground">Utilidad neta</p>
-                    </CardContent>
-                </Card>
+                {balances.map(balance => (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className={
+                                balance.tipo === "Egresos"? "text-red-600" : balance.tipo === "Ingresos"? "text-green-600" : "text-[#0000db]"}
+                                >
+                                    {balance.tipo === "Balance"? "Balance del mes" : `${balance.tipo} del mes`}
+                                </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-medium">
+                                {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(Number(balance.balance))}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{balance.variacion} vs mes anterior</p>
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
 
             {/* Pending Orders */}

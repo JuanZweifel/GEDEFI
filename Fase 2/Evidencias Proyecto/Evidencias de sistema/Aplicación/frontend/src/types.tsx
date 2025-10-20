@@ -22,8 +22,8 @@ export type SerieType = {
     id_serie?: number;
     nombre_serie: string;
     serie_activa?: boolean;
-    id_club: number;
-    nombre_club: string;
+    id_club?: number;
+    nombre_club?: string;
     fecha_creacion?: string;
     fecha_modificacion?: string;
     cantidad_jugadores: number;
@@ -110,6 +110,12 @@ export type OrdenPagoType = {
     fecha_modificacion: string; // ISO string
 };
 
+export type BalanceType = {
+    tipo?: string;
+    balance?: number;
+    variacion?: string;
+}
+
 export type CanchaType = {
     id_cancha: number;
     nombre_cancha: string;
@@ -120,3 +126,9 @@ export type CanchaType = {
     fecha_creacion: string;
     fecha_modificacion: string;
 }
+
+export type UploadExcelProps = {
+    refreshJugadores: () => Promise<void>;
+    onUploadComplete?: (result: any[]) => void;
+    openHistory?: () => void;
+};

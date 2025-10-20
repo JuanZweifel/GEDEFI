@@ -75,9 +75,9 @@ class OrdenPagoList(BaseModel):
 
 
 class IngresosMes(BaseModel):
-    total_ingresos: str      # ejemplo: "2.245.000"
+    total_ingresos: int      # ejemplo: "2.245.000"
     variacion: str           # ejemplo: "+12% vs mes anterior"
 
 class EgresosMes(BaseModel):
-    total_egresos: str
+    total_egresos: int
     variacion: str

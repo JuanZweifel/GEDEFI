@@ -236,14 +236,6 @@ export const SerieModule: React.FC = () => {
 
     useEffect(() => {
         switch (true) {
-            case location.pathname.endsWith("/edit") && !params.id:
-                console.warn("Intento de acceder a /edit sin ID válido.");
-                navigate("/dashboard/series"); // o mostrar un toast de error
-                break;
-            case location.pathname.endsWith("/edit") && !!params.id:
-                setAction("edit");
-                setIsDialogOpen(true);
-                break;
             case !!params.id:
                 setAction("view");
                 setIsDialogOpen(true);

@@ -45,6 +45,7 @@ import {
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
 import { FinanceModule } from './financiero.tsx';
+import { RegistroJugadoresModule } from './registro-jugadores.tsx';
 
 
 
@@ -287,7 +288,7 @@ export default function DashboardComponent() {
         { id: 'users-roles', label: 'Usuarios y Roles', icon: Users, component: UserRoleModule, permission: 'users' },
         { id: 'clubs', label: 'Clubes', icon: Building, component: ClubModule, permission: 'clubs' },
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
-        { id: 'players-records', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
+        { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
         { id: 'matches-training', label: 'Partidos y Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
         { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
@@ -392,9 +393,14 @@ export default function DashboardComponent() {
                             <Route path="series" element={<SerieModule />}>
                                 <Route index element={<SerieModule />} />
                                 <Route path=":id" element={<SerieModule />} />
-                                <Route path=":id/edit" element={<SerieModule />} />
                             </Route>
-                            <Route path="players-records" element={<PlayerRecordsModule />} />
+                            <Route path="registro-jugadores" element={<RegistroJugadoresModule />}>
+                                <Route index element={<RegistroJugadoresModule />} />
+                                <Route path='jugadores' element={<RegistroJugadoresModule />} />
+                                <Route path='lesiones' element={<RegistroJugadoresModule />} />
+                                <Route path='fichas' element={<RegistroJugadoresModule />} />
+                                <Route path='historial' element={<RegistroJugadoresModule />} />
+                            </Route>
                             <Route path="matches-training" element={<MatchesTrainingModule />} />
                             <Route path="scoreboard" element={<Scoreboard />} />
                             <Route path="meetings" element={<MeetingsModule />} />

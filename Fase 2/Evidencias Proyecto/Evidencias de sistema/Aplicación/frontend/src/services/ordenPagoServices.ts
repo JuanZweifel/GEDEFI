@@ -4,6 +4,7 @@ const URL_BASE = "http://localhost:8000/ordenes-pago/"
 async function handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
         const errorData = await response.json();
+        console.log(errorData)
         throw new Error(errorData.detail)
     }
     const data: T = await response.json()
@@ -14,5 +15,29 @@ export async function getOrdenesPago<T>(): Promise<T> {
     const response = await fetch(URL_BASE, {
         method: "GET"
     })
+    return handleResponse(response)
+}
+
+export async function getIngresos<T>(): Promise<T> {
+    const response = await fetch(`${URL_BASE}ingresos-mes`, {
+        method: "GET"
+    })
+
+    return handleResponse(response)
+}
+
+export async function getEgresos<T>(): Promise<T> {
+    const response = await fetch(`${URL_BASE}egresos-mes`, {
+        method: "GET"
+    })
+
+    return handleResponse(response)
+}
+
+export async function getBalanceAnual<T>(): Promise<T> {
+    const response = await fetch(`${URL_BASE}balance.anual`, {
+        method: "GET"
+    })
+
     return handleResponse(response)
 }

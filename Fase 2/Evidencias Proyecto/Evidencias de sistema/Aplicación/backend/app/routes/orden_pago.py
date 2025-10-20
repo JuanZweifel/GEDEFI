@@ -17,6 +17,23 @@ def create_orden_pago(
     except HTTPException as e:
         raise e
 
+@router.get("/balance-anual")
+def obtener_balance_anual(db: Session = Depends(get_db)):
+    return services.get_balance_anual(db)
+
+@router.get("/ingresos-mes", response_model=schemas.IngresosMes)
+def obtener_ingresos_mes(
+    db: Session = Depends(get_db),
+    #current_user: dict = Depends(get_current_user)
+):
+    return services.get_ingresos(db) #current_user)
+
+@router.get("/egresos-mes", response_model=schemas.EgresosMes)
+def obtener_egresos_mes(
+    db: Session = Depends(get_db),
+    #current_user: dict = Depends(get_current_user)
+):
+    return services.get_egresos(db) #current_user)
 
 @router.get("/{id_orden}", response_model=schemas.OrdenPagoRead)
 def get_orden_pago(id_orden: int, db: Session = Depends(get_db)):
@@ -41,16 +58,3 @@ def delete_orden_pago(id_orden: int, db: Session = Depends(get_db)):
     except HTTPException as e:
         raise e
 
-@router.get("/ingresos/mes", response_model=schemas.IngresosMes)
-def obtener_ingresos_mes(
-    db: Session = Depends(get_db),
-    #current_user: dict = Depends(get_current_user)
-):
-    return services.get_ingresos(db) #current_user)
-
-@router.get("/egresos/mes", response_model=schemas.EgresosMes)
-def obtener_egresos_mes(
-    db: Session = Depends(get_db),
-    #current_user: dict = Depends(get_current_user)
-):
-    return services.get_egresos(db) #current_user)

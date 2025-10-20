@@ -56,6 +56,7 @@ def delete_orden_pago(db: Session, id_orden: int, current_user: Usuario = Depend
 
 @handle_db_exceptions
 def get_ingresos(db: Session) -> IngresosMes:
+    print("LLEGAMOS")
     now = datetime.now()
 
     # Primer y último día del mes actual completos
@@ -96,10 +97,10 @@ def get_ingresos(db: Session) -> IngresosMes:
     else:
         diff = ((total_actual - total_anterior) / total_anterior) * 100
         signo = "+" if diff >= 0 else ""
-        variacion = f"{signo}{diff:.0f}% vs mes anterior"
+        variacion = f"{signo}{diff:.0f}%"
 
     # Formato CLP (ej: 2.245.000)
-    total_str = f"{int(total_actual):,}".replace(",", ".")
+    total_str = int(total_actual)
 
     return IngresosMes(
         total_ingresos=total_str,
@@ -161,10 +162,10 @@ def get_egresos(db: Session) -> EgresosMes:
     else:
         diff = ((total_actual - total_anterior) / total_anterior) * 100
         signo = "+" if diff >= 0 else ""
-        variacion = f"{signo}{diff:.0f}% vs mes anterior"
+        variacion = f"{signo}{diff:.0f}%"
 
     # formateo CLP: $1.045.000
-    total_str = f"${int(round(total_actual)):,}".replace(",", ".")
+    total_str = int(round(total_actual))
 
     return EgresosMes(
         total_egresos=total_str,
