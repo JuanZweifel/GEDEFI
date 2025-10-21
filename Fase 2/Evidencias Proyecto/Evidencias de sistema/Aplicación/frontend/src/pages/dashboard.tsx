@@ -12,7 +12,7 @@ import { AnalyticsModule, FingerprintModule, UserPermissionsModule } from '../co
 import { PenaltiesModule } from '../components/additional-modules';
 import { AuditModule } from './auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA Y SEPARAR EN UN POSIBLE MODULO DIFERENTE
 import { PlayerRecordsModule } from './player-records.tsx'
-import { UserRoleModule } from './user-role.tsx'
+import { UsuarioRolModule } from './usuarioRol.tsx'
 import { ClubModule } from './club.tsx'
 import { MatchesTrainingModule } from '../components/matches-training-module';
 import { EnhancedFieldsModule } from '../components/enhanced-fields-module';
@@ -286,7 +286,7 @@ export default function DashboardComponent() {
 
     const modules = [
         { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
-        { id: 'users-roles', label: 'Usuarios y Roles', icon: Users, component: UserRoleModule, permission: 'users' },
+        { id: 'usuarios-roles', label: 'Usuarios y Roles', icon: Users, component: UsuarioRolModule, permission: 'users' },
         { id: 'clubes', label: 'Clubes', icon: Building, component: ClubModule, permission: 'clubs' },
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
@@ -390,13 +390,7 @@ export default function DashboardComponent() {
 
                             <Route path="dashboard" element={<Dashboard />} />
                             <Route path="users-roles" element={<UserRoleModule />} />
-                            <Route path="clubes" element={<ClubModule />}>
-                                <Route index element={<ClubModule />} />
-                                <Route path="new" element={<ClubModule />} />
-                                <Route path=":id_club" element={<ClubModule />} />
-                                <Route path=":id_club/edit" element={<ClubModule />} />
-                                <Route path="historial" element={<ClubModule />} />
-                            </Route>
+                            <Route path="clubs/*" element={<ClubModule />} />
                             <Route path="series" element={<SerieModule />}>
                                 <Route index element={<SerieModule />} />
                                 <Route path=":id" element={<SerieModule />} />
