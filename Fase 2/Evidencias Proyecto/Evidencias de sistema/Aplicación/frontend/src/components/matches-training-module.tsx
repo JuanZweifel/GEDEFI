@@ -10,8 +10,11 @@ import { Calendar, Clock, MapPin, Trophy, Target, Users, Star, Activity, Trendin
 import { getEntrenamientos } from '../services/entrenamientoServices';
 import { useAuth } from "../contexts/authContext";
 import { toast } from 'sonner';
-
-
+import { getSeries } from "../services/serieService";
+import { getClubs } from '../services/clubServices';
+import { getUsers } from '../services/usuarioService';
+import { getCanchas } from '../services/canchaService';
+import { DialogEditEntrenamiento } from '../forms/entrenamiento-form';
 
 interface Match {
   id: number;
@@ -29,6 +32,7 @@ interface Match {
 
 interface Training {
   id: number;
+  id_entrenamiento: number;
   fecha_entrenamiento: string;
   hora_inicio: string;
   hora_fin: string;
@@ -38,6 +42,12 @@ interface Training {
   objetivos: string;
   participantes: number;
   cancha_nombre: string;
+  id_serie: number;
+  nombre_serie: string;
+  rut_usuario: string;
+  id_cancha: number;
+  descripcion_entrenamiento: string;
+  activo: boolean;
 }
 
 interface MatchPerformance {
@@ -84,28 +94,67 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
   trainingPerformance = [],
   matchHistory = [],
 }) => {
-  const [activeTab, setActiveTab] = useState('matches');
+  const [activeTab, setActiveTab] = useState("matches");
   const [trainingsFromDB, setTrainingsFromDB] = useState<Training[]>([]);
+  const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
+  const [clubs, setClubs] = useState<{ id_club: number; nombre_club: string }[]>([]);
+  const [users, setUsers] = useState<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>([]);
+  const [canchas, setCanchas] = useState<{ id_cancha: number; nombre_cancha: string }[]>([]);
   const { token } = useAuth();
 
-  // Cargar entrenamientos desde la BD
-  const fetchTrainings = async () => {
+  // ✅ 1. Definir la función fuera del useEffect
+  const fetchData = async () => {
     if (!token) return;
+
     try {
-      const data = await getEntrenamientos<Training[]>(token);
-      setTrainingsFromDB(data);
+      // 1️⃣ Obtener entrenamientos
+      const entrenamientos = await getEntrenamientos<Training[]>(token);
+
+      // 2️⃣ Obtener series
+      const seriesData = await getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token);
+      const clubsData = await getClubs<{ id_club: number; nombre_club: string }[]>(token);
+      const usersData = await getUsers<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>(token);
+      const canchasData = await getCanchas<{ id_cancha: number; nombre_cancha: string }[]>(token);
+
+      // 3️⃣ Fusionar datos
+      const merged = entrenamientos.map((t) => {
+        const serie = seriesData.find((s) => s.id_serie === t.id_serie);
+        const club = clubsData.find((c) => c.id_club === serie?.id_club);
+        const normalizeRut = (rut: string) => rut?.replace(/\D/g, "");
+        const usuario = usersData.find(
+          (u) => normalizeRut(u.rut_usuario || (u as any).rut) === normalizeRut(t.rut_usuario)
+        );
+        const cancha = canchasData.find((c) => c.id_cancha === t.id_cancha);
+
+        return {
+          ...t,
+          nombre_serie: serie?.nombre_serie || "Sin serie",
+          club_nombre: club?.nombre_club || "Sin club",
+          entrenador_nombre: usuario
+            ? `${usuario.nombre_usuario} ${usuario.apellido_usuario}`
+            : "Sin asignar",
+          cancha_nombre: cancha?.nombre_cancha || "Sin cancha",
+        };
+      });
+
+      // 4️⃣ Guardar en estado
+      setTrainingsFromDB(merged);
+      setSeries(seriesData);
+      setClubs(clubsData);
+      setUsers(usersData);
+      setCanchas(canchasData);
     } catch (error) {
-      console.error("Error al cargar entrenamientos:", error);
+      console.error("❌ Error general al cargar datos:", error);
       toast.error("No se pudieron cargar los entrenamientos");
     }
   };
 
+  // ✅ 2. Ejecutar la carga al montar el componente
   useEffect(() => {
-    fetchTrainings();
+    if (token) {
+      fetchData();
+    }
   }, [token]);
-
-  const promedio = (tecnica: number, fisica: number) => ((tecnica + fisica) / 2).toFixed(1);
-
 
   return (
     <div className="space-y-6">
@@ -115,7 +164,7 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
           <Button className="bg-blue-700 text-white flex items-center">
             <Plus className="w-4 h-4 mr-1" /> Nuevo Partido
           </Button>
-          <DialogAddEntrenamiento refreshEntrenamientos={async () => { }} />
+          <DialogAddEntrenamiento refreshEntrenamientos={fetchData} />
         </div>
       </div>
 
@@ -186,45 +235,101 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
             <CardHeader>
               <CardTitle>Gestión de Entrenamientos</CardTitle>
             </CardHeader>
+
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {['Fecha/Horario', 'Club', 'Entrenador', 'Cancha', 'Tipo', 'Participantes', 'Objetivos', 'Acciones'].map((h, i) => (
-                      <TableHead key={i}>{h}</TableHead>
+                    {[
+                      "Fecha/Horario",
+                      "Club",
+                      "Serie",
+                      "Entrenador",
+                      "Cancha",
+                      "Participantes",
+                      "Acciones",
+                    ].map((header, i) => (
+                      <TableHead key={i}>{header}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
-                  {trainingsFromDB.map((training) => (
-                    <TableRow key={training.id}>
-                      <TableCell>
-                        <div className="flex flex-col">
+                  {trainingsFromDB.length > 0 ? (
+                    trainingsFromDB.map((training) => (
+                      <TableRow key={training.id_entrenamiento || training.id}>
+                        {/* 📅 Fecha y horario */}
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <div className="flex items-center">
+                              <Calendar className="w-4 h-4 mr-1" />
+                              {training.fecha_entrenamiento || "—"}
+                            </div>
+                            <div className="text-sm text-gray-500 flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {training.hora_inicio || "-"} - {training.hora_fin || "-"}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* 🏟️ Club */}
+                        <TableCell>{training.club_nombre || "Sin club"}</TableCell>
+
+                        {/* 🏅 Serie */}
+                        <TableCell>{training.nombre_serie || "Sin serie"}</TableCell>
+
+                        {/* 🧑‍🏫 Entrenador */}
+                        <TableCell>{training.entrenador_nombre || "Sin asignar"}</TableCell>
+
+                        {/* 📍 Cancha */}
+                        <TableCell>
                           <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" /> {training.fecha_entrenamiento}
+                            <MapPin className="w-4 h-4 mr-1" />
+                            {training.cancha_nombre || "Sin cancha"}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center">
-                            <Clock className="w-3 h-3 mr-1" /> {training.hora_inicio} - {training.hora_fin}
+                        </TableCell>
+
+                        {/* 👥 Participantes */}
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Users className="w-4 h-4 mr-1" />
+                            {training.participantes ?? 0}
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{training.club_nombre}</TableCell>
-                      <TableCell>{training.entrenador_nombre}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-1" /> {training.cancha_nombre}
-                        </div>
-                      </TableCell>
-                      <TableCell><Badge variant="outline">{training.tipo_entrenamiento}</Badge></TableCell>
-                      <TableCell className="flex items-center"><Users className="w-4 h-4 mr-1" />{training.participantes}</TableCell>
-                      <TableCell className="max-w-xs truncate">{training.objetivos}</TableCell>
-                      <TableCell className="flex space-x-1">
-                        <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
-                        <Button variant="outline" size="sm"><Edit className="w-4 h-4" /></Button>
-                        <Button variant="outline" size="sm"><Target className="w-4 h-4" /></Button>
+                        </TableCell>
+
+                        {/* ⚙️ Acciones */}
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button variant="outline" size="sm" title="Ver detalles">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+
+
+
+
+                            <DialogEditEntrenamiento
+                              entrenamiento={training}
+                              refreshEntrenamientos={fetchData}
+                            />
+
+
+
+
+
+                            <Button variant="outline" size="sm" title="Registrar rendimiento">
+                              <Target className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-gray-500 py-6">
+                        No hay entrenamientos registrados.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

@@ -8,24 +8,8 @@ import { AlertDialogHandle } from "../components/alert-dialog-component";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { useAuth } from "../contexts/authContext";
 import { jwtDecode } from "jwt-decode";
-import { postEntrenamiento, getSeries } from "../services/entrenamientoServices";
-
-
-
-const getCanchas = async (token: string) => {
-    const response = await fetch("http://localhost:8000/canchas/", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-        },
-    });
-    if (!response.ok) {
-        throw new Error("Error al obtener canchas");
-    }
-    return response.json();
-};
-
+import { postEntrenamiento, getSeries, putEntrenamiento } from "../services/entrenamientoServices";
+import { getCanchas } from "../services/canchaService";
 
 
 type Entrenamiento = {
@@ -35,6 +19,7 @@ type Entrenamiento = {
     activo: boolean;
     rut_usuario: string;
     id_cancha?: number | null;
+    id_serie: number;
 };
 
 interface DialogAddEntrenamientoProps {
@@ -308,39 +293,82 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
 
 
 // Aqui comienza la logica de editar un entrenamiento
-export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = ({ entrenamiento, refreshEntrenamientos }) => {
+export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = ({
+    entrenamiento,
+    refreshEntrenamientos,
+}) => {
     const [fechaEntrenamiento, setFechaEntrenamiento] = useState("");
     const [descripcion, setDescripcion] = useState("");
     const [activo, setActivo] = useState(true);
+    const [idCancha, setIdCancha] = useState<number | null>(null);
+    const [idSerie, setIdSerie] = useState<number | null>(null);
+
+    const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string }[]>([]);
+    const [canchas, setCanchas] = useState<{ id_cancha: number; nombre_cancha: string }[]>([]);
+    const [listasCargadas, setListasCargadas] = useState(false);
 
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+    const { token } = useAuth();
 
+    // 🔹 1. Cargar listas solo una vez cuando se abre
     useEffect(() => {
-        if (entrenamiento && isOpen) {
+        const cargarListas = async () => {
+            if (!isOpen || !token) return;
+            try {
+                const [seriesData, canchasData] = await Promise.all([
+                    getSeries<{ id_serie: number; nombre_serie: string }[]>(token),
+                    getCanchas<{ id_cancha: number; nombre_cancha: string }[]>(token),
+                ]);
+                setSeries(seriesData);
+                setCanchas(canchasData);
+                setListasCargadas(true);
+            } catch (error) {
+                toast.error("No se pudieron cargar series o canchas");
+                console.error("Error al cargar listas:", error);
+            }
+        };
+        cargarListas();
+    }, [isOpen, token]);
+
+    // 🔹 2. Asignar los valores del entrenamiento solo cuando ya existan las listas
+    useEffect(() => {
+        if (entrenamiento && listasCargadas && isOpen) {
             setFechaEntrenamiento(entrenamiento.fecha_entrenamiento);
             setDescripcion(entrenamiento.descripcion_entrenamiento);
             setActivo(entrenamiento.activo);
+            setIdCancha(entrenamiento.id_cancha || null);
+            setIdSerie(entrenamiento.id_serie || null);
         }
-    }, [entrenamiento, isOpen]);
+    }, [entrenamiento, listasCargadas, isOpen]);
 
+    // 🔹 Reset form
     const resetForm = () => {
         if (!entrenamiento) return;
         setFechaEntrenamiento(entrenamiento.fecha_entrenamiento);
         setDescripcion(entrenamiento.descripcion_entrenamiento);
         setActivo(entrenamiento.activo);
+        setIdCancha(entrenamiento.id_cancha || null);
+        setIdSerie(entrenamiento.id_serie || null);
     };
 
+    // 🔹 Guardar cambios
     const handleSave = async () => {
-        if (!entrenamiento) return;
+        if (!entrenamiento || !token) return;
         setIsLoading(true);
         try {
-            await putEntrenamiento(entrenamiento.id_entrenamiento, {
-                fecha_entrenamiento: fechaEntrenamiento,
-                descripcion_entrenamiento: descripcion,
-                activo,
-            });
+            await putEntrenamiento(
+                entrenamiento.id_entrenamiento,
+                {
+                    fecha_entrenamiento: fechaEntrenamiento,
+                    descripcion_entrenamiento: descripcion,
+                    activo,
+                    id_cancha: idCancha,
+                    id_serie: idSerie,
+                },
+                token
+            );
             toast.success("Entrenamiento modificado correctamente");
             await refreshEntrenamientos();
             setIsOpen(false);
@@ -353,15 +381,18 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
 
     return (
         <>
+            {/* ✏️ Botón para abrir modal */}
             <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
                 <Edit className="w-4 h-4" />
             </Button>
 
+            {/* 🪟 Modal */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Modificar Entrenamiento</DialogTitle>
                     </DialogHeader>
+
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
@@ -369,6 +400,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                         }}
                         className="flex flex-col gap-4"
                     >
+                        {/* 📅 Fecha */}
                         <div className="flex flex-col">
                             <label>Fecha Entrenamiento *</label>
                             <Input
@@ -378,6 +410,8 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                 required
                             />
                         </div>
+
+                        {/* 📝 Descripción */}
                         <div className="flex flex-col">
                             <label>Descripción *</label>
                             <Input
@@ -386,9 +420,56 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                 required
                             />
                         </div>
+
+                        {/* 🏟️ Cancha */}
+                        <div className="flex flex-col">
+                            <label>Cancha *</label>
+                            <Select
+                                value={idCancha?.toString() || ""}
+                                onValueChange={(v: any) => setIdCancha(Number(v))}
+                                required
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar Cancha" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {canchas.map((c) => (
+                                        <SelectItem key={c.id_cancha} value={c.id_cancha.toString()}>
+                                            {c.nombre_cancha}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* 🏅 Serie */}
+                        <div className="flex flex-col">
+                            <label>Serie *</label>
+                            <Select
+                                value={idSerie?.toString() || ""}
+                                onValueChange={(v: any) => setIdSerie(Number(v))}
+                                required
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar Serie" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {series.map((s) => (
+                                        <SelectItem key={s.id_serie} value={s.id_serie.toString()}>
+                                            {s.nombre_serie}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* 🔘 Activo */}
                         <div className="flex flex-col">
                             <label>Activo</label>
-                            <Select value={activo ? "true" : "false"} onValueChange={(v) => setActivo(v === "true")}>
+                            <Select
+                                value={activo ? "true" : "false"}
+                                onValueChange={(v: any) => setActivo(v === "true")}
+                            >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -398,8 +479,17 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* 🧭 Botones */}
                         <div className="flex justify-end gap-2 mt-4">
-                            <Button variant="outline" type="button" onClick={() => { resetForm(); setIsOpen(false); }}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => {
+                                    resetForm();
+                                    setIsOpen(false);
+                                }}
+                            >
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={isLoading}>
@@ -410,6 +500,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                 </DialogContent>
             </Dialog>
 
+            {/* ⚠️ Confirmación */}
             <AlertDialogHandle
                 title="Confirmar modificación"
                 description={`¿Está seguro que desea modificar el entrenamiento "${descripcion}"?`}

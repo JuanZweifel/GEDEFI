@@ -216,7 +216,7 @@ export const PlayerRecordsModule: React.FC = () => {
     // 🔹 Obtener todas las series (sin filtrar)
     const fetchSeries = async () => {
         try {
-            const data = await getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>();
+            const data = await getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token);
             setAllSeries(data);
         } catch (error) {
             console.error("Error al obtener series:", error);

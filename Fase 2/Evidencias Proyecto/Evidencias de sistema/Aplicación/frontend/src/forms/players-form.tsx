@@ -36,16 +36,13 @@ type ButtonDeleteJugadorProps = {
 type Jugador = {
     rut_jugador: string;
     primer_nombre: string;
-    segundo_nombre?: string;
+    segundo_nombre?: string | null;
     primer_apellido: string;
-    segundo_apellido?: string;
+    segundo_apellido?: string | null;
     genero: boolean;
     fecha_nacimiento: string;
-    enfermedades_cronicas?: string;
-    fono_jugador?: string;
-    jugador_activo: boolean;
-    fecha_creacion: string;
-    fecha_modificacion: string;
+    enfermedades_cronicas?: string | null;
+    fono_jugador?: string | null;
 };
 
 
@@ -70,18 +67,18 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
     const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
     const [selectedSerie, setSelectedSerie] = useState<number | null>(null);
 
-    const { club_id } = useAuth();
+    const { id_club, token } = useAuth();
 
     useEffect(() => {
-        getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>()
+        getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token)
             .then(data => {
-                if (club_id) {
-                    const filtradas = data.filter(s => s.id_club === Number(club_id));
+                if (id_club) {
+                    const filtradas = data.filter(s => s.id_club === Number(id_club));
                     setSeries(filtradas);
                 }
             })
             .catch(err => console.error("Error al cargar series:", err));
-    }, [club_id]);
+    }, [id_club]);
 
     const validarRut = (rut: string): boolean => {
         rut = rut.replace(/\s+/g, "").toUpperCase();
@@ -149,10 +146,10 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
                 });
             }
 
-            if (club_id) {
+            if (id_club) {
                 await postDetalleClubJugador({
                     rut_jugador: jugadorCreado.rut_jugador,
-                    id_club: Number(club_id),
+                    id_club: Number(id_club),
                 });
             }
 
