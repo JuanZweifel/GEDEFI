@@ -388,15 +388,15 @@ export default function DashboardComponent() {
                         <Routes>
                             <Route index element={<Dashboard />} />
 
-                            <Route path="dashboard" element={<Dashboard />} />
+                            <Route path="" element={<Dashboard />} />
                             <Route path="usuarios-roles/" element={<UsuarioRolModule />} >
                                 <Route index element={<UsuarioRolModule />} />
                                 <Route path='usuarios' element={<UsuarioRolModule />} />
                                 <Route path='usuarios/new' element={<UsuarioRolModule />} />
-                                <Route path='usuarios/edit/:id' element={<UsuarioRolModule />} />
+                                <Route path='usuarios/:id/edit/' element={<UsuarioRolModule />} />
                                 <Route path='roles' element={<UsuarioRolModule />} />
                                 <Route path='roles/new' element={<UsuarioRolModule />} />
-                                <Route path='roles/edit/:id' element={<UsuarioRolModule />} />
+                                <Route path='roles/:id/edit/' element={<UsuarioRolModule />} />
                                 <Route path='historial' element={<UsuarioRolModule />} />
                             </Route>
                             <Route path="clubes" element={<ClubModule />}>
