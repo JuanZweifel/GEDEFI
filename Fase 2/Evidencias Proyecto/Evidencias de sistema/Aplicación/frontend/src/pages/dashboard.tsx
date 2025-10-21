@@ -389,8 +389,23 @@ export default function DashboardComponent() {
                             <Route index element={<Dashboard />} />
 
                             <Route path="dashboard" element={<Dashboard />} />
-                            <Route path="users-roles" element={<UserRoleModule />} />
-                            <Route path="clubs/*" element={<ClubModule />} />
+                            <Route path="usuarios-roles/" element={<UsuarioRolModule />} >
+                                <Route index element={<UsuarioRolModule />} />
+                                <Route path='usuarios' element={<UsuarioRolModule />} />
+                                <Route path='usuarios/new' element={<UsuarioRolModule />} />
+                                <Route path='usuarios/edit/:id' element={<UsuarioRolModule />} />
+                                <Route path='roles' element={<UsuarioRolModule />} />
+                                <Route path='roles/new' element={<UsuarioRolModule />} />
+                                <Route path='roles/edit/:id' element={<UsuarioRolModule />} />
+                                <Route path='historial' element={<UsuarioRolModule />} />
+                            </Route>
+                            <Route path="clubes" element={<ClubModule />}>
+                                <Route index element={<ClubModule />} />
+                                <Route path="new" element={<ClubModule />} />
+                                <Route path=":id_club" element={<ClubModule />} />
+                                <Route path=":id_club/edit" element={<ClubModule />} />
+                                <Route path="historial" element={<ClubModule />} />
+                            </Route>
                             <Route path="series" element={<SerieModule />}>
                                 <Route index element={<SerieModule />} />
                                 <Route path=":id" element={<SerieModule />} />
