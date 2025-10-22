@@ -8,7 +8,7 @@ import { AlertDialogHandle } from "../components/alert-dialog-component";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { useAuth } from "../contexts/authContext";
 import { jwtDecode } from "jwt-decode";
-import { postEntrenamiento, getSeries, putEntrenamiento } from "../services/entrenamientoServices";
+import { postEntrenamiento, getSeries, putEntrenamiento, deleteEntrenamiento } from "../services/entrenamientoServices";
 import { getCanchas } from "../services/canchaService";
 
 
@@ -22,7 +22,12 @@ type Entrenamiento = {
     id_serie: number;
 };
 
-interface DialogAddEntrenamientoProps {
+type DecodedToken = {
+    id_club: number;
+    [key: string]: any;
+}
+
+type DialogAddEntrenamientoProps = {
     refreshEntrenamientos: () => Promise<void>;
 }
 
@@ -86,7 +91,7 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                 const dataSeries = await getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token);
 
                 // Filtrar solo las series del club del usuario
-                const seriesUsuario = dataSeries.filter(serie => serie.id_club === decoded.club_id);
+                const seriesUsuario = dataSeries.filter(serie => serie.id_club === decoded.id_club);
                 setSeries(seriesUsuario);
             } catch (error) {
                 console.error("Error al cargar canchas o series:", error);
@@ -290,8 +295,6 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
 // Aqui termina la logica de crear un entrenamiento
 
 
-
-
 // Aqui comienza la logica de editar un entrenamiento
 export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = ({
     entrenamiento,
@@ -303,7 +306,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
     const [idCancha, setIdCancha] = useState<number | null>(null);
     const [idSerie, setIdSerie] = useState<number | null>(null);
 
-    const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string }[]>([]);
+    const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
     const [canchas, setCanchas] = useState<{ id_cancha: number; nombre_cancha: string }[]>([]);
     const [listasCargadas, setListasCargadas] = useState(false);
 
@@ -312,16 +315,23 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
     const { token } = useAuth();
 
-    // 🔹 1. Cargar listas solo una vez cuando se abre
+    // 🔹 Cargar listas al abrir el modal
     useEffect(() => {
         const cargarListas = async () => {
             if (!isOpen || !token) return;
             try {
+                const decoded: DecodedToken = jwtDecode(token);
+                const idClub = decoded.id_club;
+
                 const [seriesData, canchasData] = await Promise.all([
-                    getSeries<{ id_serie: number; nombre_serie: string }[]>(token),
+                    getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token),
                     getCanchas<{ id_cancha: number; nombre_cancha: string }[]>(token),
                 ]);
-                setSeries(seriesData);
+
+                // 🔹 Filtrar solo las series del club del usuario
+                const seriesUsuario = seriesData.filter((s) => s.id_club === idClub);
+
+                setSeries(seriesUsuario);
                 setCanchas(canchasData);
                 setListasCargadas(true);
             } catch (error) {
@@ -332,7 +342,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
         cargarListas();
     }, [isOpen, token]);
 
-    // 🔹 2. Asignar los valores del entrenamiento solo cuando ya existan las listas
+    // 🔹 Asignar valores del entrenamiento solo cuando existan las listas
     useEffect(() => {
         if (entrenamiento && listasCargadas && isOpen) {
             setFechaEntrenamiento(entrenamiento.fecha_entrenamiento);
@@ -343,7 +353,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
         }
     }, [entrenamiento, listasCargadas, isOpen]);
 
-    // 🔹 Reset form
+    // 🔹 Resetear formulario
     const resetForm = () => {
         if (!entrenamiento) return;
         setFechaEntrenamiento(entrenamiento.fecha_entrenamiento);
@@ -408,6 +418,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                 value={fechaEntrenamiento}
                                 onChange={(e) => setFechaEntrenamiento(e.target.value)}
                                 required
+                                min={new Date().toISOString().split("T")[0]}
                             />
                         </div>
 
@@ -519,8 +530,6 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
 // Aqui termina la logica de editar un entrenamiento
 
 
-
-
 // Aqui comienza la logica de ver un entrenamiento
 export const DialogViewEntrenamiento: React.FC<DialogViewEntrenamientoProps> = ({ entrenamiento }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -570,8 +579,15 @@ export const DialogViewEntrenamiento: React.FC<DialogViewEntrenamientoProps> = (
 
 
 
+
+
+
 // Aqui comienza la logica de eliminar un entrenamiento
-export const ButtonDeleteEntrenamiento: React.FC<ButtonDeleteEntrenamientoProps> = ({ id_entrenamiento, descripcion, refreshEntrenamientos }) => {
+export const ButtonDeleteEntrenamiento: React.FC<ButtonDeleteEntrenamientoProps> = ({
+    id_entrenamiento,
+    descripcion,
+    refreshEntrenamientos,
+}) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -579,12 +595,20 @@ export const ButtonDeleteEntrenamiento: React.FC<ButtonDeleteEntrenamientoProps>
         setIsLoading(true);
         try {
             await deleteEntrenamiento(id_entrenamiento);
-            toast.success("Entrenamiento eliminado correctamente");
+            toast.success(`Entrenamiento "${descripcion}" eliminado correctamente.`);
             await refreshEntrenamientos();
         } catch (error: any) {
-            toast.error(error.message || "Error al eliminar entrenamiento");
+            // 🔹 Manejo de errores personalizados
+            if (error.response && error.response.status === 400) {
+                toast.error("No se puede eliminar un entrenamiento inactivo.");
+            } else if (error.response && error.response.status === 404) {
+                toast.error("El entrenamiento no existe o ya fue eliminado.");
+            } else {
+                toast.error(error.message || "Error al eliminar entrenamiento.");
+            }
         } finally {
             setIsLoading(false);
+            setIsDialogOpen(false);
         }
     };
 

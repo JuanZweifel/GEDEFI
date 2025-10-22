@@ -15,7 +15,7 @@ export async function getEntrenamientos<T>(token?: string): Promise<T> {
     const response = await fetch(URL_BASE, {
         method: "GET",
         headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}), 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
     });
     return handleResponse<T>(response);
@@ -27,7 +27,7 @@ export async function postEntrenamiento<T>(entrenamiento: Record<string, any>, t
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}), 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(entrenamiento),
     });
@@ -58,7 +58,7 @@ export async function putEntrenamiento<T>(id: number, entrenamiento: Record<stri
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}), 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(entrenamiento),
     });
@@ -66,18 +66,24 @@ export async function putEntrenamiento<T>(id: number, entrenamiento: Record<stri
     return handleResponse<T>(response);
 }
 
-// Eliminar un entrenamiento
 export async function deleteEntrenamiento(id: number, token?: string): Promise<void> {
     const response = await fetch(URL_MODIFICAR_ENTRENAMIENTO(id), {
         method: "DELETE",
         headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}), 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
     });
 
     if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "Error al eliminar el entrenamiento");
+        // Intentamos leer el mensaje del backend
+        const errorData = await response.json().catch(() => ({}));
+
+        // Creamos un error personalizado con status
+        const error: any = new Error(
+            errorData?.detail || errorData?.message || "Error al eliminar el entrenamiento"
+        );
+        error.status = response.status; // 👈 muy importante
+        throw error;
     }
 }
 
@@ -92,7 +98,7 @@ export async function getSeries<T>(token?: string, rut?: string): Promise<T> {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}), 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
     });
 

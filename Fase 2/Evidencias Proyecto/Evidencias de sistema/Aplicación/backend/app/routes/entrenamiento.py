@@ -43,7 +43,16 @@ def update_entrenamiento(
 
 @router.delete("/{id_entrenamiento}", response_model=dict)
 def delete_entrenamiento(id_entrenamiento: int, db: Session = Depends(get_db)):
-    success = services.delete_entrenamiento(db, id_entrenamiento)
-    if not success:
-        raise HTTPException(status_code=404, detail="Entrenamiento not found")
-    return {"detail": "Entrenamiento deleted successfully"}
+    try:
+        success = services.delete_entrenamiento(db, id_entrenamiento)
+        if not success:
+            raise HTTPException(status_code=404, detail="Entrenamiento no encontrado")
+        return {"detail": "Entrenamiento eliminado correctamente"}
+
+    except ValueError as e:
+        # Este error se lanza cuando el entrenamiento está inactivo
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        # Cualquier otro error inesperado
+        raise HTTPException(status_code=500, detail=f"Error al eliminar entrenamiento: {str(e)}")
