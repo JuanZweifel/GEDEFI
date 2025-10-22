@@ -8,7 +8,13 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload
 from app.models import Usuario, DetalleUsuarioClub
 from app.models.recuperacion_contrasena import RecuperacionContrasena
-from app.security import verify_password, create_access_token, get_password_hash
+from app.security import (
+    verify_password,
+    create_access_token,
+    get_password_hash,
+    create_refresh_token,
+    verify_refresh_token,
+)
 from app.utils.decorators import handle_db_exceptions
 
 # Mailtrap credentials
@@ -65,13 +71,59 @@ def login_for_access_token(db: Session, email: str, password: str) -> dict | Non
         "id_club": active_club.id_club if active_club else None,
         "club_nombre": active_club.nombre_club if active_club else None,
         "nombre": f"{user.nombre_usuario} {user.apellido_usuario}",
-        "admin": user.admin
+        "admin": user.admin,
     }
 
-    access_token_expires = timedelta(minutes=60)
-    token = create_access_token(data=token_data, expires_delta=access_token_expires)
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(rut=user.rut_usuario)
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
+
+
+@handle_db_exceptions
+def refresh_access_token(refresh_token: str, db: Session):
+    payload = verify_refresh_token(refresh_token)
+
+    rut_usuario = payload.get("rut")
+    if not rut_usuario:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token inválido o sin usuario",
+        )
+
+    user = (
+        db.query(Usuario)
+        .filter(
+            and_(Usuario.rut_usuario == rut_usuario, Usuario.usuario_activo == True)
+        )
+        .first()
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    active_club = None
+    for detalle in user.detalles_usuario_club:
+        if not detalle.fecha_fin or detalle.fecha_fin > datetime.now():
+            active_club = detalle.club
+            break
+
+    new_token_data = {
+        "rut": user.rut_usuario,
+        "email": user.email_usuario,
+        "rol": user.rol.nombre_rol,
+        "id_club": active_club.id_club if active_club else None,
+        "club_nombre": active_club.nombre_club if active_club else None,
+        "nombre": f"{user.nombre_usuario} {user.apellido_usuario}",
+        "admin": user.admin,
+    }
+
+    new_access_token = create_access_token(data=new_token_data)
+
+    return {"access_token": new_access_token, "token_type": "bearer"}
 
 
 @handle_db_exceptions

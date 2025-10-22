@@ -20,8 +20,9 @@ interface AuthContextType {
   nombre: string | null;
   club_nombre: string | null;
   id_club: string | null;
-  login: (accessToken: string) => void;
+  login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
+  refreshAccessToken: () => Promise<string | null>;
 }
 
 interface ProtectedRouteProps {
@@ -36,6 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const navigate = useNavigate();
 
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('authToken'));
+  const [refreshToken, setRefreshToken] = useState<string | null>(() => localStorage.getItem('refreshToken'));
   const [rol, setRol] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [nombre, setNombre] = useState<string | null>(null);
@@ -43,27 +45,68 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [clubId, setClubId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (token) {
-      try {
-        const payload = jwtDecode<TokenPayload>(token);
-        setRol(payload.rol || null);
-        setEmail(payload.email || null);
-        setNombre(payload.nombre || null);
-        setClubNombre(payload.club_nombre || null);
-        setClubId(payload.id_club || null);
+    if (!token) return;
 
-        if (payload.exp && Date.now() >= payload.exp * 1000) {
-          logout();
+    try {
+      const payload = jwtDecode<TokenPayload>(token);
+      setRol(payload.rol || null);
+      setEmail(payload.email || null);
+      setNombre(payload.nombre || null);
+      setClubNombre(payload.club_nombre || null);
+      setClubId(payload.id_club || null);
+
+      if (payload.exp) {
+        const expiresInMs = payload.exp * 1000 - Date.now();
+        if (expiresInMs > 0) {
+          const timeout = setTimeout(() => {
+            refreshAccessToken();
+          }, expiresInMs - 60_000); // refresca 1 minuto antes de la expiracion
+          return () => clearTimeout(timeout);
+        } else {
+          refreshAccessToken();
         }
-      } catch {
-        logout();
       }
+    } catch {
+      logout();
     }
   }, [token]);
 
-  const login = (accessToken: string) => {
+  const refreshAccessToken = async (): Promise<string | null> => {
+    if (!refreshToken) {
+      logout();
+      return null;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:8000/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      if (!res.ok) {
+        logout();
+        return null;
+      }
+
+      const data = await res.json();
+      const newAccessToken = data.access_token;
+
+      localStorage.setItem('authToken', newAccessToken);
+      setToken(newAccessToken);
+      return newAccessToken;
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      logout();
+      return null;
+    }
+  };
+
+  const login = (accessToken: string, refreshToken: string) => {
     localStorage.setItem('authToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
     setToken(accessToken);
+    setRefreshToken(refreshToken)
     const payload = jwtDecode<TokenPayload>(accessToken);
     setRol(payload.rol || null);
     setEmail(payload.email || null);
@@ -76,7 +119,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
     setToken(null);
+    setRefreshToken(null);
     setRol(null);
     setEmail(null);
     setNombre(null);
@@ -84,7 +129,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ token, rol, email, nombre, id_club: clubId, club_nombre: clubNombre, login, logout }}>
+    <AuthContext.Provider value={{ token, rol, email, nombre, id_club: clubId, club_nombre: clubNombre, login, logout, refreshAccessToken, }}>
       {children}
     </AuthContext.Provider>
   );
