@@ -9,7 +9,7 @@ interface TokenPayload {
   nombre?: string;
   id_club?: string;
   club_nombre?: string;
-  admin:boolean;
+  admin: boolean;
   exp?: number;
 }
 
