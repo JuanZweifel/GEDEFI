@@ -9,7 +9,7 @@ interface TokenPayload {
   nombre?: string;
   id_club?: string;
   club_nombre?: string;
-  admin:boolean;
+  admin: boolean;
   exp?: number;
 }
 
@@ -57,19 +57,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setClubId(payload.id_club || null);
         setAdmin(payload.admin || null)
 
-      if (payload.exp) {
-        const expiresInMs = payload.exp * 1000 - Date.now();
-        if (expiresInMs > 0) {
-          const timeout = setTimeout(() => {
+        if (payload.exp) {
+          const expiresInMs = payload.exp * 1000 - Date.now();
+          if (expiresInMs > 0) {
+            const timeout = setTimeout(() => {
+              refreshAccessToken();
+            }, expiresInMs - 60_000); // refresca 1 minuto antes de la expiracion
+            return () => clearTimeout(timeout);
+          } else {
             refreshAccessToken();
-          }, expiresInMs - 60_000); // refresca 1 minuto antes de la expiracion
-          return () => clearTimeout(timeout);
-        } else {
-          refreshAccessToken();
+          }
         }
+      } catch {
+        logout();
       }
-    } catch {
-      logout();
     }
   }, [token]);
 
