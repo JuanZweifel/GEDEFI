@@ -119,10 +119,10 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
             }
 
             if (isEdit && club?.id_club) {
-                const response = await updateClub<any>(clubObject, club.id_club, logoClub, token)
+                const response = await updateClub<any>(clubObject, club.id_club, token, logoClub )
                 toast.success(response.message)
             } else {
-                const response = await createClub<any>(clubObject, logoClub, token)
+                const response = await createClub<any>(clubObject, token, logoClub )
                 toast.success(response.message)
             }
 
