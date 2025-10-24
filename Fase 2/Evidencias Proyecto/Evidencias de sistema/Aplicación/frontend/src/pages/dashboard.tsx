@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
-import { FinanceModule } from './financiero.tsx';
+import { FinanzasModule } from './finanzas.tsx';
 import { RegistroJugadoresModule } from './registro-jugadores.tsx';
 
 
@@ -294,7 +294,7 @@ export default function DashboardComponent() {
         { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
         { id: 'fields', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
-        { id: 'finances', label: 'Finanzas', icon: DollarSign, component: FinanceModule, permission: 'finances' },
+        { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
         { id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
         { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
         { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: FingerprintModule, permission: 'fingerprint' },
@@ -408,7 +408,7 @@ export default function DashboardComponent() {
                             </Route>
                             <Route path="series" element={<SerieModule />}>
                                 <Route index element={<SerieModule />} />
-                                <Route path=":id" element={<SerieModule />} />
+                                <Route path=":id_serie" element={<SerieModule />} />
                             </Route>
                             <Route path="registro-jugadores" element={<RegistroJugadoresModule />}>
                                 <Route index element={<RegistroJugadoresModule />} />
@@ -421,7 +421,14 @@ export default function DashboardComponent() {
                             <Route path="scoreboard" element={<Scoreboard />} />
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="fields" element={<CanchasModule />} />
-                            <Route path="finances" element={<FinanceModule />} />
+                            <Route path="finanzas" element={<FinanzasModule />}>
+                                <Route index element={<FinanzasModule/>}/>
+                                <Route path='new' element={<FinanzasModule/>}/>
+                                <Route path=':id_orden' element={<FinanzasModule/>}/>
+                                <Route path=':id_orden/edit' element={<FinanzasModule/>}/>
+                                <Route path=':id_orden/pay' element={<FinanzasModule/>}/>
+                                <Route path=':id_orden/pending' element={<FinanzasModule/>}/>
+                            </Route>
                             <Route path="analytics" element={<AnalyticsModule />} />
                             <Route path="audit" element={<AuditModule />} />
                             <Route path="fingerprint" element={<FingerprintModule />} />

@@ -9,6 +9,7 @@ interface TokenPayload {
   nombre?: string;
   id_club?: string;
   club_nombre?: string;
+  admin:boolean;
   exp?: number;
 }
 
@@ -20,6 +21,7 @@ interface AuthContextType {
   nombre: string | null;
   club_nombre: string | null;
   id_club: string | null;
+  admin: boolean | null
   login: (accessToken: string) => void;
   logout: () => void;
 }
@@ -41,6 +43,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [nombre, setNombre] = useState<string | null>(null);
   const [clubNombre, setClubNombre] = useState<string | null>(null);
   const [clubId, setClubId] = useState<string | null>(null);
+  const [admin, setAdmin] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (token) {
@@ -51,6 +54,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setNombre(payload.nombre || null);
         setClubNombre(payload.club_nombre || null);
         setClubId(payload.id_club || null);
+        setAdmin(payload.admin || null)
 
         if (payload.exp && Date.now() >= payload.exp * 1000) {
           logout();
@@ -70,6 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setNombre(payload.nombre || null);
     setClubNombre(payload.club_nombre || null);
     setClubId(payload.id_club || null);
+    setAdmin(payload.admin || null)
 
     navigate('/dashboard', { replace: true });
   };
@@ -81,10 +86,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setEmail(null);
     setNombre(null);
     setClubNombre(null);
+    setClubId(null)
+    setAdmin(null)
   };
 
   return (
-    <AuthContext.Provider value={{ token, rol, email, nombre, id_club: clubId, club_nombre: clubNombre, login, logout }}>
+    <AuthContext.Provider value={{ token, rol, email, nombre, id_club: clubId, club_nombre: clubNombre, admin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

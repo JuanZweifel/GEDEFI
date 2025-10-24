@@ -19,7 +19,8 @@ def handle_db_exceptions(func):
             raise HTTPException(
                 status_code=500, detail="Problemas de conexión con la base de datos."
             )
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
+            print(e)
             raise HTTPException(status_code=500, detail="Error interno del servidor")
 
     return wrapper

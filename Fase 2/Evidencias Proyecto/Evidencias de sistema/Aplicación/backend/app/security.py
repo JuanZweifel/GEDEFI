@@ -46,7 +46,6 @@ def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         rut_usuario: str = payload.get("rut")
-
         if rut_usuario is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -56,7 +55,6 @@ def get_current_user(
         user = db.query(Usuario).filter(and_(Usuario.rut_usuario == rut_usuario, Usuario.usuario_activo == True)).first()
         if not user:
             raise HTTPException(status_code=401, detail="Usuario no encontrado")
-
         return {
             "rut_usuario": rut_usuario,
             "email": payload.get("email"),

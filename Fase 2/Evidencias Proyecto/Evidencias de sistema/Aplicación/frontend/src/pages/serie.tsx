@@ -218,7 +218,6 @@ export const SerieModule: React.FC = () => {
                 toast.info("No hay series registradas en la base de datos.")
             }
         } catch (error: any) {
-            console.log(error.message)
             if(error.message === "Token inválido" || error.message === "Usuario no encontrado") logout()
             toast.warning(String(error))
         } finally {
@@ -228,15 +227,13 @@ export const SerieModule: React.FC = () => {
             setIsFetching(false)
         }
     }
-
-    // TODO: Revisar los useEffect, hay 3 y deben ser analizados correctamente
     useEffect(() => {
         fetchSeries();
     }, [])
 
     useEffect(() => {
         switch (true) {
-            case !!params.id:
+            case !!params.id_serie:
                 setAction("view");
                 setIsDialogOpen(true);
                 break;
@@ -247,32 +244,32 @@ export const SerieModule: React.FC = () => {
                 break;
         }
 
-    }, [location.pathname, params.id])
+    }, [location.pathname, params.id_serie])
 
     // REVISAR
     useEffect(() => {
-        if (!params.id) return; // no hay id
+        if (!params.id_serie) return; // no hay id
         if (isFetching) return; // todavía cargando
-        if (serieList.length === 0) return; // aún no se ha traído nada
+        if (serieList.length === 0) navigate("/dashboard/series", {replace:true});
 
         const serieEncontrada = serieList.find(
-            (s) => s.id_serie === Number(params.id)
+            (s) => s.id_serie === Number(params.id_serie)
         );
 
         if (serieEncontrada) {
             setSelectedSerie(serieEncontrada);
         } else {
             toast.warning("La serie solicitada no existe.");
-            navigate("/dashboard/series");
+            navigate("/dashboard/series", {replace:true});
         }
-    }, [params.id, isFetching, serieList]);
+    }, [params.id_serie, isFetching, serieList]);
 
     const handleDesactivate = async (id_serie: number) => {
         let data: { message: string }
         try {
             setIsLoading(true)
             const serie = serieList.find(s => s.id_serie === id_serie);
-            data = await updateStateSerie(id_serie, !serie?.serie_activa)
+            data = await updateStateSerie(id_serie, !serie?.serie_activa, token)
             toast.success(data.message)
         } catch (error) {
             toast.warning(String(error))
@@ -287,11 +284,9 @@ export const SerieModule: React.FC = () => {
         let data: { message: string }
         try {
             setIsLoading(true)
-            data = await deleteSerie(id_serie)
+            data = await deleteSerie(id_serie, token)
             toast.success(data.message)
         } catch (error) {
-
-            console.log(error)
             toast.warning(String(error))
         } finally {
             fetchSeries()

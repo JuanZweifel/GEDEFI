@@ -202,8 +202,6 @@ async def upload_excel(
             )
             jugadores_validos.append(jugador)
             inserted += 1
-            print("LLEGANDO A LA FILA")
-            print(fila)
             results.append({"status": "success", "fila": fila, "rut": rut,
                             "primer_nombre":primer_nombre, "segundo_nombre":segundo_nombre,
                             "primer_apellido":primer_apellido, "segundo_apellido":segundo_apellido})
@@ -211,13 +209,11 @@ async def upload_excel(
         # Insertar jugadores
         db.add_all(jugadores_validos)
         db.commit()
-        print(f"✅ {len(jugadores_validos)} jugadores insertados correctamente.")
 
         # Crear fichas para los jugadores insertados
         rut_insertados = [j.rut_jugador for j in jugadores_validos]
         fichas_resultado = crear_fichas_jugadores(db, rut_insertados, serie_obj.id_serie)
         db.commit()
-        print("✅ Fichas creadas correctamente.")
 
         # Crear registros en DetalleClubJugador
         for rut in rut_insertados:
@@ -230,7 +226,6 @@ async def upload_excel(
             db.add(detalle)
 
         db.commit()  # ✅ Aquí se guardan realmente en la base de datos
-        print("✅ DetalleClubJugador creados correctamente.")
 
 
         # Totales finales
@@ -248,7 +243,6 @@ async def upload_excel(
 
     except Exception as e:
         db.rollback()
-        print("❌ Error general:", str(e))
         import traceback
         traceback.print_exc()
         return JSONResponse({"message": f"Error general: {str(e)}"}, status_code=500)

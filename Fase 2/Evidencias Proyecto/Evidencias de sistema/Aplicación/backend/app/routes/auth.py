@@ -22,8 +22,6 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/login", response_model=Token)
 def login(form_data: LoginRequest, db: Session = Depends(get_db)):
-    print(form_data.email)
-    print(form_data.password)
     token = login_for_access_token(db, form_data.email, form_data.password)
     if not token:
         raise HTTPException(

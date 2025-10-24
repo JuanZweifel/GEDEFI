@@ -13,10 +13,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function getClubs<T>(token?: string | null): Promise<T> {
     const response = await fetch(URL_BASE, {
         method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        }
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
     return handleResponse<T>(response);
 }
@@ -68,19 +65,15 @@ export async function updateClub<T>(club: Record<string, any>, id_club: number, 
     const response = await fetch(`${URL_BASE}${id_club}`, {
         method: "PUT",
         body: formData,
-        headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        }
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
     return handleResponse(response)
 }
 
-export async function deleteClub<T>(id_club: number): Promise<T> {
+export async function deleteClub<T>(id_club: number, token:string | null): Promise<T> {
     const response = await fetch(`${URL_BASE}${id_club}`, {
         method: "DELETE",
-        headers: {
-            'content-type': 'application/json'
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
 
     return handleResponse(response)

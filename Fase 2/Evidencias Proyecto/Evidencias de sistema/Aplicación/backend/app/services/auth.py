@@ -94,7 +94,6 @@ def send_recovery_email(db: Session, email: str) -> None:
         db.commit()
     except Exception as e:
         db.rollback()
-        print("Error saving recovery token:", e)
         return
 
     recovery_link = f"http://localhost:3000/reset-password?token={token}"
@@ -121,9 +120,8 @@ def send_recovery_email(db: Session, email: str) -> None:
         with smtplib.SMTP(MAILTRAP_HOST, MAILTRAP_PORT) as server:
             server.login(MAILTRAP_USER, MAILTRAP_PASS)
             server.sendmail(FROM_EMAIL, email, message.as_string())
-            print(f"Recovery email sent to {email} (Mailtrap)")
     except Exception as e:
-        print("Error sending recovery email:", e)
+        print(e)
 
 
 def reset_user_password(db: Session, token: str, new_password: str):
