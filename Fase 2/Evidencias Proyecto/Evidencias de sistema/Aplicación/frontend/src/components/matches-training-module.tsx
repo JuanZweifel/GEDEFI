@@ -128,6 +128,8 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
         getFichasPorFiltro<any[]>(token), // 👈 aquí traemos las fichas (jugadores de series)
       ]);
 
+      console.log(entrenamientos)
+
       // 🔹 Fusionar datos
       const merged = entrenamientos.map((t: any) => {
         const serie = seriesData.find((s: any) => s.id_serie === t.id_serie);
@@ -329,9 +331,9 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
                             />
 
 
-<ButtonDeleteEntrenamiento  id_entrenamiento={training.id_entrenamiento}
-                            descripcion={training.descripcion_entrenamiento}
-                            refreshEntrenamientos={fetchData}
+                            <ButtonDeleteEntrenamiento id_entrenamiento={training.id_entrenamiento}
+                              descripcion={training.descripcion_entrenamiento}
+                              refreshEntrenamientos={fetchData}
                             />
 
 

@@ -121,12 +121,19 @@ def create_orden_pago(
 
 @handle_db_exceptions
 def delete_orden_pago(
-    db: Session, id_orden: str, current_user: Usuario = Depends(get_current_user)
-) -> dict:
-    db_orden_pago = get_orden_pago(db, id_orden)
-    db.delete(db_orden_pago)
+    db: Session, id_orden: str, current_user: dict
+) -> bool:
+    if not current_user.get("admin"): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para eliminar una orden de pago")
+    db_orden = get_orden_pago(db, id_orden)
+
+    if not db_orden: raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Orden no encontrada")
+
+    print("ESTADO")
+    print(db_orden.estado_orden == EstadoOrdenEnum.anulada)
+    if db_orden.estado_orden != EstadoOrdenEnum.anulada: raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No puedes eliminar una orden que no este anulada")
+    db.delete(db_orden)
     db.commit()
-    return {"details": "Orden de pago eliminada exitosamente."}
+    return True
 
 
 @handle_db_exceptions

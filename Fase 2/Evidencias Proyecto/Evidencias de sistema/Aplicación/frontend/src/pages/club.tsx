@@ -277,7 +277,7 @@ export const ClubDetailsContent: React.FC<ClubDetailsType> = ({ club }) => {
 export const ClubModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
     const [clubList, setClubList] = useState<ClubType[]>([]);
-    const [isFetching, setIsFetching] = useState(false);
+    const [isFetching, setIsFetching] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedEstado, setSelectedEstado] = useState<string | undefined>(undefined);
     const [selectedClub, setSelectedClub] = useState<ClubType | undefined>()
@@ -303,10 +303,10 @@ export const ClubModule: React.FC = () => {
             (c) => c.id_club === Number(params.id_club)
         );
 
-        if (clubEncontrado) {
+        if (!!clubEncontrado) {
             setSelectedClub(clubEncontrado);
         } else {
-            toast.warning("La serie solicitada no existe.");
+            toast.warning("El club solicitado no existe.");
             navigate("/dashboard/clubes", {replace:true});
         }
     }, [params.id_club, isFetching, clubList]);

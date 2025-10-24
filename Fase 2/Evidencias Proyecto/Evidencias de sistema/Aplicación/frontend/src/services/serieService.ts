@@ -19,20 +19,10 @@ export async function getSeries<T>(token:string | null): Promise<T> {
     return handleResponse<T>(response);
 }
 
-export async function updateStateSerie<T>(id_serie: number, state: boolean, token:string | null): Promise<T> {
+export async function updateStateSerie<T>(id_serie: number, token:string | null): Promise<T> {
     const response = await fetch(`${URL_BASE}/${id_serie}`, {
         method: 'PUT',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: JSON.stringify({ state }) 
     })
-    return handleResponse<T>(response)
-}
-
-export async function deleteSerie<T>(id_serie: number, token:string | null): Promise<T> {
-    const response = await fetch(`${URL_BASE}/${id_serie}`, {
-        method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-    })
-
     return handleResponse<T>(response)
 }

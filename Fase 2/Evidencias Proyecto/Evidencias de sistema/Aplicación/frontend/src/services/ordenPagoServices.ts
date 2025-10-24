@@ -79,3 +79,14 @@ export async function pendingOrder<T>(id_orden_pago:string, token:string | null)
 
     return handleResponse(response)
 }
+
+export async function deleteOrden<T>(id_orden: string, token: string | null): Promise<T> {
+    const response = await fetch(`${URL_BASE}${id_orden}`, {
+        method: "DELETE",
+        headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+    })
+
+    return handleResponse(response)
+}

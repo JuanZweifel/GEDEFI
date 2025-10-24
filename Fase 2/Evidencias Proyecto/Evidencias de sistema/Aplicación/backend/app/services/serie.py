@@ -1,93 +1,86 @@
 from sqlalchemy.orm import Session
 from app.models import Serie, Club, Jugador, FichaJugador, DetalleUsuarioClub
-from app.schemas import SerieCreate, SerieWithDetails, JugadorRead, SerieUpdate
+from app.schemas import SerieWithDetails, JugadorRead, SerieCreate
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError, OperationalError, DisconnectionError
 import psycopg2
-from .club import get_club
 from app.utils.decorators import handle_db_exceptions
 from fastapi import HTTPException, status
 from datetime import date
+from app.utils.constantes import lista_series
 
 
 @handle_db_exceptions
-def get_serie(db: Session, id_serie: int) -> Serie | None:
+def create_massive_series(
+    db: Session, id_club: int, current_user=dict
+) -> list[Serie]:
     """
-    Obtiene un registro de `Serie` desde la base de datos utilizando su identificador único.
+    Crea de manera masiva todos las instancias estandares de `Serie` asociadas a una instancia de `Club`
 
-    Esta función realiza una consulta a la base de datos para buscar una instancia del modelo
-    `Serie` que coincida con el `id_serie` proporcionado.
-    Las excepciones de base de datos son manejadas automáticamente por el decorador
-    `handle_db_exceptions`.
+    Esta funcion crea todas las instancias estandares [
+        "Segunda infantil",
+        "Primera infantil",
+        "Juveniles",
+        "Super seniors",
+        "Segunda adulta",
+        "Primera adulta",
+        "Seniors",
+        "Serie honor",
+        "Femenina",
+        "Años dorados"
+    ]
+    asociadas a una instacia de `Club`, las instancias de `Serie` estan validadas bajo el schema de pydantic `SerieCreate`
+    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.
+    Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
+
 
     Parámetros
     ----------
     db : Session
         Sesión de base de datos de SQLAlchemy.
-    id_serie : int
-        Identificador único de la serie a consultar.
 
-    Retorna
-    -------
-    Serie o None
-        Instancia del modelo `Serie` si se encuentra, de lo contrario `None`.
-
-    Lanza
-    -----
-    HTTPException
-        Si ocurre un error relacionado con la base de datos, manejado por `handle_db_exceptions`.
-    """
-    return db.query(Serie).filter(Serie.id_serie == id_serie).first()
-
-
-@handle_db_exceptions
-def delete_serie(db: Session, id_serie: int, current_user: dict):
-    """
-    Elimina una serie existente de la base de datos.
-
-    Esta función busca una instancia del modelo `Serie` según el identificador proporcionado
-    y la elimina de la base de datos.  
-    Las excepciones de base de datos son manejadas automáticamente por el decorador
-    `handle_db_exceptions`.
-
-    Parámetros
-    ----------
-    db : Session
-        Sesión de base de datos de SQLAlchemy.
-    id_serie : int
-        Identificador único de la serie a eliminar.
+    club: ClubCreate
+        Objeto de pydantic con el formato del schema `ClubCreate`
 
     Retorna
     -------
     bool
-        `True` si la serie fue eliminada correctamente, `False` si no se encontró.
+        Retorna booleano, True, indicando el correcto almacenamiento.
 
     Lanza
     -----
     HTTPException
-        Si se intenta eliminar una serie con registros asociados o si ocurre un error de integridad.
+        Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     try:
-        if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de borrar series")
-        db_serie = get_serie(db, id_serie)
-        if not db_serie:
-            return False
-        db.delete(db_serie)
-        db.commit()
-        return True
-    except AssertionError as e:
-        raise HTTPException(
-            status_code=500,
-            detail="No puedes borrar una serie que tenga registros asociados."
-        ) from e
+        series = []
+        for serie in lista_series:
+            schema = SerieCreate(nombre_serie=serie, id_club=id_club)
+            db_serie = Serie(**schema.model_dump())
+            db.add(db_serie)
+            series.append(db_serie)
+        return series
     except IntegrityError as e:
-        if isinstance(e.orig, psycopg2.errors.NotNullViolation):
-            raise HTTPException(
-                status_code=500,
-                detail="No puedes borrar una serie que tenga registros asociados.",
-            ) from e
+        db.rollback()
+        if isinstance(e.orig, psycopg2.errors.UniqueViolation):
+            detail = (
+                "El RUT ingresado esta asociado a otro club."
+                if "CLUB_rut_club_key" in str(e.orig)
+                else (
+                    "El correo ingresado ya esta asociado a un club."
+                    if "CLUB_email_club_key" in str(e.orig)
+                    else (
+                        "El nombre ingresado se encuentrado asociado a otro club"
+                        if "CLUB_nombre_club_key" in str(e.orig)
+                        else e.orig
+                    )
+                )
+            )
+            raise HTTPException(status_code=400, detail=detail) from e
         else:
-            raise HTTPException(status_code=500, detail={"error": e.orig.args}) from e
+            raise HTTPException(
+                status_code=400, detail=f"Error de integridad en la base de datos"
+            ) from e
 
 @handle_db_exceptions
 def get_series_with_details(db: Session, current_user: dict) -> list[SerieWithDetails]:
@@ -179,7 +172,7 @@ def get_series_with_details(db: Session, current_user: dict) -> list[SerieWithDe
         raise HTTPException(status_code=404, detail="Serie no encontrada.")
 
 @handle_db_exceptions
-def update_state_serie(db: Session, id_serie: int, serieUpdate: SerieUpdate, current_user: dict):
+def update_state_serie(db: Session, id_serie: int, current_user: dict):
     """
     Actualiza el estado (activo/inactivo) de una serie en la base de datos.
 
@@ -226,7 +219,7 @@ def update_state_serie(db: Session, id_serie: int, serieUpdate: SerieUpdate, cur
 
                 db_serie = db.query(Serie).filter(Serie.id_serie == id_serie).first()
     if not db_serie: raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Serie no encontrada")
-    db_serie.serie_activa = serieUpdate.state
+    db_serie.serie_activa = not db_serie.serie_activa
     db.commit()
     db.refresh(db_serie)
-    return True
+    return db_serie.serie_activa
