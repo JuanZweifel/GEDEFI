@@ -473,7 +473,7 @@ export const UsuarioRolModule: React.FC = () => {
                                         <CardContent>
                                             <p className="text-sm text-gray-600 mb-4">{role.desc_rol}</p>
                                             <div className="flex flex-wrap gap-2">
-                                                <NavLink to={`/dashboard/usuarios-roles/roles/edit/${role.id_rol}`}>
+                                                <NavLink to={`/dashboard/usuarios-roles/roles/${role.id_rol}/edit`}>
                                                     <Button variant="outline" size="sm">
                                                         <Edit className="w-4 h-4 mr-1" /> Editar
                                                     </Button>
