@@ -215,12 +215,13 @@ export const RegistroJugadoresModule: React.FC = () => {
     // 🔹 Obtener clubes
     const fetchClubs = async () => {
         try {
-            const data = await getClubs<any[]>();
+            const data = await getClubs<any[]>(token);
             const mapped = data.map(club => ({
                 id_club: club.id_club,
                 nombre: club.nombre_club
             }));
             setClubs(mapped);
+            console.log("✅ Clubs cargados:", mapped);
         } catch (error) {
             console.error("Error al obtener clubes:", error);
         }
@@ -626,11 +627,222 @@ export const RegistroJugadoresModule: React.FC = () => {
                 </TabsContent>
 
                 <TabsContent value="lesiones" className="space-y-4">
-                    <p>LESION</p>
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle>Gestión de Lesiones</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {injuries.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>No hay lesiones registradas</p>
+                                </div>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Jugador</TableHead>
+                                            <TableHead>Tipo de Lesión</TableHead>
+                                            <TableHead>Descripción</TableHead>
+                                            <TableHead>Fecha Lesión</TableHead>
+                                            <TableHead>Recuperación (Semanas)</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Acciones</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {injuries.map((injury) => (
+                                            <TableRow key={injury.id}>
+                                                <TableCell className="font-medium">{injury.rut_jugador}</TableCell>
+                                                <TableCell>{injury.tipo_lesion ? "Grave" : "Leve"}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{injury.descripcion}</TableCell>
+                                                <TableCell>{injury.fecha_lesion}</TableCell>
+                                                <TableCell>{injury.tiempo_recuperacion}</TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        className={
+                                                            injury.fecha_fin_lesion
+                                                                ? new Date(injury.fecha_fin_lesion) >= new Date()
+                                                                    ? 'bg-red-500'
+                                                                    : 'bg-green-500'
+                                                                : 'bg-red-500'
+                                                        }
+                                                    >
+                                                        {injury.fecha_fin_lesion
+                                                            ? new Date(injury.fecha_fin_lesion) >= new Date()
+                                                                ? 'Lesión Activa'
+                                                                : 'Lesión Terminada'
+                                                            : 'Lesión Activa'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex space-x-1">
+                                                        <DialogEditLesion lesion={injury} refreshLesiones={fetchLesiones} />
+                                                        <DialogViewLesion lesion={injury} refreshLesiones={fetchLesiones} />
+                                                        <ButtonDeleteLesion id_lesion={injury.id_lesion} refreshLesiones={fetchLesiones} />
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </CardContent>
+                    </Card>
                 </TabsContent>
 
                 <TabsContent value="fichas" className="space-y-4">
-                    <p>FICHAS</p>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Fichas de Jugadores por Club/Serie</CardTitle>
+                        </CardHeader>
+
+                        <CardContent>
+                            <div className="space-y-4">
+                                {/* 🔹 Filtros */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    {/* Input de búsqueda por RUT o Nombre */}
+                                    <Input
+                                        type="text"
+                                        placeholder="Buscar ficha por nombre o RUT..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-64"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    {/* Selección de Club (preseleccionado y deshabilitado) */}
+                                    <Select value={selectedClub} disabled>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar Club" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {clubs
+                                                .filter(club => club.id_club === Number(selectedClub))
+                                                .map(club => (
+                                                    <SelectItem key={club.id_club} value={club.id_club.toString()}>
+                                                        {club.nombre}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                    {/* Selección de Serie */}
+                                    <Select
+                                        value={selectedSerie || ''}
+                                        onValueChange={setSelectedSerie}
+                                        disabled={!selectedClub}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar Serie" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {series.map(serie => (
+                                                <SelectItem key={serie.id_serie} value={serie.id_serie.toString()}>
+                                                    {serie.nombre_serie}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                    {/* Botón de búsqueda */}
+                                    <Button
+                                        style={{ backgroundColor: '#0000db' }}
+                                        className="text-white"
+                                        onClick={buscarFichas}
+                                        disabled={!selectedSerie}
+                                    >
+                                        <Search className="w-4 h-4 mr-2" />
+                                        Buscar Fichas
+                                    </Button>
+                                </div>
+
+                                {/* 🔹 Tabla de fichas o mensajes */}
+                                {fichas.length > 0 ? (
+                                    <div className="overflow-auto border rounded-lg">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>RUT</TableHead>
+                                                    <TableHead>Nombre Completo</TableHead>
+                                                    <TableHead>Club</TableHead>
+                                                    <TableHead>Serie</TableHead>
+                                                    <TableHead>Fecha Creación</TableHead>
+                                                    <TableHead>Acciones</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {fichas
+                                                    .filter(ficha => {
+                                                        const jugador = players.find(j => j.rut_jugador === ficha.rut_jugador);
+                                                        const fullName = jugador
+                                                            ? `${jugador.primer_nombre} ${jugador.segundo_nombre || ''} ${jugador.primer_apellido} ${jugador.segundo_apellido || ''}`.toLowerCase()
+                                                            : '';
+                                                        const rut = ficha.rut_jugador.toLowerCase();
+                                                        const term = searchTerm.toLowerCase();
+                                                        return fullName.includes(term) || rut.includes(term);
+                                                    })
+                                                    .map(ficha => {
+                                                        const jugador = players.find(j => j.rut_jugador === ficha.rut_jugador);
+                                                        const serieCompleta = allSeries.find(s => s.id_serie === ficha.id_serie);
+                                                        const club = clubs.find(c => c.id_club === serieCompleta?.id_club);
+
+                                                        return (
+                                                            <TableRow key={ficha.id_ficha}>
+                                                                <TableCell>{ficha.rut_jugador}</TableCell>
+                                                                <TableCell>
+                                                                    {jugador
+                                                                        ? `${jugador.primer_nombre} ${jugador.segundo_nombre || ''} ${jugador.primer_apellido} ${jugador.segundo_apellido || ''}`
+                                                                        : "Jugador no encontrado"}
+                                                                </TableCell>
+                                                                <TableCell>{club?.nombre || "Club no encontrado"}</TableCell>
+                                                                <TableCell>{serieCompleta?.nombre_serie || "Serie no encontrada"}</TableCell>
+                                                                <TableCell>
+                                                                    {new Date(ficha.fecha_creacion).toLocaleDateString('es-CL')}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex space-x-1">
+                                                                        <DialogEditFichaJugador
+                                                                            ficha={ficha}
+                                                                            refreshFichas={buscarFichas}
+                                                                            jugador={players.find(j => j.rut_jugador === ficha.rut_jugador)}
+                                                                        />
+                                                                        <DialogViewFichaJugador
+                                                                            ficha={ficha}
+                                                                            jugador={players.find(j => j.rut_jugador === ficha.rut_jugador)}
+                                                                        />
+                                                                        <DialogDeleteFichaJugador
+                                                                            fichaRut={ficha.rut_jugador}
+                                                                            fichaIdSerie={ficha.id_serie}
+                                                                            refreshFichas={buscarFichas}
+                                                                        />
+
+
+
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                        <p>
+                                            {!busquedaRealizada
+                                                ? "Seleccione una serie para ver las fichas de jugadores"
+                                                : "No hay fichas para la serie seleccionada, vuelva a seleccionar una serie"}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
 
                 <TabsContent value="historial" className="space-y-4">

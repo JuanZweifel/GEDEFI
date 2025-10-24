@@ -89,6 +89,8 @@ interface MatchesTrainingModuleProps {
   matchHistory?: HistoryItem[];
 }
 
+
+
 export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
   matches = [],
   trainings = [],
@@ -333,9 +335,6 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
                             />
 
 
-                            <Button variant="outline" size="sm" title="Registrar rendimiento">
-                              <Target className="w-4 h-4" />
-                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

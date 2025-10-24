@@ -88,7 +88,7 @@ async def upload_excel(
     current_user: Usuario = Depends(get_current_user)
 ):
     try:
-        id_club = current_user["club_id"]
+        id_club = current_user["id_club"]
 
         # Leer archivo Excel
         contents = await file.read()

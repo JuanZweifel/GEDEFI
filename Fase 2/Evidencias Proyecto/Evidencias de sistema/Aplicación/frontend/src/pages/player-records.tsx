@@ -174,7 +174,7 @@ export const PlayerRecordsModule: React.FC = () => {
     const [allSeries, setAllSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
     const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string }[]>([]);
     const [busquedaRealizada, setBusquedaRealizada] = useState(false);
-    const { token, club_id } = useAuth();
+    const { token, id_club } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
 
     // 🔹 Obtener jugadores (función reutilizable)
@@ -232,11 +232,11 @@ export const PlayerRecordsModule: React.FC = () => {
 
     // 🔹 Preseleccionar club y filtrar series automáticamente
     useEffect(() => {
-        if (club_id && allSeries.length > 0) {
-            setSelectedClub(String(club_id));
+        if (id_club && allSeries.length > 0) {
+            setSelectedClub(String(id_club));
 
             const filtered = allSeries
-                .filter((s) => s.id_club === Number(club_id))
+                .filter((s) => s.id_club === Number(id_club))
                 .map((s) => ({ id_serie: s.id_serie, nombre_serie: s.nombre_serie }));
 
             setSeries(filtered);
@@ -246,7 +246,7 @@ export const PlayerRecordsModule: React.FC = () => {
                 setSelectedSerie(filtered[0].id_serie.toString());
             }
         }
-    }, [club_id, allSeries]);
+    }, [id_club, allSeries]);
 
     // 🔹 Filtrado historial
     const filteredHistory = uploadHistory.filter(item => {
@@ -296,9 +296,9 @@ export const PlayerRecordsModule: React.FC = () => {
 
     // 🔹 Filtrar jugadores por club del usuario logeado
     const fetchJugadoresPorClub = async (): Promise<Jugador[]> => {
-        if (!token || !club_id) return [];
+        if (!token || !id_club) return [];
         try {
-            const clubId = Number(club_id);
+            const clubId = Number(id_club);
             const todosLosJugadores = await fetchJugadores();
             const detalles: any[] = await getDetallesClubJugador<any[]>(token);
             const detallesDelClub = detalles.filter(d => Number(d.id_club) === clubId);
@@ -314,10 +314,10 @@ export const PlayerRecordsModule: React.FC = () => {
     };
 
     useEffect(() => {
-        if (club_id && token) {
+        if (id_club && token) {
             fetchJugadoresPorClub();
         }
-    }, [club_id, token]);
+    }, [id_club, token]);
 
 
     return (
