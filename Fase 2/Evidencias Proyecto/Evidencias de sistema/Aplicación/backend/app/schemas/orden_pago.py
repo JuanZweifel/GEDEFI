@@ -5,7 +5,7 @@ from ..utils.validaciones import validar_fecha, validar_rut
 
 
 class OrdenPagoBase(BaseModel):
-    tipo_orden: str = Field(..., max_length=25, description="Tipo de orden de pago")
+    tipo_orden: str = Field(..., max_length=100, description="Tipo de orden de pago")
     tipo_movimiento: str = Field(..., max_length=25, description="Tipo de movimiento [Ingreso, Egreso]")
     monto: float = Field(..., gt=0, description="Monto de la orden de pago")
     descripcion: Optional[str] = Field(None, max_length=500, description="Descripción de la orden de pago.")
@@ -45,12 +45,13 @@ class OrdenPagoCreate(OrdenPagoBase):
 class OrdenPagoRead(OrdenPagoBase):
     id_orden_pago: str
     tipo_pago: Optional[str] = None
-    orden_paga: bool
-    metodo_pago: Optional[int] = None
+    metodo_pago: Optional[str] = None
     numero_transaccion: Optional[str] = None
-    orden_activa: bool
-    fecha_pago: Optional[date] = None
+    estado_orden: str
+    fecha_pago: Optional[datetime] = None
     nombre_club: Optional[str] = None
+    usuario_emisor: Optional[str]
+    usuario_pago: Optional[str]
     fecha_emision: datetime = Field(..., description="Fecha de emisión de la orden de pago.")
     fecha_modificacion: datetime = Field(..., description="Fecha de la ultima modificación de la orden de pago.")
 
@@ -60,10 +61,10 @@ class OrdenPagoUpdate(BaseModel):
     tipo_orden: Optional[int] = None
     tipo_pago: Optional[int] = None
     monto: Optional[float] = Field(None, gt=0, description="Monto de la orden de pago")
-    metodo_pago: Optional[int] = None
+    metodo_pago: Optional[str] = None
     numero_transaccion: Optional[str] = Field(None, max_length=50)
     descripcion: Optional[str] = Field(None, max_length=500)
-    orden_activa: Optional[bool] = None
+    estado_orden: Optional[str]
     fecha_emision: Optional[datetime] = None
     fecha_vencimiento: Optional[datetime] = None
     fecha_pago: Optional[datetime] = None
@@ -81,3 +82,12 @@ class IngresosMes(BaseModel):
 class EgresosMes(BaseModel):
     total_egresos: int
     variacion: str
+
+class OrdenPagoPay(BaseModel):
+    tipo_pago: str
+    metodo_pago: str
+    numero_transaccion: Optional[str]
+    usuario_pago: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
+

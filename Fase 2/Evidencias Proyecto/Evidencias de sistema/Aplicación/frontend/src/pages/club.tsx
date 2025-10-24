@@ -297,7 +297,7 @@ export const ClubModule: React.FC = () => {
     useEffect(() => {
         if (!params.id_club) return; // no hay id
         if (isFetching) return; // todavía cargando
-        if (clubList.length === 0) return; // aún no se ha traído nada
+        if (clubList.length === 0) navigate("/dashboard/clubes", {replace:true});
 
         const clubEncontrado = clubList.find(
             (c) => c.id_club === Number(params.id_club)
@@ -307,7 +307,7 @@ export const ClubModule: React.FC = () => {
             setSelectedClub(clubEncontrado);
         } else {
             toast.warning("La serie solicitada no existe.");
-            navigate("/dashboard/series");
+            navigate("/dashboard/clubes", {replace:true});
         }
     }, [params.id_club, isFetching, clubList]);
 
@@ -359,7 +359,7 @@ export const ClubModule: React.FC = () => {
 
     const handleDelete = async (id_club: number) => {
         try {
-            const response = await deleteClub<any>(id_club);
+            const response = await deleteClub<any>(id_club, token);
             toast.success(response.message);
             setSelectedClub(undefined);
             fetchClubs();

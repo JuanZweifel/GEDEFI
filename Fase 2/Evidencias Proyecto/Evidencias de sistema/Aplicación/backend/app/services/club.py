@@ -74,7 +74,7 @@ def get_club(
         )
     ).first()
 
-    if not db_detalle and not current_user["admin"] or id_club != current_user["id_club"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
+    if (not db_detalle and not current_user.get("admin")) or (not current_user.get("admin") and id_club != current_user["id_club"]): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
     return db.query(Club).filter(Club.id_club == id_club).first()
 
 
@@ -300,7 +300,7 @@ def update_club(
             return None
 
         # Determinar campos permitidos según permisos
-        if current_user.get("admin", False):
+        if current_user.get("admin"):
             # Admin puede actualizar todo
             campos_permitidos = set(club_update.dict(exclude_unset=True).keys())
         else:
@@ -391,7 +391,6 @@ def get_clubs_with_details(
         elif current_user.get("admin", True):
             db_clubs = db.query(Club).all()
         else:
-            print("Llegamos al else")
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
         club_with_details: list[ClubWithDetails] = []
 
@@ -511,7 +510,6 @@ def get_clubs_with_details(
 
 @handle_db_exceptions
 def get_club_with_details(db:Session, current_user: dict, id_club) -> ClubWithDetails:
-    print(current_user)
     hoy = date.today()
     id_club = current_user["id_club"]
     rut_ususario = current_user["rut_usuario"]

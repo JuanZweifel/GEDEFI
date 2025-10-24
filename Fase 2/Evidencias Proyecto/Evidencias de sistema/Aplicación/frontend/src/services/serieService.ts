@@ -14,28 +14,24 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function getSeries<T>(token:string | null): Promise<T> {
     const response = await fetch(URL_BASE, {
         method: 'GET',
-        headers: {
-            'content-type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        }
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
     return handleResponse<T>(response);
 }
 
-export async function updateStateSerie<T>(id_serie: number, state: boolean): Promise<T> {
+export async function updateStateSerie<T>(id_serie: number, state: boolean, token:string | null): Promise<T> {
     const response = await fetch(`${URL_BASE}/${id_serie}`, {
         method: 'PUT',
-        headers: {
-            'content-type': 'application/json'
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: JSON.stringify({ state }) 
     })
     return handleResponse<T>(response)
 }
 
-export async function deleteSerie<T>(id_serie: number): Promise<T> {
+export async function deleteSerie<T>(id_serie: number, token:string | null): Promise<T> {
     const response = await fetch(`${URL_BASE}/${id_serie}`, {
         method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
 
     return handleResponse<T>(response)

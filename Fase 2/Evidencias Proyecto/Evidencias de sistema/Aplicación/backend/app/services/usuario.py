@@ -52,7 +52,6 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
         return usuarios
 
     except Exception as e:
-        print(f"Error fetching usuarios with club: {e}")
         raise HTTPException(
             status_code=500, detail="Error al obtener los usuarios con su club."
         )

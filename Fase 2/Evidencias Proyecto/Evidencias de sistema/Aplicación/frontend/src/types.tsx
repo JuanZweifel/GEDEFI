@@ -100,12 +100,13 @@ export type OrdenPagoType = {
     fecha_vencimiento?: string | null; // ISO string
     id_club?: number | null;
     tipo_pago?: string | null;
-    orden_paga: boolean;
-    metodo_pago?: number | null;
+    metodo_pago?: string | null;
     numero_transaccion?: string | null;
-    orden_activa: boolean;
+    estado_orden: string;
     fecha_pago?: string | null; // ISO string
     nombre_club?: string | null;
+    usuario_emisor: string;
+    usuario_pago: string | null;
     fecha_emision: string; // ISO string
     fecha_modificacion: string; // ISO string
 };
@@ -132,3 +133,7 @@ export type UploadExcelProps = {
     onUploadComplete?: (result: any[]) => void;
     openHistory?: () => void;
 };
+
+export type OrdenDetailsType = {
+    orden: OrdenPagoType;
+}

@@ -1,9 +1,11 @@
-from sqlalchemy import ForeignKey, event, select, func
+from sqlalchemy import ForeignKey, event, select, Enum as SQLEnum
 from sqlalchemy import String, Integer, DateTime, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, Session
+from typing import Optional
 from sqlalchemy.orm import relationship
 from datetime import date, datetime, timezone
 from app.db import Base
+import enum
 
 
 def generar_id_orden(mapper, connection, target):
@@ -29,24 +31,51 @@ def generar_id_orden(mapper, connection, target):
     
     session.close()
 
+class EstadoOrdenEnum(str, enum.Enum):
+    pendiente = "Pendiente"
+    anulada = "Anulada"
+    pagada = "Pagada"
+    vencida = "Vencida"
+
+class TipoPagoEnum(str, enum.Enum):
+    na = "N/A"
+    efectivo = "Efectivo"
+    transferencia = "Transferencia"
+    pago_linea = "Pago en linea"
+    otro = "otro"
+
+class TipoMovimientoEnum(str, enum.Enum):
+    ingreso = "Ingreso"
+    egreso = "Egreso"
+
 class OrdenPago(Base):
     __tablename__ = "ORDEN_PAGO"
 
     id_orden_pago: Mapped[str] = mapped_column(String(12), primary_key=True, index=True)
-    tipo_orden: Mapped[str] = mapped_column(String(25), nullable=False)
-    tipo_movimiento: Mapped[str] = mapped_column(String(25), nullable=False)
-    tipo_pago: Mapped[str] = mapped_column(String(25), nullable=True)
+    tipo_orden: Mapped[str] = mapped_column(String(100), nullable=False)
+    tipo_movimiento: Mapped[TipoMovimientoEnum] = mapped_column(
+        SQLEnum(TipoMovimientoEnum, name="tipo_movimiento_enum"),
+        nullable=False
+    )
+    tipo_pago: Mapped[Optional[TipoPagoEnum]] = mapped_column(
+        SQLEnum(TipoPagoEnum, name="metodo_pago_enum"),
+        nullable=False,
+        default=TipoPagoEnum.na
+    )
     monto: Mapped[float] = mapped_column(nullable=False)
-    orden_paga: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    metodo_pago: Mapped[int] = mapped_column(Integer, nullable=True)
-    numero_transaccion: Mapped[str] = mapped_column(String(50), nullable=True)
+    metodo_pago: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    numero_transaccion: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     descripcion: Mapped[str] = mapped_column(String(500), nullable=True)
-    orden_activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    fecha_emision: Mapped[date] = mapped_column(
+    estado_orden: Mapped[EstadoOrdenEnum] = mapped_column(
+        SQLEnum(EstadoOrdenEnum, name="estado_orden_enum"),
+        nullable=False,
+        default=EstadoOrdenEnum.pendiente
+    )
+    fecha_emision: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
     fecha_vencimiento: Mapped[date] = mapped_column(DateTime, nullable=True)
-    fecha_pago: Mapped[date] = mapped_column(DateTime, nullable=True)
+    fecha_pago: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     id_club: Mapped[int] = mapped_column(ForeignKey("CLUB.id_club"), nullable=True)
     fecha_modificacion: Mapped[datetime] = mapped_column(
         DateTime,
@@ -58,7 +87,7 @@ class OrdenPago(Base):
     usuario_emisor: Mapped[str] = mapped_column(
         ForeignKey("USUARIO.rut_usuario"), nullable=False
     )
-    usuario_pago: Mapped[str] = mapped_column(
+    usuario_pago: Mapped[Optional[str]] = mapped_column(
         ForeignKey("USUARIO.rut_usuario"), nullable=True
     )
 
