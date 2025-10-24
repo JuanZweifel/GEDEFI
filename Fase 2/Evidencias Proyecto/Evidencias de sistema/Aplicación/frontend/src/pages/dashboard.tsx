@@ -46,6 +46,7 @@ import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
 import { FinanzasModule } from './finanzas.tsx';
 import { RegistroJugadoresModule } from './registro-jugadores.tsx';
+import { PartidosModule } from './partidos.tsx';
 
 
 
@@ -291,6 +292,7 @@ export default function DashboardComponent() {
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
         { id: 'matches-training', label: 'Partidos y Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
+        { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidosModule, permission: 'matches' },
         { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
         { id: 'fields', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
@@ -333,7 +335,7 @@ export default function DashboardComponent() {
                                 const Icon = module.icon;
                                 return (
                                     <SidebarMenuItem key={module.id} onClick={
-                                        () => navigate(module.id !== "dashboard" ? `/dashboard/${module.id}` : `/${module.id}`, {replace: true})}>
+                                        () => navigate(module.id !== "dashboard" ? `/dashboard/${module.id}` : `/${module.id}`, { replace: true })}>
                                         <SidebarMenuButton
                                             onClick={() => setActiveModule(module.id)}
                                             isActive={activeModule === module.id}
@@ -418,15 +420,22 @@ export default function DashboardComponent() {
                                 <Route path='historial' element={<RegistroJugadoresModule />} />
                             </Route>
                             <Route path="matches-training" element={<MatchesTrainingModule />} />
+                            <Route path="partidos" element={<PartidosModule />}>
+                                <Route index element={<PartidosModule />} />
+                                <Route path='new' element={<PartidosModule />} />
+                                <Route path=':id_partido' element={<PartidosModule />} />
+                                <Route path=':id_partido/edit' element={<PartidosModule />} />
+                            </Route>
                             <Route path="scoreboard" element={<Scoreboard />} />
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="fields" element={<CanchasModule />} />
                             <Route path="finanzas" element={<FinanzasModule />}>
-                                <Route index element={<FinanzasModule/>}/>
-                                <Route path='new' element={<FinanzasModule/>}/>
-                                <Route path=':id_orden' element={<FinanzasModule/>}/>
-                                <Route path=':id_orden/edit' element={<FinanzasModule/>}/>
-                                <Route path=':id_orden/pay' element={<FinanzasModule/>}/>
+                                <Route index element={<FinanzasModule />} />
+                                <Route path='new' element={<FinanzasModule />} />
+                                <Route path=':id_orden' element={<FinanzasModule />} />
+                                <Route path=':id_orden/edit' element={<FinanzasModule />} />
+                                <Route path=':id_orden/pay' element={<FinanzasModule />} />
+                                <Route path=':id_orden/pending' element={<FinanzasModule />} />
                             </Route>
                             <Route path="analytics" element={<AnalyticsModule />} />
                             <Route path="audit" element={<AuditModule />} />
