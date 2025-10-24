@@ -427,7 +427,6 @@ export default function DashboardComponent() {
                                 <Route path=':id_orden' element={<FinanzasModule/>}/>
                                 <Route path=':id_orden/edit' element={<FinanzasModule/>}/>
                                 <Route path=':id_orden/pay' element={<FinanzasModule/>}/>
-                                <Route path=':id_orden/pending' element={<FinanzasModule/>}/>
                             </Route>
                             <Route path="analytics" element={<AnalyticsModule />} />
                             <Route path="audit" element={<AuditModule />} />
