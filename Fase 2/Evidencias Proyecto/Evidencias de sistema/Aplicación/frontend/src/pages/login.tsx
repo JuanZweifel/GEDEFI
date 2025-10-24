@@ -33,11 +33,11 @@ export const Login: React.FC = () => {
         return;
       }
 
-      if (data.access_token) {
-        login(data.access_token);
-        localStorage.setItem('authToken', data.access_token);
+      if (data.access_token && data.refresh_token) {
+        login(data.access_token, data.refresh_token);
         navigate('/dashboard'); // <-- redirect to home/dashboard after login
       }
+
     } catch (err) {
       console.error(err);
       setError('Error de conexión con el servidor');

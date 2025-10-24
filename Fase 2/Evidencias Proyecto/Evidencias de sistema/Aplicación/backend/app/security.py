@@ -11,7 +11,8 @@ from app.models.usuario import Usuario
 # TODO: Cambiar "SECRET_KEY"
 SECRET_KEY = "lalilulelo"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -40,6 +41,14 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def create_refresh_token(rut: str, expires_delta: timedelta | None = None):
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    to_encode = {"rut": str(rut), "type": "refresh", "exp": expire}
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
 def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ):
@@ -52,7 +61,13 @@ def get_current_user(
                 detail="Token inválido o sin información de usuario",
             )
 
-        user = db.query(Usuario).filter(and_(Usuario.rut_usuario == rut_usuario, Usuario.usuario_activo == True)).first()
+        user = (
+            db.query(Usuario)
+            .filter(
+                and_(Usuario.rut_usuario == rut_usuario, Usuario.usuario_activo == True)
+            )
+            .first()
+        )
         if not user:
             raise HTTPException(status_code=401, detail="Usuario no encontrado")
         return {
@@ -70,4 +85,25 @@ def get_current_user(
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+        )
+
+
+def verify_refresh_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token no es de tipo refresh",
+            )
+        return payload
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="El token de actualización ha expirado",
+        )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de actualización inválido",
         )

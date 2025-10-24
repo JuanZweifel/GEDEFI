@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavLink } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -6,6 +6,61 @@ import { Badge } from './ui/badge';
 import { Calendar, Trophy, Users, MapPin, Clock, LogIn } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select';
 import { getSeries } from "../services/jugadoresService";
+import { createPortal } from "react-dom";
+
+
+type AbbrevThProps = {
+  abbr: string;
+  hint: string;
+  className?: string;
+};
+
+const AbbrevTh: React.FC<AbbrevThProps> = ({ abbr, hint, className = "" }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    // Centro horizontal del th y justo arriba (8px de separación)
+    setPos({ x: r.left + r.width / 2, y: r.top - r.height - 10 });
+  }, [open]);
+
+  return (
+    <th className={`px-3 py-2 text-center ${className}`}>
+      <div
+        ref={ref}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        className="inline-block cursor-help"
+      >
+        {abbr}
+      </div>
+
+      {open && pos &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              left: pos.x,
+              top: pos.y,
+            }}
+            className="
+              -translate-x-1/2 -translate-y-full
+              bg-black/90 text-black text-xs rounded-md px-2 py-1
+              shadow-md whitespace-nowrap z-[9999]
+              pointer-events-none
+            "
+          >
+            {hint}
+          </div>,
+          document.body
+        )
+      }
+    </th>
+  );
+};
 
 export const LandingPage = () => {
   const [series, setSeries] = useState<any[]>([]);
@@ -97,16 +152,17 @@ export const LandingPage = () => {
                 <table className="w-full table-auto text-sm text-gray-600">
                   <thead className="bg-gray-100">
                     <tr>
-                      <th className="px-3 py-2 text-center">Pos</th>
+                      <AbbrevTh abbr="Pos" hint="Posiciones" />
                       <th className="px-3 py-2 text-left">Equipo</th>
-                      <th className="px-3 py-2 text-center">Pts</th>
-                      <th className="px-3 py-2 text-center">PJ</th>
-                      <th className="px-3 py-2 text-center">PG</th>
-                      <th className="px-3 py-2 text-center">PE</th>
-                      <th className="px-3 py-2 text-center">PP</th>
-                      <th className="px-3 py-2 text-center">GF</th>
-                      <th className="px-3 py-2 text-center">GC</th>
-                      <th className="px-3 py-2 text-center">Dif</th>
+
+                      <AbbrevTh abbr="Pts" hint="Puntos" />
+                      <AbbrevTh abbr="PJ" hint="Partidos Jugados" />
+                      <AbbrevTh abbr="PG" hint="Partidos Ganados" />
+                      <AbbrevTh abbr="PE" hint="Partidos Empatados" />
+                      <AbbrevTh abbr="PP" hint="Partidos Perdidos" />
+                      <AbbrevTh abbr="GF" hint="Goles a Favor" />
+                      <AbbrevTh abbr="GC" hint="Goles en Contra" />
+                      <AbbrevTh abbr="Dif" hint="Diferencia de Goles" />
                     </tr>
                   </thead>
                   <tbody>

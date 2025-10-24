@@ -21,5 +21,7 @@ from .serie import *
 from .detalle_club_jugador import *
 from .ficha_jugador import *
 from .cancha import *
+from .rendimiento_entrenamiento import *
+
 
 # WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente

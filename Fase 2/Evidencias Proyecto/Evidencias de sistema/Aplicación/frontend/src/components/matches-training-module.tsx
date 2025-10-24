@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { DialogAddEntrenamiento } from '../forms/entrenamiento-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Calendar, Clock, MapPin, Trophy, Target, Users, Star, Activity, TrendingUp, BarChart3, CheckCircle, Edit, Eye, Plus } from 'lucide-react';
 import { getEntrenamientos } from '../services/entrenamientoServices';
@@ -14,7 +13,9 @@ import { getSeries } from "../services/serieService";
 import { getClubs } from '../services/clubServices';
 import { getUsers } from '../services/usuarioService';
 import { getCanchas } from '../services/canchaService';
-import { DialogEditEntrenamiento } from '../forms/entrenamiento-form';
+import { DialogEditEntrenamiento, DialogViewEntrenamiento, ButtonDeleteEntrenamiento, DialogAddEntrenamiento } from '../forms/entrenamiento-form';
+import { getRendimientosEntrenamiento } from '../services/rendimientoEntrenamientoService';
+import { getFichasPorFiltro } from '../services/fichaJugadorService';
 
 interface Match {
   id: number;
@@ -64,13 +65,14 @@ interface MatchPerformance {
 }
 
 interface TrainingPerformance {
-  id: number;
+  id_: number;
   id_entrenamiento: number;
   jugador_nombre: string;
   asistencia: boolean;
   calificacion_tecnica: number;
   calificacion_fisica: number;
   observaciones: string;
+  rut_jugador: string;
 }
 
 interface HistoryItem {
@@ -100,31 +102,44 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
   const [clubs, setClubs] = useState<{ id_club: number; nombre_club: string }[]>([]);
   const [users, setUsers] = useState<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>([]);
   const [canchas, setCanchas] = useState<{ id_cancha: number; nombre_cancha: string }[]>([]);
+  const [trainingPerformanceFromDB, setTrainingPerformanceFromDB] = useState<TrainingPerformance[]>([]);
+  const [selectedTrainingId, setSelectedTrainingId] = useState<number | null>(null);
+
   const { token } = useAuth();
 
-  // ✅ 1. Definir la función fuera del useEffect
+  // ✅ 1. Definir la función de carga de datos
   const fetchData = async () => {
     if (!token) return;
 
     try {
-      // 1️⃣ Obtener entrenamientos
-      const entrenamientos = await getEntrenamientos<Training[]>(token);
+      // 🔹 Obtener rendimientos
+      const rendimientosEntrenamientos = await getRendimientosEntrenamiento<TrainingPerformance[]>(token);
+      setTrainingPerformanceFromDB(rendimientosEntrenamientos);
 
-      // 2️⃣ Obtener series
-      const seriesData = await getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token);
-      const clubsData = await getClubs<{ id_club: number; nombre_club: string }[]>(token);
-      const usersData = await getUsers<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>(token);
-      const canchasData = await getCanchas<{ id_cancha: number; nombre_cancha: string }[]>(token);
+      // 🔹 Obtener entrenamientos y tablas relacionadas
+      const [entrenamientos, seriesData, clubsData, usersData, canchasData, fichasData] = await Promise.all([
+        getEntrenamientos<Training[]>(token),
+        getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token),
+        getClubs<{ id_club: number; nombre_club: string }[]>(token),
+        getUsers<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>(token),
+        getCanchas<{ id_cancha: number; nombre_cancha: string }[]>(token),
+        getFichasPorFiltro<any[]>(token), // 👈 aquí traemos las fichas (jugadores de series)
+      ]);
 
-      // 3️⃣ Fusionar datos
-      const merged = entrenamientos.map((t) => {
-        const serie = seriesData.find((s) => s.id_serie === t.id_serie);
-        const club = clubsData.find((c) => c.id_club === serie?.id_club);
+      // 🔹 Fusionar datos
+      const merged = entrenamientos.map((t: any) => {
+        const serie = seriesData.find((s: any) => s.id_serie === t.id_serie);
+        const club = clubsData.find((c: any) => c.id_club === serie?.id_club);
+
         const normalizeRut = (rut: string) => rut?.replace(/\D/g, "");
         const usuario = usersData.find(
-          (u) => normalizeRut(u.rut_usuario || (u as any).rut) === normalizeRut(t.rut_usuario)
+          (u: any) => normalizeRut(u.rut_usuario || (u as any).rut) === normalizeRut(t.rut_usuario)
         );
-        const cancha = canchasData.find((c) => c.id_cancha === t.id_cancha);
+        const cancha = canchasData.find((c: any) => c.id_cancha === t.id_cancha);
+
+        // ✅ Contar jugadores de la serie
+        const jugadoresDeSerie = fichasData.filter((f: any) => f.id_serie === t.id_serie);
+        const totalJugadores = jugadoresDeSerie.length;
 
         return {
           ...t,
@@ -134,10 +149,11 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
             ? `${usuario.nombre_usuario} ${usuario.apellido_usuario}`
             : "Sin asignar",
           cancha_nombre: cancha?.nombre_cancha || "Sin cancha",
+          participantes: totalJugadores, // 👈 nuevo campo con el total
         };
       });
 
-      // 4️⃣ Guardar en estado
+      // 🔹 Guardar en estado
       setTrainingsFromDB(merged);
       setSeries(seriesData);
       setClubs(clubsData);
@@ -300,9 +316,7 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
                         {/* ⚙️ Acciones */}
                         <TableCell>
                           <div className="flex space-x-1">
-                            <Button variant="outline" size="sm" title="Ver detalles">
-                              <Eye className="w-4 h-4" />
-                            </Button>
+                            <DialogViewEntrenamiento key={training.id_entrenamiento} entrenamiento={training} />
 
 
 
@@ -313,7 +327,10 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
                             />
 
 
-
+<ButtonDeleteEntrenamiento  id_entrenamiento={training.id_entrenamiento}
+                            descripcion={training.descripcion_entrenamiento}
+                            refreshEntrenamientos={fetchData}
+                            />
 
 
                             <Button variant="outline" size="sm" title="Registrar rendimiento">
@@ -391,38 +408,83 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({
           <Card>
             <CardHeader className="flex justify-between items-center">
               <CardTitle>Rendimiento en Entrenamientos</CardTitle>
-              <Select>
-                <SelectTrigger className="w-48">
+
+              {/* 🔹 Select para filtrar por entrenamiento (opcional) */}
+              <Select onValueChange={(v: any) => setSelectedTrainingId(Number(v))}>
+                <SelectTrigger className="w-64">
                   <SelectValue placeholder="Seleccionar entrenamiento" />
                 </SelectTrigger>
                 <SelectContent>
-                  {trainings.map((t) => (
-                    <SelectItem key={t.id} value={t.id.toString()}>{t.club_nombre} - {t.fecha_entrenamiento}</SelectItem>
+                  {trainingsFromDB.map((t) => (
+                    <SelectItem key={t.id_entrenamiento} value={t.id_entrenamiento.toString()}>
+                      {t.club_nombre} - {t.fecha_entrenamiento}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </CardHeader>
+
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {['Jugador', 'Asistencia', 'Calificación Técnica', 'Calificación Física', 'Promedio', 'Observaciones', 'Acciones'].map((h, i) => (
+                    {[
+                      "Jugador",
+                      "Asistencia",
+                      "Calificación Técnica",
+                      "Calificación Física",
+                      "Promedio",
+                      "Observaciones",
+                      "Acciones",
+                    ].map((h, i) => (
                       <TableHead key={i}>{h}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
-                  {trainingPerformance.map((perf) => (
-                    <TableRow key={perf.id}>
-                      <TableCell>{perf.jugador_nombre}</TableCell>
+                  {/* 🔹 Filtramos si el usuario seleccionó un entrenamiento */}
+                  {(selectedTrainingId
+                    ? trainingPerformanceFromDB.filter(
+                      (perf) => perf.id_entrenamiento === selectedTrainingId
+                    )
+                    : trainingPerformanceFromDB
+                  ).map((perf) => (
+                    <TableRow key={perf.id_entrenamiento}>
+                      <TableCell>{perf.jugador_nombre || perf.rut_jugador}</TableCell>
+
                       <TableCell>
-                        {perf.asistencia ? <Badge className="bg-green-500 flex items-center"><CheckCircle className="w-3 h-3 mr-1" />Presente</Badge> : <Badge className="bg-red-500">Ausente</Badge>}
+                        {perf.asistencia ? (
+                          <Badge className="bg-green-500 flex items-center">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Presente
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-red-500">Ausente</Badge>
+                        )}
                       </TableCell>
-                      <TableCell className="flex items-center"><Star className="w-4 h-4 mr-1 text-blue-500" />{perf.calificacion_tecnica}</TableCell>
-                      <TableCell className="flex items-center"><Activity className="w-4 h-4 mr-1 text-green-500" />{perf.calificacion_fisica}</TableCell>
-                      <TableCell className="flex items-center"><TrendingUp className="w-4 h-4 mr-1 text-[#0000db]" />{promedio(perf.calificacion_tecnica, perf.calificacion_fisica)}</TableCell>
-                      <TableCell className="max-w-xs truncate">{perf.observaciones}</TableCell>
-                      <TableCell><Button variant="outline" size="sm"><Edit className="w-4 h-4" /></Button></TableCell>
+
+                      <TableCell className="flex items-center">
+                        <Star className="w-4 h-4 mr-1 text-blue-500" />
+                        {perf.calificacion_tecnica ?? "-"}
+                      </TableCell>
+
+                      <TableCell className="flex items-center">
+                        <Activity className="w-4 h-4 mr-1 text-green-500" />
+                        {perf.calificacion_fisica ?? "-"}
+                      </TableCell>
+
+
+
+                      <TableCell className="max-w-xs truncate">
+                        {perf.observaciones ?? "-"}
+                      </TableCell>
+
+                      <TableCell>
+                        <Button variant="outline" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

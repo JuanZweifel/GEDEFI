@@ -18,7 +18,7 @@ export async function getClubs<T>(token?: string | null): Promise<T> {
     return handleResponse<T>(response);
 }
 
-export async function createClub<T>(club: Record<string, any>, logo_club?: File, token): Promise<T> {
+export async function createClub<T>(club: Record<string, any>, token?: string, logo_club?: File): Promise<T> {
     const formData = new FormData();
     formData.append("nombre_club", club.nombre_club);
     formData.append("rut_club", club.rut_club);
@@ -45,7 +45,7 @@ export async function createClub<T>(club: Record<string, any>, logo_club?: File,
     return handleResponse(response);
 }
 
-export async function updateClub<T>(club: Record<string, any>, id_club: number, logo_club?: File, token): Promise<T> {
+export async function updateClub<T>(club: Record<string, any>, id_club: number, token?: string, logo_club?: File): Promise<T> {
     const formData = new FormData();
     formData.append("nombre_club", club.nombre_club);
     formData.append("rut_club", club.rut_club);

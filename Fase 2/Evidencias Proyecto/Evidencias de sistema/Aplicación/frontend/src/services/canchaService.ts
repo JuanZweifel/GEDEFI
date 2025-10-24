@@ -1,6 +1,6 @@
 import { fetchAPI } from "../utils/fetchApi";
 
-export const getCanchas = <T>(): Promise<T> => fetchAPI<T>("/canchas/");
+export const getCanchas = <T>(token:string): Promise<T> => fetchAPI<T>("/canchas/");
 
 export const getCanchaById = <T>(id: number): Promise<T> =>
     fetchAPI<T>(`/canchas/${id}/`);
