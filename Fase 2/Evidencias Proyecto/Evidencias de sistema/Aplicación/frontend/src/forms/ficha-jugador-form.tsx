@@ -44,9 +44,9 @@ type FichaJugador = {
 type Jugador = {
     rut_jugador: string;
     primer_nombre: string;
-    segundo_nombre?: string;
+    segundo_nombre?: string | null;
     primer_apellido: string;
-    segundo_apellido?: string;
+    segundo_apellido?: string | null;
 };
 
 // Aqui comienza la logica de editar una ficha

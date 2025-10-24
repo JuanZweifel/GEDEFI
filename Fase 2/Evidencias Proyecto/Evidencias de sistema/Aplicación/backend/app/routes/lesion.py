@@ -17,7 +17,7 @@ def create_lesion(
 ):
     detalle = db.query(DetalleClubJugador).filter(
         DetalleClubJugador.rut_jugador == lesion.rut_jugador,
-        DetalleClubJugador.id_club == current_user["club_id"]  # acceder como dict
+        DetalleClubJugador.id_club == current_user["id_club"]  # acceder como dict
     ).first()
 
     if not detalle:
@@ -59,7 +59,7 @@ def read_lesiones(
     # Obtener los RUTs de los jugadores que pertenecen al club del usuario logeado
     ruts_club = (
         db.query(DetalleClubJugador.rut_jugador)
-        .filter(DetalleClubJugador.id_club == current_user["club_id"])
+        .filter(DetalleClubJugador.id_club == current_user["id_club"])
         .all()
     )
     # ruts_club es lista de tuplas, convertir a lista simple
