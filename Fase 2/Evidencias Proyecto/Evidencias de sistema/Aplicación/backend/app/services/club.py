@@ -22,14 +22,13 @@ from app.schemas import (
     UsuarioForClub,
     SerieWithDetails,
     JugadorBase,
-    SerieCreate,
 )
 
 from app.services.serie import create_massive_series
 from fastapi import HTTPException, status
 from app.utils.decorators import handle_db_exceptions
 from datetime import date
-
+from typing import Optional
 
 @handle_db_exceptions
 def get_club(
@@ -287,41 +286,53 @@ def delete_club(db: Session, id_club: int, current_user:dict):
 
 @handle_db_exceptions
 def get_clubs_with_details(
-    db: Session, current_user:dict
-) -> list[ClubWithDetails] | None:
+    db: Session,
+    current_user: dict,
+    search: Optional[str] = None,
+    estado: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 20,
+) -> dict:
     """
-    Devuelve todas las instancias de `Club` con información extra de las instancias: `dict`, `Jugador` y `Serie`
-
-    Esta función retorna todas las instancias de `Club`, con información extra. Estas instancias estan validadas con el schema de pydantic `ClubWithDetails`
-    Requiere un dict autenticado obtenido mediante la dependencia `get_current_user`.
-    Las excepciones de base de datos son manejadas automáticamente por el decorador `handle_db_exceptions`.
-
-
-    Parámetros
-    ----------
-    db : Session
-        Sesión de base de datos de SQLAlchemy.
-
-    Retorna
-    -------
-    list[ClubWithDetails]
-        Retorna la lista de instancias validadas y formateadas por el schema de `ClubWithDetails`
-
-    Lanza
-    -----
-    HTTPException
-        Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
+    Retorna { items: list[ClubWithDetails], total: int }
+    Soporta search (nombre, email, rut), estado (1 activos, 2 inactivos), skip y limit.
     """
     try:
         hoy = date.today()
-        if not current_user.get("admin") and current_user.get("id_club") != None:
-            db_clubs = db.query(Club).filter(Club.id_club == current_user["id_club"])
-        elif current_user.get("admin", True):
-            db_clubs = db.query(Club).all()
-        else:
+
+        # --- Construir query base segun permisos ---
+        if not current_user.get("admin") and current_user.get("id_club") is not None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
+
+        base_query = db.query(Club)
+        base_query = base_query.order_by(Club.id_club.asc())
+
+        # --- Filtro por estado ---
+        if estado == 1:
+            base_query = base_query.filter(Club.club_activo == True)
+        elif estado == 2:
+            base_query = base_query.filter(Club.club_activo == False)
+
+        # --- Filtro por texto: nombre, email, rut (ILIKE para case-insensitive y coincidencia parcial) ---
+        if search:
+            like_pattern = f"%{search}%"
+            base_query = base_query.filter(
+                or_(
+                    Club.nombre_club.ilike(like_pattern),
+                    Club.email_club.ilike(like_pattern),
+                    Club.rut_club.ilike(like_pattern),
+                )
+            )
+
+        # --- total antes de paginar ---
+        total = base_query.count()
+
+        # --- aplicar paginación ---
+        db_clubs = base_query.offset(skip).limit(limit).all()
+
         club_with_details: list[ClubWithDetails] = []
 
+        # --- ahora iterar sólo sobre db_clubs (como ya hacías) ---
         for club in db_clubs:
             # --- DIRECTIVA ---
             db_directiva = (
@@ -345,7 +356,7 @@ def get_clubs_with_details(
             # --- SERIES ---
             db_series = db.query(Serie).filter(Serie.id_club == club.id_club).all()
 
-            # --- JUGADORES (todos los jugadores del club, por DetalleClubJugador) ---
+            # --- JUGADORES ---
             db_jugadores = (
                 db.query(Jugador)
                 .join(
@@ -362,7 +373,7 @@ def get_clubs_with_details(
                     "../images", "http://localhost:8000/images"
                 )
 
-            # --- Construcción de DIRECTIVA con rol incluido ---
+            # --- Construcción de directiva con rol incluido ---
             usuarios_for_club = []
             for u in db_directiva:
                 role_name = None
@@ -374,16 +385,12 @@ def get_clubs_with_details(
                     role_obj = getattr(u, "role")
 
                 if role_obj is not None:
-                    role_name = getattr(role_obj, "nombre_rol", None) or getattr(
-                        role_obj, "name", None
-                    )
+                    role_name = getattr(role_obj, "nombre_rol", None) or getattr(role_obj, "name", None)
                 else:
                     if getattr(u, "id_rol", None) is not None:
                         rol_db = db.query(Rol).filter(Rol.id_rol == u.id_rol).first()
                         if rol_db:
-                            role_name = getattr(rol_db, "nombre_rol", None) or getattr(
-                                rol_db, "name", None
-                            )
+                            role_name = getattr(rol_db, "nombre_rol", None) or getattr(rol_db, "name", None)
 
                 usuario_dict = {
                     "rut_usuario": getattr(u, "rut_usuario", None),
@@ -397,16 +404,15 @@ def get_clubs_with_details(
 
                 usuarios_for_club.append(UsuarioForClub.model_validate(usuario_dict))
 
-            # --- Construcción de SERIES (con cantidad de jugadores desde FichaJugador) ---
+            # --- Construcción series con cantidad ---
             series_for_club = []
             for s in db_series:
-                # contar jugadores únicos asociados a esta serie a través de FICHA_JUGADOR
                 jugadores_serie = (
                     db.query(Jugador)
                     .join(FichaJugador)
                     .filter(FichaJugador.id_serie == s.id_serie)
                     .all()
-                )  # TODO: REVISAR FICHAS INACTIVAS
+                )
 
                 serie_dict = {
                     **s.__dict__,
@@ -414,155 +420,173 @@ def get_clubs_with_details(
                     "nombre_club": club.nombre_club,
                 }
 
-                series_for_club.append(
-                    SerieWithDetails.model_validate(serie_dict, from_attributes=True)
-                )
+                series_for_club.append(SerieWithDetails.model_validate(serie_dict, from_attributes=True))
 
-            # --- Construcción final del objeto ClubWithDetails ---
+            # --- Construcción final ---
             club_details = ClubWithDetails(
                 **club.__dict__,
                 directiva=usuarios_for_club,
                 series=series_for_club,
-                jugadores=[
-                    JugadorBase.model_validate(j, from_attributes=True)
-                    for j in db_jugadores
-                ],
+                jugadores=[JugadorBase.model_validate(j, from_attributes=True) for j in db_jugadores],
             )
 
             club_with_details.append(club_details)
 
-        return club_with_details
+        return {"items": club_with_details, "total": total}
 
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Club no encontrado")
 
 @handle_db_exceptions
-def get_club_with_details(db:Session, current_user: dict, id_club) -> ClubWithDetails:
-    hoy = date.today()
-    id_club = current_user["id_club"]
-    rut_ususario = current_user["rut_usuario"]
+def get_club_with_details(
+    db: Session,
+    id_club: int,
+    current_user: dict,
+    search: Optional[str] = None,
+    estado: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 20,
+) -> ClubWithDetails:
+    """
+    Retorna { items: list[ClubWithDetails], total: int }
+    Soporta search (nombre, email, rut), estado (1 activos, 2 inactivos), skip y limit.
+    """
+    try:
+        hoy = date.today()
 
-    db_detalle = db.query(DetalleUsuarioClub).filter(
-        and_(
-            DetalleUsuarioClub.id_club == id_club,
-            DetalleUsuarioClub.rut_usuario == rut_ususario,
-            or_(
-                DetalleUsuarioClub.fecha_fin == None,
-                DetalleUsuarioClub.fecha_fin >= hoy,
-            ),
-        )
-    ).first()
-    if not db_detalle: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
+        # --- Construir query base segun permisos ---
+        if (not current_user.get("id_club") or id_club != current_user.get("id_club")) and not current_user.get("admin"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a este club")
 
-    db_club = db.query(Club).filter(Club.id_club == id_club).first()
+        base_query = db.query(Club).filter(Club.id_club == id_club)
+        base_query = base_query.order_by(Club.id_club.asc())
 
-    if not db_club: raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club no encontrado")
+        # --- Filtro por estado ---
+        if estado == 1:
+            base_query = base_query.filter(Club.club_activo == True)
+        elif estado == 2:
+            base_query = base_query.filter(Club.club_activo == False)
 
-    # --- DIRECTIVA ---
-    db_directiva = (
-        db.query(Usuario)
-        .join(
-            DetalleUsuarioClub,
-            Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
-        )
-        .filter(
-            and_(
-                DetalleUsuarioClub.id_club == db_club.id_club,
+        # --- Filtro por texto: nombre, email, rut (ILIKE para case-insensitive y coincidencia parcial) ---
+        if search:
+            like_pattern = f"%{search}%"
+            base_query = base_query.filter(
                 or_(
-                    DetalleUsuarioClub.fecha_fin == None,
-                    DetalleUsuarioClub.fecha_fin >= hoy,
-                ),
+                    Club.nombre_club.ilike(like_pattern),
+                    Club.email_club.ilike(like_pattern),
+                    Club.rut_club.ilike(like_pattern),
+                )
             )
-        )
-        .all()
-    )
 
-    # --- SERIES ---
-    db_series = db.query(Serie).filter(Serie.id_club == db_club.id_club).all()
 
-    # --- JUGADORES (todos los jugadores del club, por DetalleClubJugador) ---
-    db_jugadores = (
-        db.query(Jugador)
-        .join(
-            DetalleClubJugador,
-            Jugador.rut_jugador == DetalleClubJugador.rut_jugador,
-        )
-        .filter(DetalleClubJugador.id_club == db_club.id_club)
-        .all()
-    )
+        # --- aplicar paginación ---
+        db_clubs = base_query.offset(skip).limit(limit).all()
 
-    # --- Ajustar logo si existe ---
-    if db_club.logo_club:
-        db_club.logo_club = db_club.logo_club.replace(
-            "../images", "http://localhost:8000/images"
-        )
+        if not db_clubs: raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club no encontrado")
 
-    # --- Construcción de DIRECTIVA con rol incluido ---
-    usuarios_for_club = []
-    for u in db_directiva:
-        role_name = None
-        role_obj = None
+        
 
-        if hasattr(u, "rol"):
-            role_obj = getattr(u, "rol")
-        elif hasattr(u, "role"):
-            role_obj = getattr(u, "role")
-
-        if role_obj is not None:
-            role_name = getattr(role_obj, "nombre_rol", None) or getattr(
-                role_obj, "name", None
-            )
-        else:
-            if getattr(u, "id_rol", None) is not None:
-                rol_db = db.query(Rol).filter(Rol.id_rol == u.id_rol).first()
-                if rol_db:
-                    role_name = getattr(rol_db, "nombre_rol", None) or getattr(
-                        rol_db, "name", None
+        # --- ahora iterar sólo sobre db_clubs (como ya hacías) ---
+        for club in db_clubs:
+            # --- DIRECTIVA ---
+            db_directiva = (
+                db.query(Usuario)
+                .join(
+                    DetalleUsuarioClub,
+                    Usuario.rut_usuario == DetalleUsuarioClub.rut_usuario,
+                )
+                .filter(
+                    and_(
+                        DetalleUsuarioClub.id_club == club.id_club,
+                        or_(
+                            DetalleUsuarioClub.fecha_fin == None,
+                            DetalleUsuarioClub.fecha_fin >= hoy,
+                        ),
                     )
+                )
+                .all()
+            )
 
-        usuario_dict = {
-            "rut_usuario": getattr(u, "rut_usuario", None),
-            "email_usuario": getattr(u, "email_usuario", None),
-            "nombre_usuario": getattr(u, "nombre_usuario", None),
-            "apellido_usuario": getattr(u, "apellido_usuario", None),
-            "fecha_nacimiento": getattr(u, "fecha_nacimiento", None),
-            "id_rol": getattr(u, "id_rol", None),
-            "nombre_rol": role_name or "",
-        }
+            # --- SERIES ---
+            db_series = db.query(Serie).filter(Serie.id_club == club.id_club).all()
 
-        usuarios_for_club.append(UsuarioForClub.model_validate(usuario_dict))
+            # --- JUGADORES ---
+            db_jugadores = (
+                db.query(Jugador)
+                .join(
+                    DetalleClubJugador,
+                    Jugador.rut_jugador == DetalleClubJugador.rut_jugador,
+                )
+                .filter(DetalleClubJugador.id_club == club.id_club)
+                .all()
+            )
 
-    # --- Construcción de SERIES (con cantidad de jugadores desde FichaJugador) ---
-    series_for_club = []
-    for s in db_series:
-        # contar jugadores únicos asociados a esta serie a través de FICHA_JUGADOR
-        jugadores_serie = (
-            db.query(Jugador)
-            .join(FichaJugador)
-            .filter(FichaJugador.id_serie == s.id_serie)
-            .all()
-        )  # TODO: REVISAR FICHAS INACTIVAS
+            # --- Ajustar logo si existe ---
+            if club.logo_club:
+                club.logo_club = club.logo_club.replace(
+                    "../images", "http://localhost:8000/images"
+                )
 
-        serie_dict = {
-            **s.__dict__,
-            "cantidad_jugadores": len(jugadores_serie),
-            "nombre_club": db_club.nombre_club,
-        }
+            # --- Construcción de directiva con rol incluido ---
+            usuarios_for_club = []
+            for u in db_directiva:
+                role_name = None
+                role_obj = None
 
-        series_for_club.append(
-            SerieWithDetails.model_validate(serie_dict, from_attributes=True)
-        )
+                if hasattr(u, "rol"):
+                    role_obj = getattr(u, "rol")
+                elif hasattr(u, "role"):
+                    role_obj = getattr(u, "role")
 
-    # --- Construcción final del objeto ClubWithDetails ---
-    club_details = ClubWithDetails(
-        **db_club.__dict__,
-        directiva=usuarios_for_club,
-        series=series_for_club,
-        jugadores=[
-            JugadorBase.model_validate(j, from_attributes=True)
-            for j in db_jugadores
-        ],
-    )
-    return club_details
+                if role_obj is not None:
+                    role_name = getattr(role_obj, "nombre_rol", None) or getattr(role_obj, "name", None)
+                else:
+                    if getattr(u, "id_rol", None) is not None:
+                        rol_db = db.query(Rol).filter(Rol.id_rol == u.id_rol).first()
+                        if rol_db:
+                            role_name = getattr(rol_db, "nombre_rol", None) or getattr(rol_db, "name", None)
+
+                usuario_dict = {
+                    "rut_usuario": getattr(u, "rut_usuario", None),
+                    "email_usuario": getattr(u, "email_usuario", None),
+                    "nombre_usuario": getattr(u, "nombre_usuario", None),
+                    "apellido_usuario": getattr(u, "apellido_usuario", None),
+                    "fecha_nacimiento": getattr(u, "fecha_nacimiento", None),
+                    "id_rol": getattr(u, "id_rol", None),
+                    "nombre_rol": role_name or "",
+                }
+
+                usuarios_for_club.append(UsuarioForClub.model_validate(usuario_dict))
+
+            # --- Construcción series con cantidad ---
+            series_for_club = []
+            for s in db_series:
+                jugadores_serie = (
+                    db.query(Jugador)
+                    .join(FichaJugador)
+                    .filter(FichaJugador.id_serie == s.id_serie)
+                    .all()
+                )
+
+                serie_dict = {
+                    **s.__dict__,
+                    "cantidad_jugadores": len(jugadores_serie),
+                    "nombre_club": club.nombre_club,
+                }
+
+                series_for_club.append(SerieWithDetails.model_validate(serie_dict, from_attributes=True))
+
+            # --- Construcción final ---
+            club_details = ClubWithDetails(
+                **club.__dict__,
+                directiva=usuarios_for_club,
+                series=series_for_club,
+                jugadores=[JugadorBase.model_validate(j, from_attributes=True) for j in db_jugadores],
+            )
+
+        return club_details
+
+    except NoResultFound:
+        raise HTTPException(status_code=404, detail="Club no encontrado")
 
 

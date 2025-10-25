@@ -8,13 +8,13 @@ import { Label } from '../components/ui/label.tsx';
 import { DialogHandle } from '../components/dialog-component.tsx';
 import { Input } from '../components/ui/input.tsx';
 import {
-    Plus, Edit, Eye,
+    Plus, Edit, Eye, ArrowBigLeft, ArrowBigRight,
     Trash2, RefreshCcw, FileText
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 
-import { getClubs, deleteClub } from '../services/clubServices.ts';
+import { getClubs, deleteClub, getClub } from '../services/clubServices.ts';
 import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 import { ClubForm } from '../forms/club-forms.tsx';
 import {
@@ -172,7 +172,7 @@ export const ClubDetailsContent: React.FC<ClubDetailsType> = ({ club }) => {
                             <CardTitle className='font-medium'>Series registradas</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {series.length > 0 &&
+                            {!!series && series.length > 0 &&
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -276,6 +276,8 @@ export const ClubDetailsContent: React.FC<ClubDetailsType> = ({ club }) => {
 
 export const ClubModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('clubs');
+    const [page, setPage] = useState<number>(1);
+    const [totalPages, setTotalPages] = useState<number>(0);
     const [clubList, setClubList] = useState<ClubType[]>([]);
     const [isFetching, setIsFetching] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -284,33 +286,13 @@ export const ClubModule: React.FC = () => {
     const [selectedDelete, setSelectedDelete] = useState<number | null>(null)
     const [action, setAction] = useState<string>("")
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
+
     const location = useLocation();
     const navigate = useNavigate();
     const params = useParams();
     const { token } = useAuth();
 
-    useEffect(() => {
-        fetchClubs();
-    }, []);
-
-
-    useEffect(() => {
-        if (!params.id_club) return; // no hay id
-        if (isFetching) return; // todavía cargando
-        if (clubList.length === 0) navigate("/dashboard/clubes", {replace:true});
-
-        const clubEncontrado = clubList.find(
-            (c) => c.id_club === Number(params.id_club)
-        );
-
-        if (!!clubEncontrado) {
-            setSelectedClub(clubEncontrado);
-        } else {
-            toast.warning("El club solicitado no existe.");
-            navigate("/dashboard/clubes", {replace:true});
-        }
-    }, [params.id_club, isFetching, clubList]);
-
+    // Effect para manejar rutas y acciones
     useEffect(() => {
         const path = location.pathname;
 
@@ -323,32 +305,120 @@ export const ClubModule: React.FC = () => {
             case path.endsWith("/edit") && !!params.id_club:
                 setAction("edit");
                 setIsDialogOpen(true);
+                fetchClub(Number(params.id_club));
                 break;
 
             case !!params.id_club:
                 setAction("view");
                 setIsDialogOpen(true);
+                fetchClub(Number(params.id_club));
                 break;
 
             default:
                 setAction("");
                 setIsDialogOpen(false);
-                fetchClubs()
+                fetchClubs();
                 break;
         }
     }, [location.pathname, params.id_club]);
 
-    const fetchClubs = async () => {
-        let data: ClubType[] = [];
+    // Effect para búsqueda con debounce
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const rawTerm = searchTerm.trim();
+            const term = rawTerm.toLowerCase();
+
+            if (!term) {
+                fetchClubs(undefined, selectedEstado);
+                return;
+            }
+
+            const cacheToSearch =
+                selectedEstado === "1"
+                    ? clubList.filter(c => c.club_activo)
+                    : selectedEstado === "2"
+                        ? clubList.filter(c => !c.club_activo)
+                        : clubList;
+
+            const onlyDigits = /^\d+$/.test(rawTerm);
+            const foundInCache = cacheToSearch.some(c => {
+                const rut = (c.rut_club ?? "").toLowerCase();
+                const nombre = (c.nombre_club ?? "").toLowerCase();
+                const email = (c.email_club ?? "").toLowerCase();
+
+                if (onlyDigits) return rut.includes(term);
+                return (
+                    nombre.includes(term) ||
+                    email.includes(term)
+                );
+            });
+
+            if (foundInCache) {
+                const filtered = cacheToSearch.filter(c => {
+                    const rut = (c.rut_club ?? "").toLowerCase();
+                    const nombre = (c.nombre_club ?? "").toLowerCase();
+                    const email = (c.email_club ?? "").toLowerCase();
+
+                    if (onlyDigits) return rut.includes(term);
+                    return nombre.includes(term) || email.includes(term);
+                });
+                setClubList(filtered);
+                return;
+            }
+
+            fetchClubs(searchTerm, selectedEstado);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm, selectedEstado, page]);
+
+    // Fetch de clubes paginados
+    const fetchClubs = async (search?: string, estado?: string) => {
+        let data: { items: ClubType[]; total: number } = { items: [], total: 0 };
         try {
             setIsFetching(true);
-            data = await getClubs<ClubType[]>(token);
-            setClubList(data);
-            if (data.length === 0) toast.info("No hay clubs registrados en la base de datos.");
+            data = await getClubs<{ items: ClubType[]; total: number }>(
+                page,
+                10,
+                search,
+                estado,
+                token
+            );
+            setClubList(data.items);
+            setTotalPages(Math.ceil(data.total / 10));
+            console.log(data.total)
+            if (data.items.length === 0) {
+                toast.info("No hay clubs registrados en la base de datos.");
+            }
         } catch (error: any) {
             toast.warning(String(error));
         } finally {
-            if (data.length === 0) setClubList([]);
+            if (data.items.length === 0) setClubList([]);
+            setIsFetching(false);
+        }
+    };
+
+    // Fetch de un club específico
+    const fetchClub = async (id_club: number) => {
+        try {
+            setIsFetching(true);
+            const clubEncontrado = clubList.find((c) => c.id_club === id_club);
+            if (clubEncontrado) {
+                setSelectedClub(clubEncontrado);
+            } else {
+                const data = await getClub<ClubType>(id_club, token);
+                if (data) {
+                    console.log(data)
+                    setSelectedClub(data);
+                } else {
+                    toast.warning("El club solicitado no existe.");
+                    navigate("/dashboard/clubes", { replace: true });
+                }
+            }
+        } catch (error) {
+            toast.warning(String(error));
+            navigate("/dashboard/clubes", { replace: true });
+        } finally {
             setIsFetching(false);
         }
     };
@@ -368,21 +438,6 @@ export const ClubModule: React.FC = () => {
         }
     };
 
-    const filteredClubs = (() => {
-        let baseList = clubList;
-        if (selectedEstado === "1") baseList = clubList.filter(c => c.club_activo);
-        else if (selectedEstado === "2") baseList = clubList.filter(c => !c.club_activo);
-
-        if (!searchTerm.trim()) return baseList;
-
-        if (/^\d+$/.test(searchTerm)) return baseList.filter(c => c.rut_club?.includes(searchTerm));
-
-        const term = searchTerm.toLowerCase();
-        const byName = baseList.filter(c => c.nombre_club.toLowerCase().includes(term));
-        const byEmail = baseList.filter(c => !byName.includes(c) && c.email_club.toLowerCase().includes(term));
-        return [...byName, ...byEmail];
-    })();
-
     const clubHistory = [
         { fecha: "2024-09-15", accion: "Registro nueva serie", club: "FC Barcelona Santiago", detalle: "Serie Femenina agregada" },
         { fecha: "2024-09-10", accion: "Actualización directiva", club: "Real Madrid Chile", detalle: "Cambio de tesorero" }
@@ -399,7 +454,7 @@ export const ClubModule: React.FC = () => {
                         </Button>
                     ) : (
                         <>
-                            <Button variant="outline" size="sm" className="flex-1" onClick={fetchClubs}>
+                            <Button variant="outline" size="sm" className="flex-1" onClick={() => fetchClubs()}>
                                 <RefreshCcw className="w-4 h-4 mr-1" /> Recargar
                             </Button>
                             <Button
@@ -427,7 +482,7 @@ export const ClubModule: React.FC = () => {
                             <CardTitle>Clubes registrados</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <Input
                                     type="text"
                                     placeholder="Buscar club por Nombre, RUT o Email..."
@@ -445,10 +500,36 @@ export const ClubModule: React.FC = () => {
                                         <SelectItem value="2">Inactivo</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                <div></div>
+                                {clubList.length > 0 &&
+                                    <div className="flex space-x-1 col-start-4 justify-end items-center">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                                            disabled={page === 1 || !!isFetching}
+                                        >
+                                            <ArrowBigLeft className="w-2 h-2 mr-2" />
+                                        </Button>
+
+                                        <span className="text-sm font-medium">
+                                            {page} / {totalPages === 0 ? "-" : totalPages}
+                                        </span>
+
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                            disabled={page === totalPages || !!isFetching}
+                                        >
+                                            <ArrowBigRight className="w-2 h-2 mr-2" />
+                                        </Button>
+                                    </div>
+                                }
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredClubs.map((club) => (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                                {clubList.map((club) => (
                                     <Card key={club.id_club}>
                                         <CardHeader>
                                             <div className="flex items-start justify-between">
@@ -510,10 +591,10 @@ export const ClubModule: React.FC = () => {
 
                                             {/* Buttons */}
                                             <div className="flex space-x-2 pt-2">
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${club.id_club}`, {replace:true})}>
+                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${club.id_club}`, { replace: true })}>
                                                     <Eye className="w-4 h-4 mr-1" /> Ver Detalles
                                                 </Button>
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${club.id_club}/edit`, {replace: true})}>
+                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${club.id_club}/edit`, { replace: true })}>
                                                     <Edit className="w-4 h-4 mr-1" /> Editar
                                                 </Button>
                                             </div>
@@ -539,6 +620,31 @@ export const ClubModule: React.FC = () => {
                                         </CardContent>
                                     </Card>
                                 ))}
+                                {clubList.length > 0 &&
+                                    <div className="flex space-x-1 justify-end items-center col-span-2">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                                            disabled={page === 1 || !!isFetching}
+                                        >
+                                            <ArrowBigLeft className="w-2 h-2 mr-2" />
+                                        </Button>
+
+                                        <span className="text-sm font-medium">
+                                            {page} / {totalPages === 0 ? "-" : totalPages}
+                                        </span>
+
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                            disabled={page === totalPages || !!isFetching}
+                                        >
+                                            <ArrowBigRight className="w-2 h-2 mr-2" />
+                                        </Button>
+                                    </div>
+                                }
                             </div>
                             {clubList.length === 0 &&
                                 <div className="text-center py-8 text-gray-500">
@@ -546,7 +652,7 @@ export const ClubModule: React.FC = () => {
                                     <p>No hay clubes registrados.</p>
                                 </div>
                             }
-                            {filteredClubs.length === 0 && clubList.length > 0 &&
+                            {clubList.length === 0 && clubList.length > 0 &&
                                 <div className="text-center py-8 text-gray-500">
                                     <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
                                     <p>No se encontraron clubs que coincidan con la busqueda.</p>
@@ -589,7 +695,7 @@ export const ClubModule: React.FC = () => {
                 </TabsContent>
             </Tabs>
 
-            {action === "view" && (
+            {action === "view" && !!selectedClub && (
                 <DialogHandle<ClubType>
                     title={selectedClub ? `Detalles del club: ${selectedClub.nombre_club}` : 'Detalles del club'}
                     trigger={<div />}
@@ -623,7 +729,7 @@ export const ClubModule: React.FC = () => {
                 </DialogHandle>
             )}
 
-            {action === "edit" && (
+            {action === "edit" && !!selectedClub && (
                 <DialogHandle<ClubType>
                     title={selectedClub ? `Modificar club ${selectedClub.nombre_club}` : "Cargando..."}
                     trigger={<div />}
@@ -634,7 +740,7 @@ export const ClubModule: React.FC = () => {
                         if (!selectedClub) {
                             return (
                                 <div className="p-6 flex items-center justify-center">
-                                    <span>Cargando detalles de la serie...</span>
+                                    <span>Cargando detalles del club...</span>
                                 </div>
                             );
                         }

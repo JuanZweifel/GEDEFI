@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, File, Query
 from typing import Optional
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -63,24 +63,29 @@ async def create_club(nombre_club: str = Form(...),
     except TypeError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@router.get("/{id_club}", response_model=schemas.ClubRead)
-def get_club(id_club: int, db: Session = Depends(get_db)):
+@router.get("/", response_model=schemas.PaginatedClubs)
+def get_clubs_with_details(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+    search: str | None = Query(None, description="Buscar por nombre, rut o email"),
+    estado: int | None = Query(None, description="1=activos, 2=inactivos"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=30)
+):
     try:
-        current_user = {
-            "rut_usuario": "26811934-5",
-            "id_club": 1
-        }
-        db_club = services.get_club_with_details(db, current_user, id_club)
-        return db_club
+        info = services.get_clubs_with_details(db, current_user, search=search, estado=estado, skip=skip, limit=limit)
+        return info
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
-
-@router.get("/", response_model=list[schemas.ClubWithDetails])
-def get_clubs_with_details(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+@router.get("/{id_club}", response_model=schemas.ClubWithDetails)
+def get_club_with_details(
+    id_club:int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
     try:
-        info = services.get_clubs_with_details(db, current_user)       
+        info = services.get_club_with_details(db, id_club, current_user)
         return info
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)

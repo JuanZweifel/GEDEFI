@@ -30,7 +30,7 @@ from app.routes import (
     calendario,
 )
 from app.utils.trigger import create_trigger
-from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo
+from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo, insertar_clubs_demo
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
@@ -91,6 +91,7 @@ app.add_middleware(
 #def startup_event():
 #    insertar_ordenes_egresos_demo()
 #    insertar_ordenes_ingresos_demo()
+#    insertar_clubs_demo()
 #    create_trigger()
 
 @app.get("/api")

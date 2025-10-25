@@ -14,7 +14,7 @@ class ClubBase(BaseModel):
     nombre_club: str = Field(..., max_length=120, min_length=4, description="Nombre del club.")
     fecha_fundacion: date = Field(..., description="Fecha de fundación del club.")
     fono_club: Optional[str] = Field(None, max_length=12, description="Teléfono del club.")
-    direccion_club: str = Field(..., max_length=500, min_length=10, description="Dirección del club.")
+    direccion_club: str = Field(..., max_length=500, min_length=5, description="Dirección del club.")
     email_club: EmailStr = Field(..., max_length=320, description="Email del club.")
     logo_club: Optional[str] = Field(None, description="Ruta del archivo del logo.")
     color_primario: str = Field(..., min_length=7, max_length=7, description="Color principal del club en formato hexadecimal (ej: #ABC123).")
@@ -112,3 +112,8 @@ class ClubWithDetails(ClubRead):
     series: list[SerieWithDetails] = Field(default_factory=list)
     jugadores: list[JugadorBase] = Field(default_factory=list)
 
+class PaginatedClubs(BaseModel):
+    items: List[ClubWithDetails]
+    total: int
+
+    model_config = ConfigDict(from_attributes=True)

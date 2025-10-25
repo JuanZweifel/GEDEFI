@@ -10,11 +10,47 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return data
 }
 
-export async function getClubs<T>(token?: string | null): Promise<T> {
-    const response = await fetch(URL_BASE, {
+export async function getClubs<T>(
+    page = 1,          // página 1 = primer bloque
+    limit = 10,        // cantidad de items por página
+    search?: string,
+    estado?: string,
+    token?: string | null
+): Promise<T> {
+    // --- calcular skip consistente con backend ---
+    // página 1 => skip = 0
+    // página 2 => skip = 20
+    // página 3 => skip = 40
+    const skip = (page - 1) * limit;
+
+    const params = new URLSearchParams();
+    params.append("skip", String(skip));
+    params.append("limit", String(limit));
+    if (search) params.append("search", search);
+    if (estado) params.append("estado", estado);
+
+    const url = `${URL_BASE}?${params.toString()}`;
+
+    const response = await fetch(url, {
         method: "GET",
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
+
+    return handleResponse<T>(response);
+}
+
+export async function getClub<T>(
+    id_club:number,
+    token?: string | null
+): Promise<T> {
+
+    const url = `${URL_BASE}${id_club}`;
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
     return handleResponse<T>(response);
 }
 
@@ -70,7 +106,7 @@ export async function updateClub<T>(club: Record<string, any>, id_club: number, 
     return handleResponse(response)
 }
 
-export async function deleteClub<T>(id_club: number, token:string | null): Promise<T> {
+export async function deleteClub<T>(id_club: number, token: string | null): Promise<T> {
     const response = await fetch(`${URL_BASE}${id_club}`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {}
