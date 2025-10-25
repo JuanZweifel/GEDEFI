@@ -295,7 +295,7 @@ export default function DashboardComponent() {
         { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidosModule, permission: 'matches' },
         { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
-        { id: 'fields', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
+        { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
         { id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
         { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
@@ -428,7 +428,15 @@ export default function DashboardComponent() {
                             </Route>
                             <Route path="scoreboard" element={<Scoreboard />} />
                             <Route path="meetings" element={<MeetingsModule />} />
-                            <Route path="fields" element={<CanchasModule />} />
+                            <Route path="canchas" element={<CanchasModule />}>
+                                <Route index element={<PartidosModule />} />
+                                <Route path='new' element={<PartidosModule />} />
+                                <Route path=':id_cancha/edit' element={<PartidosModule />} />
+                                <Route path='new' element={<PartidosModule />} />
+                                <Route path='programacion' element={<PartidosModule />} />
+                                <Route path='mantenimiento' element={<PartidosModule />} />
+                                <Route path='historial' element={<PartidosModule />} />
+                            </Route>
                             <Route path="finanzas" element={<FinanzasModule />}>
                                 <Route index element={<FinanzasModule />} />
                                 <Route path='new' element={<FinanzasModule />} />
