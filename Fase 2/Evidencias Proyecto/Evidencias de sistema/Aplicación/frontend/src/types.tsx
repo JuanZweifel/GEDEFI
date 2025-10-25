@@ -137,3 +137,34 @@ export type UploadExcelProps = {
 export type OrdenDetailsType = {
     orden: OrdenPagoType;
 }
+
+
+export type PartidoType = {
+    id_partido: number;
+    fecha_partido: string;
+    hora_ini_partido: string;
+    hora_fin_partido: string | null;
+    goles_local: number | null;
+    goles_visita: number | null;
+    estado_partido: "programado" | "en_curso" | "finalizado" | "cancelado";
+    tipo_partido: "campeonato" | "amistoso" | "playoff" | "final";
+    observaciones: string;
+    fecha_creacion: string;
+    fecha_modificacion: string;
+    id_cancha: number;
+    id_serie_local: number;
+    id_serie_visitante: number;
+}
+
+export type RendimientoPartidoType = {
+    id: number;
+    id_partido: number;
+    jugador_nombre: string;
+    goles: number;
+    asistencias: number;
+    tarjetas_amarillas: number;
+    tarjetas_rojas: number;
+    minutos_jugados: number;
+    calificacion: number;
+    observaciones: string;
+}

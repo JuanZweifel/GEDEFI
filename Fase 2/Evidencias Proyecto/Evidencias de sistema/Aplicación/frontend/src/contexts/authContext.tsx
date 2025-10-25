@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router';
 import { jwtDecode } from 'jwt-decode';
 
 interface TokenPayload {
-  rut_usuario?: string;
+  rut?: string;
   email?: string;
   rol?: string;
   nombre?: string;
@@ -15,13 +15,14 @@ interface TokenPayload {
 
 interface AuthContextType {
   token: string | null;
+  rut: string | null;
   rol: string | null;
   permisos?: string | null; //<- Se debe cambiar quitando la opcionalidad "?"
   email: string | null;
   nombre: string | null;
   club_nombre: string | null;
   id_club: string | null;
-  admin:boolean | null;
+  admin: boolean | null;
   login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   refreshAccessToken: () => Promise<string | null>;
@@ -40,6 +41,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('authToken'));
   const [refreshToken, setRefreshToken] = useState<string | null>(() => localStorage.getItem('refreshToken'));
+  const [rut, setRut] = useState<string | null>(null);
   const [rol, setRol] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [nombre, setNombre] = useState<string | null>(null);
@@ -51,6 +53,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (token) {
       try {
         const payload = jwtDecode<TokenPayload>(token);
+        setRut(payload.rut || null);
         setRol(payload.rol || null);
         setEmail(payload.email || null);
         setNombre(payload.nombre || null);
@@ -136,7 +139,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ token, rol, email, nombre, id_club: clubId, club_nombre: clubNombre, admin, login, logout }}>
+    <AuthContext.Provider value={{ token, rut, rol, email, nombre, id_club: clubId, club_nombre: clubNombre, admin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

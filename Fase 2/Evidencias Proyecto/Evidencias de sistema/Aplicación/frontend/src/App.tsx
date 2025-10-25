@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router";
 import DashboardComponent from "./pages/dashboard";
 import { LandingPage } from "./components/landing-page";
 import { Login } from "./pages/login";
+import { ResetPassword } from "./pages/reset-password";
 import { useAuth, ProtectedRoute } from "./contexts/authContext";
 
 export default function App() {
@@ -22,6 +23,8 @@ export default function App() {
         path="/login"
         element={!token ? <Login onSuccess={() => { }} onCancel={() => { }} /> : <Navigate to="/dashboard" replace />}
       />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
 
 
       {/* Rutas privada */}

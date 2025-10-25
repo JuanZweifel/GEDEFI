@@ -1,38 +1,48 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, List
-from datetime import date
+from datetime import date, time, datetime
 from ..utils.validaciones import validar_fecha
+from ..models.partido import EstadoPartidoEnum, TipoPartidoEnum
 
 
 class PartidoBase(BaseModel):
     fecha_partido: date
+    hora_ini_partido: time
     goles_local: Optional[int] = None
     goles_visita: Optional[int] = None
-    partido_activo: bool
+    estado_partido: EstadoPartidoEnum = EstadoPartidoEnum.PROGRAMADO
+    tipo_partido: TipoPartidoEnum = TipoPartidoEnum.CAMPEONATO
+    observaciones: str
     id_cancha: int
-    serie_local: int
-    serie_visita: int
+    id_serie_local: int
+    id_serie_visitante: int
 
-        # Validaciones
+    # Validaciones
     @field_validator("fecha_partido")
     @classmethod
     def validar_fecha_partido(cls, v) -> date:
         return validar_fecha(v, False)
 
+
 class PartidoCreate(PartidoBase):
     pass
 
+
 class PartidoRead(PartidoBase):
     id_partido: int
-    fecha_creacion: date
-    fecha_modificacion: date
+    fecha_creacion: datetime
+    fecha_modificacion: datetime
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class PartidoUpdate(BaseModel):
     fecha_partido: Optional[date] = None
+    hora_ini_partido: Optional[time] = None
+    hora_fin_partido: Optional[time] = None
     goles_local: Optional[int] = None
     goles_visita: Optional[int] = None
-    partido_activo: Optional[bool] = None
+    estado_partido: Optional[EstadoPartidoEnum] = None
+    tipo_partido: Optional[TipoPartidoEnum] = None
     id_cancha: Optional[int] = None
-    serie_local: Optional[int] = None
-    serie_visita: Optional[int] = None
+    observaciones: Optional[str] = None

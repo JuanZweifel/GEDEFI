@@ -4,6 +4,7 @@ from sqlalchemy import extract
 from typing import List
 from datetime import datetime, timedelta, date, time
 from app.models import Partido, Cancha, Club, Serie
+from app.models.partido import EstadoPartidoEnum, TipoPartidoEnum
 
 SERIES_SABADO = ["Segunda Infantil", "Primera Infantil", "Juveniles", "Super Seniors"]
 SERIES_DOMINGO = ["Segunda Adulta", "Primera Adulta", "Seniors", "Serie Honor"]
@@ -108,12 +109,12 @@ def generate_calendar_for_fixture(
             # Cargar solo series activas de cada club
             home_series = (
                 db.query(Serie)
-                .filter(Serie.id_club == home_club_id, Serie.serie_activa == True)
+                .filter(Serie.id_club == home_club_id, Serie.serie_activa == False)
                 .all()
             )
             away_series = (
                 db.query(Serie)
-                .filter(Serie.id_club == away_club_id, Serie.serie_activa == True)
+                .filter(Serie.id_club == away_club_id, Serie.serie_activa == False)
                 .all()
             )
 
@@ -128,24 +129,34 @@ def generate_calendar_for_fixture(
                 if hs and as_:
                     partido = Partido(
                         fecha_partido=saturday_date,
-                        partido_activo=True,
-                        id_cancha=0,  # placeholder
+                        hora_ini_partido=time(8, 0),
+                        hora_fin_partido=None,
+                        id_cancha=0,  # "Sin asignar"
                         id_serie_local=hs.id_serie,
                         id_serie_visitante=as_.id_serie,
+                        # TODO: Recibir el tipo de partido como parametro
+                        estado_partido=EstadoPartidoEnum.PROGRAMADO,
+                        tipo_partido=TipoPartidoEnum.CAMPEONATO,
+                        observaciones="",
                     )
                     partidos.append(partido)
 
-            # Crear partidos del domingo
+            # Domingo
             for serie_name in SERIES_DOMINGO:
                 hs = home_map.get(serie_name)
                 as_ = away_map.get(serie_name)
                 if hs and as_:
                     partido = Partido(
                         fecha_partido=sunday_date,
-                        partido_activo=True,
-                        id_cancha=0,  # placeholder
+                        hora_ini_partido=time(8, 0),
+                        hora_fin_partido=None,
+                        id_cancha=0,
                         id_serie_local=hs.id_serie,
                         id_serie_visitante=as_.id_serie,
+                        # TODO: Recibir el tipo de partido como parametro
+                        estado_partido=EstadoPartidoEnum.PROGRAMADO,
+                        tipo_partido=TipoPartidoEnum.CAMPEONATO,
+                        observaciones="",
                     )
                     partidos.append(partido)
 

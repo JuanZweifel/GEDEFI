@@ -7,6 +7,7 @@ import { AlertDialogHandle } from "../components/alert-dialog-component";
 import { toast } from "sonner";
 import { createCancha, updateCancha } from "../services/canchaService.ts";
 import { type CanchaType } from "../types.tsx";
+import { useAuth } from "../contexts/authContext.tsx";
 
 type CanchaFormProps = {
     cancha?: CanchaType;
@@ -45,6 +46,7 @@ export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: Cancha
             fecha_modificacion: new Date().toISOString(),
         }
     );
+    const { token } = useAuth();
 
     useEffect(() => {
         if (isEdit && cancha) setForm(cancha);
@@ -60,10 +62,10 @@ export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: Cancha
         setIsLoading(true);
         try {
             if (isEdit && form.id_cancha) {
-                await updateCancha(form.id_cancha, form);
+                await updateCancha(token, form.id_cancha, form);
                 toast.success("Cancha modificada correctamente!");
             } else {
-                await createCancha(form);
+                await createCancha(token, form);
                 toast.success("Cancha registrada correctamente!");
             }
             await refreshCanchas();

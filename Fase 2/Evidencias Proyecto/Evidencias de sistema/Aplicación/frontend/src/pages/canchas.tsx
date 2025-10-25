@@ -4,65 +4,164 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { DialogHandle } from "../components/dialog-component.tsx";
 import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import {
-  Plus, Edit, Trash2, MapPin, Calendar, Clock, CheckCircle,
-  XCircle, Settings, History, Eye, Activity, AlertTriangle
-} from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, Calendar, Clock, Eye } from 'lucide-react';
 import { CanchaForm } from '../forms/canchaForm.tsx';
 import type { CanchaType } from '../types.tsx';
 import { deleteCancha, getCanchas } from '../services/canchaService.ts';
 import { toast } from "sonner";
+import { useAuth } from '../contexts/authContext.tsx';
+import { NavLink, useLocation, useNavigate, useParams } from 'react-router';
 
 export const CanchasModule: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('fields');
-  const [isCreateFieldOpen, setIsCreateFieldOpen] = useState(false);
-  const [openSelected, setOpenSelected] = useState<number | null>(null)
-  const [isEditFieldOpen, setIsEditFieldOpen] = useState(false);
-  const [selectedField, setSelectedField] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('canchas');
+  const [openSelected, setOpenSelected] = useState<number | null>(null);
+  const [selectedField, setSelectedField] = useState<CanchaType | null>(null);
   const [isFetchingCanchas, setIsFetchingCanchas] = useState(false);
   const [canchas, setCanchas] = useState<CanchaType[]>([]);
 
+  const { token } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams<{ id_cancha?: string }>();
+
+  // Route detection (new / edit)
+  const isFieldNewRoute = /\/dashboard\/canchas\/new/.test(location.pathname);
+  const isFieldEditRoute = /\/dashboard\/canchas\/[^/]+\/edit$/.test(location.pathname);
+
   useEffect(() => {
     fetchCanchas();
-  }, [])
+
+    const path = location.pathname;
+
+    if (path === '/dashboard/canchas' || path === '/dashboard/canchas/') {
+      navigate('/dashboard/canchas', { replace: true });
+      setActiveTab('canchas');
+      return;
+    }
+
+    if (path.startsWith('/dashboard/canchas/programacion')) {
+      setActiveTab('programacion');
+      return;
+    }
+
+    if (path.startsWith('/dashboard/canchas/mantenimiento')) {
+      setActiveTab('mantenimiento');
+      return;
+    }
+
+    if (path.startsWith('/dashboard/canchas/historial')) {
+      setActiveTab('historial');
+      return;
+    }
+
+    if (path.startsWith('/dashboard/canchas/')) {
+      setActiveTab('canchas');
+      return;
+    }
+
+    setActiveTab('canchas');
+  }, []);
+
+  // Keep activeTab in sync with route when location changes
+  useEffect(() => {
+    const path = location.pathname;
+
+    if (path === '/dashboard/canchas' || path === '/dashboard/canchas/') {
+      navigate('/dashboard/canchas', { replace: true });
+      setActiveTab('canchas');
+      return;
+    }
+
+    // check specific tabs first to avoid matching the dynamic :id_cancha route
+    if (path.startsWith('/dashboard/canchas/programacion')) {
+      setActiveTab('programacion');
+      return;
+    }
+
+    if (path.startsWith('/dashboard/canchas/mantenimiento')) {
+      setActiveTab('mantenimiento');
+      return;
+    }
+
+    if (path.startsWith('/dashboard/canchas/historial')) {
+      setActiveTab('historial');
+      return;
+    }
+
+    // fallback to canchas for any other /dashboard/canchas/* path (including :id_cancha)
+    if (path.startsWith('/dashboard/canchas/')) {
+      setActiveTab('canchas');
+      return;
+    }
+
+    setActiveTab('canchas');
+  }, [location.pathname, navigate]);
 
   const fetchCanchas = async () => {
-    let data: CanchaType[] = []
+    let data: CanchaType[] = [];
     try {
-      setIsFetchingCanchas(true)
-      data = await getCanchas();
+      setIsFetchingCanchas(true);
+      data = await getCanchas(token);
       setCanchas(data);
       if (data.length === 0) {
-        toast.info("No hay canchas registradas en la base de datos.")
+        toast.info("No hay canchas registradas en la base de datos.");
       }
     } catch (err: any) {
-      toast.warning(String(err))
+      toast.warning(String(err));
     } finally {
-      if (data.length === 0) {
-        setCanchas([]);
-      }
-      setIsFetchingCanchas(false)
+      if (data.length === 0) setCanchas([]);
+      setIsFetchingCanchas(false);
     }
   };
 
   const handleDeleteCancha = async (id: number) => {
     try {
-      const response = await deleteCancha(id);
-      console.log(response)
+      // if your deleteCancha needs token, add it to the service signature and pass token
+      const response = await deleteCancha(token, id);
       toast.success(response?.detail || "Cancha eliminada correctamente");
-      setOpenSelected(null)
+      setOpenSelected(null);
       fetchCanchas();
     } catch (error) {
-      console.log(error)
-      toast.error(String(error))
+      toast.error(String(error));
     }
-  }
+  };
+
+  // Resolve selectedField from route params (edit route)
+  useEffect(() => {
+    if (!isFieldEditRoute) {
+      setSelectedField(null);
+      return;
+    }
+
+    if (!params.id_cancha) {
+      setSelectedField(null);
+      return;
+    }
+
+    if (canchas.length === 0) {
+      if (!isFetchingCanchas) fetchCanchas();
+      return;
+    }
+
+    const idNumber = Number(params.id_cancha);
+    if (!Number.isNaN(idNumber)) {
+      const found = canchas.find(c => c.id_cancha === idNumber);
+      if (found) {
+        setSelectedField(found);
+      } else if (!isFetchingCanchas) {
+        toast.warning("La cancha solicitada no existe.");
+        navigate("/dashboard/canchas/");
+      }
+    } else {
+      toast.warning("ID de cancha inválido en la ruta.");
+      navigate("/dashboard/canchas/");
+    }
+  }, [params.id, canchas, isFetchingCanchas, navigate, isFieldEditRoute]);
 
   const fieldSchedule = [
     {
@@ -131,35 +230,30 @@ export const CanchasModule: React.FC = () => {
       <div className="flex justify-between items-center">
         <h2>Administración de Canchas de Fútbol</h2>
         <div className="flex space-x-2">
-          <DialogHandle<any>
-            title="Registrar Nueva Cancha"
-            trigger={
-              <Button style={{ backgroundColor: "#0000db" }} className="text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva cancha
-              </Button>
-            }
-          >
-            {(close) => (
-              <CanchaForm
-                isEdit={false}
-                refreshCanchas={fetchCanchas}
-                onSuccess={close}
-              />
-            )}
-          </DialogHandle>
+          <NavLink to="/dashboard/canchas/new">
+            <Button style={{ backgroundColor: "#0000db" }} className="text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva cancha
+            </Button>
+          </NavLink>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(v) => {
+        setActiveTab(v);
+        if (v === 'canchas') navigate('/dashboard/canchas');
+        if (v === 'programacion') navigate('/dashboard/canchas/programacion');
+        if (v === 'mantenimiento') navigate('/dashboard/canchas/mantenimiento');
+        if (v === 'historial') navigate('/dashboard/canchas/historial');
+      }}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="fields">Canchas</TabsTrigger>
-          <TabsTrigger value="schedule">Programación</TabsTrigger>
-          <TabsTrigger value="maintenance">Mantenimiento</TabsTrigger>
-          <TabsTrigger value="history">Historial</TabsTrigger>
+          <TabsTrigger value="canchas">Canchas</TabsTrigger>
+          <TabsTrigger value="programacion">Programación</TabsTrigger>
+          <TabsTrigger value="mantenimiento">Mantenimiento</TabsTrigger>
+          <TabsTrigger value="historial">Historial</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="fields" className="space-y-4">
+        <TabsContent value="canchas" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {canchas.map((cancha) => (
               <Card key={cancha.id_cancha}>
@@ -200,50 +294,39 @@ export const CanchasModule: React.FC = () => {
                         {new Date(cancha.fecha_modificacion).toLocaleDateString()}
                       </p>
                     </div>
-
-                    <div className="flex space-x-2 pt-2">
-                    </div>
                   </div>
-                  <DialogHandle<CanchaType>
-                    title={`Modificar cancha ${cancha.nombre_cancha}`}
-                    trigger={
+
+                  <div className="mt-4 flex gap-2">
+                    <NavLink to={`/dashboard/canchas/${cancha.id_cancha}/edit`}>
                       <Button variant="outline" size="sm" className="flex-1">
                         <Edit className="w-4 h-4 mr-1" /> Editar
                       </Button>
-                    }
-                  >
-                    {(close) => (
-                      <CanchaForm
-                        cancha={cancha}
-                        isEdit={true}
-                        refreshCanchas={fetchCanchas}
-                        onSuccess={close}
-                      />
-                    )}
-                  </DialogHandle>
-                  <Button onClick={() => setOpenSelected(cancha.id_cancha)} variant="destructive" size="sm" className="flex-1">
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Eliminar
-                  </Button>
+                    </NavLink>
+
+                    <Button onClick={() => setOpenSelected(cancha.id_cancha)} variant="destructive" size="sm" className="flex-1">
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Eliminar
+                    </Button>
+                  </div>
+
                   <AlertDialogHandle
                     title={`Eliminacion de cancha ${cancha.nombre_cancha}`}
-                    description={`¿Estas seguro de querer eliminar al cancha ${cancha.nombre_cancha}`}
+                    description={`¿Estas seguro de querer eliminar la cancha ${cancha.nombre_cancha}?`}
                     confirmLabel='Eliminar'
                     cancelLabel='Cancelar'
                     onConfirm={() => handleDeleteCancha(cancha.id_cancha)}
                     open={openSelected === cancha.id_cancha}
-                    onOpenChange={(Open) => {
-                      if (!Open) setOpenSelected(null); // cerrar el dialog
+                    onOpenChange={(open) => {
+                      if (!open) setOpenSelected(null);
                     }}
-                  >
-                  </AlertDialogHandle>
+                  />
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
 
-        <TabsContent value="schedule" className="space-y-4">
+        <TabsContent value="programacion" className="space-y-4">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -310,7 +393,7 @@ export const CanchasModule: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="maintenance" className="space-y-4">
+        <TabsContent value="mantenimiento" className="space-y-4">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -369,7 +452,7 @@ export const CanchasModule: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-4">
+        <TabsContent value="historial" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Historial de Cambios (HISTORIAL_CANCHA)</CardTitle>
@@ -408,90 +491,60 @@ export const CanchasModule: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Field Dialog */}
-      <Dialog open={isEditFieldOpen} onOpenChange={setIsEditFieldOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Editar Cancha: {selectedField?.nombre}</DialogTitle>
-          </DialogHeader>
-          {selectedField && (
-            <form className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-2">Nombre de la Cancha</label>
-                  <Input defaultValue={selectedField.nombre} />
-                </div>
-                <div>
-                  <label className="block mb-2">Capacidad</label>
-                  <Input type="number" defaultValue={selectedField.capacidad} />
-                </div>
-                <div className="col-span-2">
-                  <label className="block mb-2">Dirección</label>
-                  <Input defaultValue={selectedField.direccion} />
-                </div>
-                <div>
-                  <label className="block mb-2">Tipo de Superficie</label>
-                  <Select defaultValue={selectedField.tipo_superficie.toLowerCase().replace(' ', '')}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cespednatural">Césped Natural</SelectItem>
-                      <SelectItem value="cespedsintetico">Césped Sintético</SelectItem>
-                      <SelectItem value="tierra">Tierra</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block mb-2">Estado Actual</label>
-                  <Select defaultValue={selectedField.estado_actual.toLowerCase()}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="excelente">Excelente</SelectItem>
-                      <SelectItem value="bueno">Bueno</SelectItem>
-                      <SelectItem value="regular">Regular</SelectItem>
-                      <SelectItem value="malo">Malo</SelectItem>
-                      <SelectItem value="en mantenimiento">En Mantenimiento</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block mb-2">Costo de Arriendo</label>
-                  <Input type="number" defaultValue={selectedField.costo_arriendo} />
-                </div>
-                <div>
-                  <label className="block mb-2">Disponibilidad</label>
-                  <Select defaultValue={selectedField.disponible ? "true" : "false"}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Disponible</SelectItem>
-                      <SelectItem value="false">No Disponible</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block mb-2">Observaciones</label>
-                <Textarea defaultValue={selectedField.observaciones} />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditFieldOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button style={{ backgroundColor: '#0000db' }} className="text-white">
-                  Guardar Cambios
-                </Button>
-              </div>
-            </form>
+      {isFieldNewRoute && (
+        <DialogHandle<CanchaType>
+          title="Registrar Nueva Cancha"
+          trigger={<div />}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) navigate("/dashboard/canchas/");
+          }}
+        >
+          {(close) => (
+            <CanchaForm
+              isEdit={false}
+              refreshCanchas={fetchCanchas}
+              onSuccess={() => {
+                close();
+                navigate("/dashboard/canchas/");
+              }}
+            />
           )}
-        </DialogContent>
-      </Dialog>
+        </DialogHandle>
+      )}
+
+      {isFieldEditRoute && (
+        <DialogHandle<CanchaType>
+          title={selectedField ? `Modificar cancha ${selectedField.nombre_cancha}` : 'Modificar cancha'}
+          trigger={<div />}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) navigate("/dashboard/canchas/");
+          }}
+          initialData={selectedField ?? undefined}
+        >
+          {() => {
+            if (!selectedField) {
+              return (
+                <div className="p-6 flex items-center justify-center">
+                  <span>Cargando detalles de la cancha...</span>
+                </div>
+              );
+            }
+
+            return (
+              <CanchaForm
+                cancha={selectedField}
+                isEdit={true}
+                refreshCanchas={fetchCanchas}
+                onSuccess={() => {
+                  navigate("/dashboard/canchas/");
+                }}
+              />
+            );
+          }}
+        </DialogHandle>
+      )}
     </div>
   );
 };
