@@ -47,6 +47,7 @@ import { SerieModule } from './serie.tsx';
 import { FinanzasModule } from './finanzas.tsx';
 import { RegistroJugadoresModule } from './registro-jugadores.tsx';
 import { PartidosModule } from './partidos.tsx';
+import { PerfilUsuarioModule } from './perfilUsuario.tsx';
 
 
 
@@ -302,7 +303,8 @@ export default function DashboardComponent() {
         { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: FingerprintModule, permission: 'fingerprint' },
         { id: 'penalties', label: 'Castigos', icon: AlertTriangle, component: PenaltiesModule, permission: 'penalties' },
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
-        { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' }
+        { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
+        { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
     ];
 
     const filteredModules = modules.filter(module =>
@@ -372,13 +374,18 @@ export default function DashboardComponent() {
                                 <Badge variant="outline" style={{ borderColor: '#0000db', color: '#0000db' }}>
                                     {rol ? rol : 'N/A'}
                                 </Badge>
-                                <div className="text-right">
-                                    <p className="font-medium">{nombre}</p>
-                                    <p className="text-xs text-muted-foreground">{club}</p>
-                                </div>
-                                <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
-                                    {mockUser.name.split(' ').map(n => n[0]).join('')}
-                                </div>
+                                <NavLink
+                                    to="/dashboard/perfil"
+                                    className="flex items-center space-x-2 hover:opacity-80 transition"
+                                >
+                                    <div className="text-right">
+                                        <p className="font-medium">{nombre}</p>
+                                        <p className="text-xs text-muted-foreground">{club}</p>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
+                                        {mockUser.name.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                </NavLink>
                                 <Button variant="outline" size="sm" onClick={logout}>
                                     Logout
                                 </Button>
@@ -396,6 +403,7 @@ export default function DashboardComponent() {
                                 <Route path='usuarios' element={<UsuarioRolModule />} />
                                 <Route path='usuarios/new' element={<UsuarioRolModule />} />
                                 <Route path='usuarios/:id/edit/' element={<UsuarioRolModule />} />
+                                <Route path='usuarios/:id/view/' element={<UsuarioRolModule />} />
                                 <Route path='roles' element={<UsuarioRolModule />} />
                                 <Route path='roles/new' element={<UsuarioRolModule />} />
                                 <Route path='roles/:id/edit/' element={<UsuarioRolModule />} />
@@ -451,6 +459,7 @@ export default function DashboardComponent() {
                             <Route path="penalties" element={<PenaltiesModule />} />
                             <Route path="calendar" element={<CalendarioModule />} />
                             <Route path="admin" element={<div>Panel Administrativo</div>} />
+                            <Route path="perfil" element={<PerfilUsuarioModule />} />
 
                             <Route path="*" element={<Dashboard />} />
                         </Routes>

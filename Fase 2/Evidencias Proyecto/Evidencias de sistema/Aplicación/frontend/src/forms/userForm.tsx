@@ -35,13 +35,24 @@ function InputField({ label, value, onChange, type = "text", ...rest }: any) {
   );
 }
 
+const hasChanges = (current: UsuarioFormType, original: UsuarioFormType) => {
+  for (const key in original) {
+    if (key === "pass_usuario") continue;
+    if (current[key as keyof UsuarioFormType] !== original[key as keyof UsuarioFormType]) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUsers, onSuccess }: UserFormProps) {
   const [availableRoles, setAvailableRoles] = useState<RolType[]>([]);
   const [rutError, setRutError] = useState("");
-
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<UsuarioFormType>(
-    user || {
+
+  const initialForm = user
+    ? { ...user } // for edit
+    : {
       rut_usuario: "",
       email_usuario: "",
       nombre_usuario: "",
@@ -52,8 +63,9 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
       admin: false,
       id_club: undefined,
       pass_usuario: "",
-    }
-  );
+    };
+  const [form, setForm] = useState<UsuarioFormType>(initialForm);
+
   const [isLoading, setIsLoading] = useState(false);
   const { token } = useAuth()
 
@@ -89,7 +101,14 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
   }
 
   const handleSubmit = async () => {
+    if (isEdit && !hasChanges(form, initialForm)) {
+      toast.info("No se hicieron cambios");
+      setOpen(false); // close the alert dialog
+      return;
+    }
+
     setIsLoading(true);
+
     try {
       if (isEdit) {
         await updateUser(form.rut_usuario, form, token);
@@ -148,7 +167,8 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
           required
           minLength={2}
           maxLength={50}
-          title="Ingrese un nombre entre 2 y 50 caracteres"
+          pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$"
+          title="Ingrese un nombre entre 2 y 50 caracteres (solo letras)"
         />
 
         <InputField
@@ -158,7 +178,8 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
           required
           minLength={2}
           maxLength={50}
-          title="Ingrese un apellido entre 2 y 50 caracteres"
+          pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$"
+          title="Ingrese un apellido entre 2 y 50 caracteres (solo letras)"
         />
 
         <InputField
@@ -185,7 +206,7 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
           label="Contraseña"
           type="password"
           value={form.pass_usuario}
-          onChange={(val) => setForm({ ...form, pass_usuario: val })}
+          onChange={(val) => setForm({ ...form, pass_usuario: val === "" && isEdit ? undefined : val, })}
           required={!isEdit}
           minLength={isEdit ? undefined : 8}
           placeholder={isEdit ? "Dejar vacío para no cambiar" : undefined}
