@@ -14,7 +14,6 @@ import { AuditModule } from './auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA
 import { PlayerRecordsModule } from './player-records.tsx'
 import { UsuarioRolModule } from './usuarioRol.tsx'
 import { ClubModule } from './club.tsx'
-import { MatchesTrainingModule } from '../components/matches-training-module';
 import { EnhancedFieldsModule } from '../components/enhanced-fields-module';
 import { useAuth } from '../contexts/authContext.tsx';
 import { Login } from './login.tsx'
@@ -46,6 +45,7 @@ import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
 import { FinanzasModule } from './finanzas.tsx';
 import { RegistroJugadoresModule } from './registro-jugadores.tsx';
+import { MatchesTrainingModule } from './entrenamiento.tsx';
 
 
 
@@ -240,7 +240,7 @@ export default function DashboardComponent() {
     const [activeModule, setActiveModule] = useState('dashboard');
     const [resetToken, setResetToken] = useState<string | null>(null);
 
-    const { token, rol, nombre, club, logout } = useAuth();
+    const { token, rol, nombre, id_club, logout } = useAuth();
 
     // Si no tiene token de login, lo redirecciona a la landing page
     if (!token) {
@@ -372,7 +372,7 @@ export default function DashboardComponent() {
                                 </Badge>
                                 <div className="text-right">
                                     <p className="font-medium">{nombre}</p>
-                                    <p className="text-xs text-muted-foreground">{club}</p>
+                                    <p className="text-xs text-muted-foreground">{id_club}</p>
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
                                     {mockUser.name.split(' ').map(n => n[0]).join('')}
@@ -417,7 +417,7 @@ export default function DashboardComponent() {
                                 <Route path='fichas' element={<RegistroJugadoresModule />} />
                                 <Route path='historial' element={<RegistroJugadoresModule />} />
                             </Route>
-                            <Route path="matches-training" element={<MatchesTrainingModule />} />
+                            <Route path="entrenamiento" element={<MatchesTrainingModule />} />
                             <Route path="scoreboard" element={<Scoreboard />} />
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="fields" element={<CanchasModule />} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
@@ -16,10 +16,15 @@ type Entrenamiento = {
     id_entrenamiento: number;
     fecha_entrenamiento: string;
     descripcion_entrenamiento: string;
+    entrenador_nombre: string;
     activo: boolean;
     rut_usuario: string;
     id_cancha?: number | null;
     id_serie: number;
+    hora_ini: string;
+    hora_fin: string;
+    cancha_nombre: string;
+    participantes: number;
 };
 
 type DecodedToken = {
@@ -47,6 +52,8 @@ type ButtonDeleteEntrenamientoProps = {
 };
 
 
+
+
 // Aqui comienza la logica de crear un entrenamiento
 export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ refreshEntrenamientos }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -63,6 +70,9 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
 
     const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string; id_club?: number }[]>([]);
     const [idSerie, setIdSerie] = useState<number | null>(null);
+
+    const [horaInicio, setHoraInicio] = useState("");
+    const [horaFin, setHoraFin] = useState("");
 
     const { token } = useAuth();
 
@@ -144,6 +154,9 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                     rut_usuario: decoded.rut,
                     id_cancha: idCancha,
                     id_serie: idSerie,
+                    hora_ini: horaInicio,
+                    hora_fin: horaFin,
+
                 },
                 token
             );
@@ -188,6 +201,58 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                                 required
                                 min={new Date().toISOString().split("T")[0]}
                             />
+                        </div>
+
+                        <div className="flex flex-col md:flex-row gap-4">
+                            {/* Hora Inicio */}
+                            <div className="flex flex-col flex-1">
+                                <label>Hora de Inicio *</label>
+                                <Select
+                                    value={horaInicio}
+                                    onValueChange={(v: string) => setHoraInicio(v)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecciona hora de inicio" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({ length: 48 }, (_, i) => {
+                                            const hours = Math.floor(i / 2);
+                                            const minutes = i % 2 === 0 ? "00" : "30";
+                                            const time = `${hours.toString().padStart(2, "0")}:${minutes}`;
+                                            return (
+                                                <SelectItem key={time} value={time}>
+                                                    {time}
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Hora Fin */}
+                            <div className="flex flex-col flex-1">
+                                <label>Hora de Fin *</label>
+                                <Select
+                                    value={horaFin}
+                                    onValueChange={(v: string) => setHoraFin(v)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecciona hora de fin" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({ length: 48 }, (_, i) => {
+                                            const hours = Math.floor(i / 2);
+                                            const minutes = i % 2 === 0 ? "00" : "30";
+                                            const time = `${hours.toString().padStart(2, "0")}:${minutes}`;
+                                            return (
+                                                <SelectItem key={time} value={time}>
+                                                    {time}
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         {/* Descripción */}
@@ -236,23 +301,6 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                                             {serie.nombre_serie}
                                         </SelectItem>
                                     ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Select Activo */}
-                        <div className="flex flex-col">
-                            <label>Activo</label>
-                            <Select
-                                value={activo ? "true" : "false"}
-                                onValueChange={(v: string) => setActivo(v === "true")}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="true">Sí</SelectItem>
-                                    <SelectItem value="false">No</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -313,7 +361,15 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+    const [soloLectura, setSoloLectura] = useState(false);
+
     const { token } = useAuth();
+
+    useEffect(() => {
+        // Si el entrenamiento está finalizado (activo = false), se bloquea la edición
+        setSoloLectura(!entrenamiento.activo);
+    }, [entrenamiento]);
 
     // 🔹 Cargar listas al abrir el modal
     useEffect(() => {
@@ -391,12 +447,10 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
 
     return (
         <>
-            {/* ✏️ Botón para abrir modal */}
             <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
                 <Edit className="w-4 h-4" />
             </Button>
 
-            {/* 🪟 Modal */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
@@ -406,7 +460,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
-                            setIsConfirmDialogOpen(true);
+                            if (!soloLectura) setIsConfirmDialogOpen(true);
                         }}
                         className="flex flex-col gap-4"
                     >
@@ -419,6 +473,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                 onChange={(e) => setFechaEntrenamiento(e.target.value)}
                                 required
                                 min={new Date().toISOString().split("T")[0]}
+                                disabled={soloLectura} // 👈 Bloqueado si finalizado
                             />
                         </div>
 
@@ -429,6 +484,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                 value={descripcion}
                                 onChange={(e) => setDescripcion(e.target.value)}
                                 required
+                                disabled={soloLectura} // 👈 Bloqueado si finalizado
                             />
                         </div>
 
@@ -439,6 +495,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                 value={idCancha?.toString() || ""}
                                 onValueChange={(v: any) => setIdCancha(Number(v))}
                                 required
+                                disabled={soloLectura} // 👈
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Seleccionar Cancha" />
@@ -460,6 +517,7 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                 value={idSerie?.toString() || ""}
                                 onValueChange={(v: any) => setIdSerie(Number(v))}
                                 required
+                                disabled={soloLectura} // 👈
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Seleccionar Serie" />
@@ -474,19 +532,20 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                             </Select>
                         </div>
 
-                        {/* 🔘 Activo */}
+                        {/* 🔘 Estado */}
                         <div className="flex flex-col">
-                            <label>Activo</label>
+                            <label>Estado</label>
                             <Select
                                 value={activo ? "true" : "false"}
                                 onValueChange={(v: any) => setActivo(v === "true")}
+                                disabled={soloLectura} // 👈 no puede cambiarlo si ya está finalizado
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="true">Sí</SelectItem>
-                                    <SelectItem value="false">No</SelectItem>
+                                    <SelectItem value="true">Programado</SelectItem>
+                                    <SelectItem value="false">Finalizado</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -501,9 +560,9 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                                     setIsOpen(false);
                                 }}
                             >
-                                Cancelar
+                                Cerrar
                             </Button>
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" disabled={soloLectura || isLoading}>
                                 {isLoading ? "Guardando..." : "Guardar Cambios"}
                             </Button>
                         </div>
@@ -511,7 +570,6 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                 </DialogContent>
             </Dialog>
 
-            {/* ⚠️ Confirmación */}
             <AlertDialogHandle
                 title="Confirmar modificación"
                 description={`¿Está seguro que desea modificar el entrenamiento "${descripcion}"?`}
@@ -533,7 +591,6 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
 // Aqui comienza la logica de ver un entrenamiento
 export const DialogViewEntrenamiento: React.FC<DialogViewEntrenamientoProps> = ({ entrenamiento }) => {
     const [isOpen, setIsOpen] = useState(false);
-
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
@@ -547,26 +604,75 @@ export const DialogViewEntrenamiento: React.FC<DialogViewEntrenamientoProps> = (
                     <DialogTitle>Detalles del Entrenamiento</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                    <div className="flex flex-col">
-                        <label>Fecha Entrenamiento:</label>
-                        <Input value={entrenamiento.fecha_entrenamiento} disabled />
+
+                    {/* 🔹 Fila 1: Fecha + Entrenador (ocupan todo el ancho) */}
+                    <div className="flex gap-4">
+                        <div className="flex flex-col flex-1">
+                            <label>Fecha Entrenamiento:</label>
+                            <Input
+                                value={
+                                    entrenamiento.fecha_entrenamiento
+                                        ? entrenamiento.fecha_entrenamiento
+                                            .split("T")[0]
+                                            .split("-")
+                                            .reverse()
+                                            .join("/")
+                                        : ""
+                                }
+                                disabled
+                            />
+                        </div>
+                        <div className="flex flex-col flex-1">
+                            <label>Entrenador:</label>
+                            <Input value={entrenamiento.entrenador_nombre} disabled />
+                        </div>
                     </div>
+
+                    {/* 🔹 Fila 2: Hora Inicio + Hora Fin */}
+                    <div className="flex gap-4">
+                        <div className="flex flex-col flex-1">
+                            <label>Hora Inicio:</label>
+                            <Input value={entrenamiento.hora_ini} disabled />
+                        </div>
+                        <div className="flex flex-col flex-1">
+                            <label>Hora Fin:</label>
+                            <Input value={entrenamiento.hora_fin} disabled />
+                        </div>
+                    </div>
+
+                    {/* 🔹 Fila 3: cancha y participantes */}
+                    <div className="flex gap-4">
+                        <div className="flex flex-col flex-1">
+                            <label>Cancha:</label>
+                            <Input value={entrenamiento.cancha_nombre} disabled />
+                        </div>
+                        <div className="flex flex-col flex-1">
+                            <label>Total de participantes:</label>
+                            <Input value={entrenamiento.participantes} disabled />
+                        </div>
+                    </div>
+
+                    {/* 🔹 Fila 4: Descripción */}
                     <div className="flex flex-col">
                         <label>Descripción:</label>
                         <Input value={entrenamiento.descripcion_entrenamiento} disabled />
                     </div>
+
+                    {/* 🔹 Fila 5: Activo */}
                     <div className="flex flex-col">
-                        <label>Activo:</label>
+                        <label>Estado:</label>
                         <Select value={entrenamiento.activo ? "true" : "false"} disabled>
                             <SelectTrigger style={{ cursor: "not-allowed" }}>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="true">Sí</SelectItem>
-                                <SelectItem value="false">No</SelectItem>
+                                <SelectItem value="true">Programado</SelectItem>
+                                <SelectItem value="false">Finalizado</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {/* 🔹 Botón */}
                     <div className="flex justify-end mt-4">
                         <Button variant="outline" onClick={() => setIsOpen(false)}>Cerrar</Button>
                     </div>
@@ -576,10 +682,6 @@ export const DialogViewEntrenamiento: React.FC<DialogViewEntrenamientoProps> = (
     );
 };
 // Aqui termina la logica de ver un entrenamiento
-
-
-
-
 
 
 // Aqui comienza la logica de eliminar un entrenamiento
@@ -600,7 +702,7 @@ export const ButtonDeleteEntrenamiento: React.FC<ButtonDeleteEntrenamientoProps>
         } catch (error: any) {
             // 🔹 Manejo de errores personalizados
             if (error.response && error.response.status === 400) {
-                toast.error("No se puede eliminar un entrenamiento inactivo.");
+                toast.error("No se puede eliminar un entrenamiento finalizado.");
             } else if (error.response && error.response.status === 404) {
                 toast.error("El entrenamiento no existe o ya fue eliminado.");
             } else {

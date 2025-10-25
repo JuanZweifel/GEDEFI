@@ -90,7 +90,7 @@ def delete_entrenamiento(db: Session, id_entrenamiento: int) -> bool:
             return False  # No existe
 
         if not db_entrenamiento.activo:
-            raise ValueError("No se puede eliminar un entrenamiento inactivo")
+            raise ValueError("No se puede eliminar un entrenamiento finalizado")
 
         db.delete(db_entrenamiento)
         db.commit()

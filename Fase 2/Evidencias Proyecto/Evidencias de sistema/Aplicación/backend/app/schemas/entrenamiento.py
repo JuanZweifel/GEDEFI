@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from app.utils.validaciones import validar_fecha
@@ -23,6 +23,8 @@ class EntrenamientoCreate(EntrenamientoBase):
     rut_usuario: str = Field(..., description="RUT del usuario que registra el entrenamiento")
     id_cancha: int = Field(..., description="ID de la cancha donde se realiza el entrenamiento")
     id_serie: int = Field(..., description="ID de la serie que se le realizara el entrenamiento")
+    hora_ini: time
+    hora_fin: time
 
 class EntrenamientoUpdate(BaseModel):
     fecha_entrenamiento: Optional[date] = None
@@ -40,6 +42,8 @@ class EntrenamientoRead(EntrenamientoBase):
     rut_usuario: str
     id_cancha: int
     id_serie: int
+    hora_ini: time
+    hora_fin: time
 
     class Config:
         orm_mode = True

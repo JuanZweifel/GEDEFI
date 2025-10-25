@@ -12,6 +12,7 @@ class RendimientoEntrenamiento(Base):
     velocidad: Mapped[int] = mapped_column(Integer, nullable=True)
     duracion_recorrido:Mapped[int] = mapped_column(Integer, nullable=True)
     nivel_oxigeno:Mapped[int] = mapped_column(Integer,  nullable=True)
+    observaciones: Mapped[str] = mapped_column(String, nullable=True)
     rut_jugador:Mapped[str] = mapped_column(String(10), ForeignKey("JUGADOR.rut_jugador"), primary_key=True, nullable=False)
     id_entrenamiento:Mapped[int] = mapped_column(Integer, ForeignKey("ENTRENAMIENTO.id_entrenamiento"), primary_key=True, nullable=False, index=True)
 
