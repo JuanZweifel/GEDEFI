@@ -1,6 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, timezone
 from app.db import SessionLocal
 from app.models.orden_pago import OrdenPago, EstadoOrdenEnum, TipoPagoEnum, TipoMovimientoEnum
+from app.models.club import Club
+from app.services.serie import create_massive_series
 
 
 def insertar_ordenes_ingresos_demo():
@@ -203,3 +205,81 @@ def insertar_ordenes_egresos_demo():
         db.rollback()
     finally:
         db.close()
+
+
+# Función para generar RUT ficticio válido
+def generar_rut_ficticio(index: int) -> str:
+    base = 10000000 + index
+    suma = 0
+    factor = 2
+    for c in reversed(str(base)):
+        suma += int(c) * factor
+        factor += 1
+        if factor > 7:
+            factor = 2
+    dv = 11 - (suma % 11)
+    if dv == 11:
+        dv = 0
+    elif dv == 10:
+        dv = "K"
+    return f"{base}-{dv}"
+
+
+def insertar_clubs_demo():
+    db=SessionLocal()
+    try:
+        logo = "../images/logos/Angamos_Fc_1761257118.jpg"
+        color_primario = "#000000"
+        color_secundario = "#000000"
+        color_respaldo = None
+        fecha_fundacion = date(2025, 10, 1)
+
+        NUMEROS_EN_TEXTO = [
+            "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez",
+            "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho",
+            "diecinueve", "veinte", "veintiuno", "veintidós", "veintitrés", "veinticuatro",
+            "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve", "treinta",
+            "treinta y uno", "treinta y dos", "treinta y tres", "treinta y cuatro", "treinta y cinco",
+            "treinta y seis", "treinta y siete", "treinta y ocho", "treinta y nueve", "cuarenta"
+        ]
+
+        for i in range(1, 41):
+            rut = generar_rut_ficticio(i)
+            nombre = f"Club Demo {NUMEROS_EN_TEXTO[i-1]}"
+            telefono = f"9{10000000 + i}"
+            direccion = f"Demo # {i}"
+            email = f"club{i}@deportes.com"
+
+            club = Club(
+                rut_club=rut,
+                nombre_club=nombre,
+                fecha_fundacion=fecha_fundacion,
+                fono_club=telefono,
+                direccion_club=direccion,
+                email_club=email,
+                logo_club=logo,
+                color_primario=color_primario,
+                color_secundario=color_secundario,
+                color_respaldo=color_respaldo,
+                club_activo=True,
+                fecha_creacion=datetime.now(timezone.utc),
+                fecha_modificacion=datetime.now(timezone.utc),
+            )
+
+            db.add(club)
+            db.flush()
+            db.refresh(club)
+
+            # Crear series para el club
+            create_massive_series(db, club.id_club, current_user={"admin": True})
+
+        db.commit()
+        print("✅ Se insertaron 40 clubs con sus series correctamente.")
+    except Exception as e:
+        print("❌ Error al insertar clubs:", e)
+        db.rollback()
+    finally:
+        db.close()
+
+# Para ejecutar:
+# insertar_clubs_demo()

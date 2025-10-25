@@ -14,7 +14,7 @@ import {
 
 import { toast } from 'sonner';
 import { type SerieType, type SerieDetailsProps, type JugadorType } from '../types.tsx';
-import { getSeries, updateStateSerie, deleteSerie } from '../services/serieService.ts';
+import { getSeries, updateStateSerie } from '../services/serieService.ts';
 import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { NavLink, useLocation, useNavigate, useParams } from 'react-router';
@@ -166,7 +166,7 @@ export const SerieDetailsContent: React.FC<SerieDetailsProps> = ({ serie }) => {
 export const SerieModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('series');
     const [serieList, setSerieList] = useState<SerieType[]>([]);
-    const [isFetching, setIsFetching] = useState(false)
+    const [isFetching, setIsFetching] = useState(true)
     const [isSelected, setIsSelected] = useState<number | null>(null)
     const [selectedAction, setSelectedAction] = useState<'delete' | 'toggle' | null>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -269,7 +269,7 @@ export const SerieModule: React.FC = () => {
         try {
             setIsLoading(true)
             const serie = serieList.find(s => s.id_serie === id_serie);
-            data = await updateStateSerie(id_serie, !serie?.serie_activa, token)
+            data = await updateStateSerie(id_serie, token)
             toast.success(data.message)
         } catch (error) {
             toast.warning(String(error))
@@ -278,21 +278,6 @@ export const SerieModule: React.FC = () => {
             setSelectedAction(null)
             setIsLoading(false)
             fetchSeries();
-        }
-    }
-    const handleDelete = async (id_serie: number) => {
-        let data: { message: string }
-        try {
-            setIsLoading(true)
-            data = await deleteSerie(id_serie, token)
-            toast.success(data.message)
-        } catch (error) {
-            toast.warning(String(error))
-        } finally {
-            fetchSeries()
-            setIsSelected(null)
-            setSelectedAction(null)
-            setIsLoading(false)
         }
     }
     return (
@@ -403,32 +388,6 @@ export const SerieModule: React.FC = () => {
                                                                     <Eye className="w-4 h-4" />
                                                                 </Button>
                                                             </NavLink>
-                                                            <Button
-                                                                onClick={() => {
-                                                                    setIsSelected(serie.id_serie);
-                                                                    setSelectedAction('delete');
-                                                                }}
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                className="flex items-center"
-                                                            >
-                                                                <Trash2 className='w-3 h-3' />
-                                                            </Button>
-
-                                                            <AlertDialogHandle
-                                                                title={`Eliminar ${serie.nombre_club} - ${serie.nombre_serie}`}
-                                                                description={`¿Estas seguro de querer eliminar la serie ${serie.nombre_serie}?`}
-                                                                confirmLabel="Eliminar"
-                                                                cancelLabel="Cancelar"
-                                                                onConfirm={() => handleDelete(serie.id_serie)}
-                                                                open={isSelected === serie.id_serie && selectedAction === 'delete'}
-                                                                onOpenChange={(open) => {
-                                                                    if (!open) {
-                                                                        setIsSelected(null);
-                                                                        setSelectedAction(null);
-                                                                    }
-                                                                }}
-                                                            />
                                                             <Button
                                                                 onClick={() => {
                                                                     setIsSelected(serie.id_serie);

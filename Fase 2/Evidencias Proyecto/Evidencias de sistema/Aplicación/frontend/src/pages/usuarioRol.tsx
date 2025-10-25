@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button.tsx";
 import { Badge } from "../components/ui/badge.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table.tsx";
+import { Label } from '../components/ui/label.tsx';
 import { DialogHandle } from "../components/dialog-component.tsx";
 import { Input } from "../components/ui/input.tsx";
 import { Plus, Edit, Eye, Shield, Trash2, RefreshCcw, Pen } from "lucide-react";
@@ -53,6 +54,9 @@ export const UsuarioRolModule: React.FC = () => {
     // Deteccion de rutas de creacion
     const isUserNewRoute = /\/dashboard\/usuarios-roles\/usuarios\/new/.test(location.pathname);
     const isRoleNewRoute = /\/dashboard\/usuarios-roles\/roles\/new/.test(location.pathname);
+
+    // Deteccion de rutas de ver detalle
+    const isUserViewRoute = /\/dashboard\/usuarios-roles\/usuarios\/[^/]+\/view$/.test(location.pathname);
 
 
     // Fetch functions
@@ -157,7 +161,7 @@ export const UsuarioRolModule: React.FC = () => {
 
     // Resuelve usuario seleccionado desde la ruta
     useEffect(() => {
-        if (!isUserEditRoute) {
+        if (!isUserEditRoute && !isUserViewRoute) {
             setSelectedUsuario(null);
             return;
         }
@@ -180,7 +184,7 @@ export const UsuarioRolModule: React.FC = () => {
             toast.warning("El usuario solicitado no existe.");
             navigate("/dashboard/usuarios-roles/usuarios");
         }
-    }, [params.id, users, isFetchingUsers, navigate, isUserEditRoute]);
+    }, [params.id, users, isFetchingUsers, navigate, isUserEditRoute, isUserViewRoute]);
 
     // Resuelve rol seleccionado desde la ruta
     useEffect(() => {
@@ -215,8 +219,12 @@ export const UsuarioRolModule: React.FC = () => {
 
     // Data filtrada
     const filteredUsers = users.filter((u) => {
-        const query = userFilter.toLowerCase();
+        const query = userFilter.toLowerCase().trim();
+
+        const fullName = `${u.nombre_usuario} ${u.apellido_usuario}`.toLowerCase();
+
         const matchesQuery =
+            fullName.includes(query) ||
             u.nombre_usuario.toLowerCase().includes(query) ||
             u.apellido_usuario.toLowerCase().includes(query) ||
             u.email_usuario.toLowerCase().includes(query) ||
@@ -399,9 +407,11 @@ export const UsuarioRolModule: React.FC = () => {
                                                             <Pen className="w-4 h-4" />
                                                         </Button>
                                                     </NavLink>
-                                                    <Button variant="outline" size="sm">
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
+                                                    <NavLink to={`/dashboard/usuarios-roles/usuarios/${user.rut_usuario}/view`}>
+                                                        <Button variant="outline" size="sm">
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                    </NavLink>
                                                     <Button
                                                         onClick={() => setOpenSelected(user.rut_usuario)}
                                                         variant="destructive"
@@ -473,7 +483,7 @@ export const UsuarioRolModule: React.FC = () => {
                                         <CardContent>
                                             <p className="text-sm text-gray-600 mb-4">{role.desc_rol}</p>
                                             <div className="flex flex-wrap gap-2">
-                                                <NavLink to={`/dashboard/usuarios-roles/roles/edit/${role.id_rol}`}>
+                                                <NavLink to={`/dashboard/usuarios-roles/roles/${role.id_rol}/edit`}>
                                                     <Button variant="outline" size="sm">
                                                         <Edit className="w-4 h-4 mr-1" /> Editar
                                                     </Button>
@@ -660,6 +670,149 @@ export const UsuarioRolModule: React.FC = () => {
                     }}
                 </DialogHandle>
             )}
+
+            {/* Dialogos "ver detalles" - Route-driven */}
+            {isUserViewRoute && (
+                <DialogHandle<UsuarioType>
+                    title={selectedUsuario ? `Detalles del club: ${selectedUsuario.nombre_usuario}` : 'Detalles del usuario'}
+                    trigger={<div />}
+                    open={true}
+                    onOpenChange={(open) => {
+                        if (!open) navigate("/dashboard/usuarios-roles/usuarios");
+                    }}
+                    initialData={selectedUsuario ?? undefined}
+                    size='w-full'
+                >
+                    {() => {
+                        if (!selectedUsuario) {
+                            return (
+                                <div className="p-6 flex items-center justify-center">
+                                    <span>Cargando detalles del usuario...</span>
+                                </div>
+                            );
+                        }
+
+                        return <UsuarioDetailsContent usuario={selectedUsuario} />;
+                    }}
+                </DialogHandle>
+            )}
+        </div>
+    );
+};
+
+export const UsuarioDetailsContent: React.FC<{ usuario: UsuarioType }> = ({ usuario }) => {
+    const [clubs, setClubs] = useState<ClubType[]>([]);
+    const [activeTab, setActiveTab] = useState("clubs");
+
+    useEffect(() => {
+        // assuming usuario.clubes is an array of clubs the user belongs to
+        setClubs(usuario.clubes || []);
+    }, [usuario]);
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <Label className="block mb-2">RUT</Label>
+                    <Input value={usuario.rut_usuario} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Nombre completo</Label>
+                    <Input value={`${usuario.nombre_usuario} ${usuario.apellido_usuario}`} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Correo electrónico</Label>
+                    <Input value={usuario.email_usuario} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Fecha nacimiento</Label>
+                    <Input value={usuario.fecha_nacimiento} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-0">Estado</Label>
+                    <Badge className={usuario.usuario_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                        {usuario.usuario_activo ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                </div>
+            </div>
+            {/* 
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="clubs">Clubs</TabsTrigger>
+                    <TabsTrigger value="huellas">Huella</TabsTrigger>
+                    <TabsTrigger value="roles">Roles</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="clubs" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Clubs asociados</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {clubs.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Nombre Club</TableHead>
+                                            <TableHead>Fecha asociación</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Acciones</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {clubs.map((club) => (
+                                            <TableRow key={club.id_club}>
+                                                <TableCell>{club.nombre_club}</TableCell>
+                                                <TableCell>{club.fecha_asociacion}</TableCell>
+                                                <TableCell>
+                                                    <Badge className={club.club_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                                                        {club.club_activo ? 'Activo' : 'Inactivo'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button variant="outline" size="sm">
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Este usuario no tiene clubs asociados.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="huellas" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Huella digital</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Badge className={usuario.huella_indice || usuario.huella_pulgar ? 'bg-green-500' : 'bg-red-500'}>
+                                {usuario.huella_indice || usuario.huella_pulgar ? 'Registrada' : 'Sin registrar'}
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="roles" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Rol del usuario</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Badge className='bg-blue-500'>{usuario.nombre_rol?.toUpperCase() || "N/A"}</Badge>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        */}
         </div>
     );
 };

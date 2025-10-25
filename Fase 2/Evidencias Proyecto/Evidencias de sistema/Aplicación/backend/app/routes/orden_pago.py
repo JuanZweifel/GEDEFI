@@ -48,9 +48,10 @@ def get_ordenes_pago(db: Session = Depends(get_db), current_user: dict = Depends
 
 
 @router.delete("/{id_orden}")
-def delete_orden_pago(id_orden: str, db: Session = Depends(get_db)):
+def delete_orden_pago(id_orden: str, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     try:
-        return services.delete_orden_pago(db, id_orden)
+        services.delete_orden_pago(db, id_orden, current_user)
+        return {"message": "Orden eliminada correctamente"}
     except HTTPException as e:
         raise e
 

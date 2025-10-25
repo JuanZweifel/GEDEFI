@@ -219,6 +219,7 @@ export const OrdenPagoForm: React.FC<OrdenFormProps> = ({ onSuccess }) => {
 
 
 export const PagoForm: React.FC<OrdenFormProps & { id_orden_pago: string }> = ({ onSuccess, id_orden_pago }) => {
+    console.log(id_orden_pago)
     const [tipoPago, setTipoPago] = useState("Efectivo")
     const [metodoPago, setMetodoPago] = useState("")
     const [transaccion, setTransaccion] = useState("")

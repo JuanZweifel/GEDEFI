@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import {
-    Plus, Eye
+    Plus, Eye, DollarSign
 } from 'lucide-react';
-import { getIngresos, getOrdenesPago, getEgresos, cancelOrden, pendingOrder } from '../services/ordenPagoServices';
+import { getIngresos, getOrdenesPago, getEgresos, cancelOrden, pendingOrder, deleteOrden } from '../services/ordenPagoServices';
 import type { OrdenPagoType, BalanceType, OrdenDetailsType } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/authContext';
@@ -118,8 +118,8 @@ type OrdenPagoDropdownProps = {
 export const OrdenDropdown: React.FC<OrdenPagoDropdownProps> = ({ orden, setAction, setSelectedOrden }) => {
     const navigate = useNavigate()
     const handleOption = (action: string) => {
-        if(action === "pay") {
-            navigate(`/dashboard/finanzas/${orden.id_orden_pago}/${action}`, {replace:true})
+        if (action === "pay") {
+            navigate(`/dashboard/finanzas/${orden.id_orden_pago}/${action}`, { replace: true })
         }
         setAction(action)
         setSelectedOrden(orden)
@@ -185,17 +185,16 @@ export const FinanzasModule: React.FC = () => {
                 setIsDialogOpen(true);
                 break;
 
-            case path.endsWith("/edit") && !!params.id_orden:
-                setAction("edit");
-                setIsDialogOpen(true);
-                break;
-
             case path.endsWith("/pay") && !!params.id_orden:
+                if (!!admin) fetchBalances();
+                fetchOrdenes()
                 setAction("pay");
                 setIsDialogOpen(true);
                 break;
 
             case !!params.id_orden:
+                if (!!admin) fetchBalances();
+                fetchOrdenes()
                 setAction("view");
                 setIsDialogOpen(true);
                 break;
@@ -224,8 +223,12 @@ export const FinanzasModule: React.FC = () => {
         const ordenEncontrada = ordenesList.find(
             (o) => o.id_orden_pago?.trim() === params.id_orden?.trim()
         );
-
+        console.log(ordenEncontrada)
         if (ordenEncontrada) {
+            if (["Pagada", "Anulada"].includes(ordenEncontrada.estado_orden)) {
+                toast.info("No puedes pagar una orden anulada o que ya se encuentra paga")
+                navigate("/dashboard/finanzas", { replace: true });
+            }
             setSelectedOrden(ordenEncontrada);
         } else {
             toast.warning("No se encontro la orden de pago");
@@ -279,7 +282,22 @@ export const FinanzasModule: React.FC = () => {
             console.log(error)
             toast.info(String(error))
         } finally {
-            fetchOrdenes();
+            if (!!admin) fetchBalances();
+            fetchOrdenes()
+        }
+    }
+
+    const handleDelete = async (id_orden: string) => {
+        try {
+            const data = await deleteOrden<any>(id_orden, token)
+            toast.success(data.message)
+            setSelectedOrden(undefined)
+        } catch (error) {
+            console.log(error)
+            toast.info(String(error))
+        } finally {
+            if (!!admin) fetchBalances();
+            fetchOrdenes()
         }
     }
 
@@ -292,7 +310,8 @@ export const FinanzasModule: React.FC = () => {
             console.log(error)
             toast.info(String(error))
         } finally {
-            fetchOrdenes();
+            if (!!admin) fetchBalances();
+            fetchOrdenes()
         }
     }
 
@@ -523,7 +542,12 @@ export const FinanzasModule: React.FC = () => {
                                             <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/finanzas/${orden.id_orden_pago}`, { replace: true })}>
                                                 <Eye className="w-4 h-4 mr-1" /> Ver Detalles
                                             </Button>
-                                            <OrdenDropdown orden={orden} setAction={setAction} setSelectedOrden={setSelectedOrden} />
+                                            {!!admin && <OrdenDropdown orden={orden} setAction={setAction} setSelectedOrden={setSelectedOrden} />}
+                                            {!admin &&
+                                                <Button variant="outline" size="sm" className="flex-1">
+                                                    <DollarSign className="w-4 h-4 mr-1" /> Pagar (Webpay - development)
+                                                </Button>
+                                            }
                                         </div>
                                     </div>
                                 </div>
@@ -597,7 +621,7 @@ export const FinanzasModule: React.FC = () => {
                 </DialogHandle>
             )}
 
-            {action === "pending" && 
+            {action === "pending" &&
                 <AlertDialogHandle
                     title={`Anular pago de Orden N°${selectedOrden?.id_orden_pago}`}
                     description={`¿Estas seguro de querer anular el pago de la orden ${selectedOrden?.id_orden_pago}?`}
@@ -605,6 +629,17 @@ export const FinanzasModule: React.FC = () => {
                     cancelLabel="Cancelar"
                     onConfirm={() => handlePending(selectedOrden?.id_orden_pago)}
                     open={selectedOrden !== undefined && action === "pending"}
+                    onOpenChange={open => !open && setSelectedOrden(undefined)}
+                />
+            }
+            {action === "delete" &&
+                <AlertDialogHandle
+                    title={`Eliminar Orden N°${selectedOrden?.id_orden_pago}`}
+                    description={`¿Estas seguro de querer eliminar la orden N° ${selectedOrden?.id_orden_pago}?`}
+                    confirmLabel="Confirmar"
+                    cancelLabel="Cancelar"
+                    onConfirm={() => handleDelete(selectedOrden?.id_orden_pago)}
+                    open={selectedOrden !== undefined && action === "delete"}
                     onOpenChange={open => !open && setSelectedOrden(undefined)}
                 />
             }

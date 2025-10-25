@@ -45,6 +45,8 @@ import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
 import { FinanzasModule } from './finanzas.tsx';
 import { RegistroJugadoresModule } from './registro-jugadores.tsx';
+import { PartidosModule } from './partidos.tsx';
+import { PerfilUsuarioModule } from './perfilUsuario.tsx';
 import { MatchesTrainingModule } from './entrenamiento.tsx';
 
 
@@ -291,16 +293,18 @@ export default function DashboardComponent() {
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
         { id: 'matches-training', label: 'Partidos y Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
+        { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidosModule, permission: 'matches' },
         { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
-        { id: 'fields', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
+        { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
         { id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
         { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
         { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: FingerprintModule, permission: 'fingerprint' },
         { id: 'penalties', label: 'Castigos', icon: AlertTriangle, component: PenaltiesModule, permission: 'penalties' },
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
-        { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' }
+        { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
+        { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
     ];
 
     const filteredModules = modules.filter(module =>
@@ -333,7 +337,7 @@ export default function DashboardComponent() {
                                 const Icon = module.icon;
                                 return (
                                     <SidebarMenuItem key={module.id} onClick={
-                                        () => navigate(module.id !== "dashboard" ? `/dashboard/${module.id}` : `/${module.id}`, {replace: true})}>
+                                        () => navigate(module.id !== "dashboard" ? `/dashboard/${module.id}` : `/${module.id}`, { replace: true })}>
                                         <SidebarMenuButton
                                             onClick={() => setActiveModule(module.id)}
                                             isActive={activeModule === module.id}
@@ -370,13 +374,18 @@ export default function DashboardComponent() {
                                 <Badge variant="outline" style={{ borderColor: '#0000db', color: '#0000db' }}>
                                     {rol ? rol : 'N/A'}
                                 </Badge>
-                                <div className="text-right">
-                                    <p className="font-medium">{nombre}</p>
-                                    <p className="text-xs text-muted-foreground">{id_club}</p>
-                                </div>
-                                <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
-                                    {mockUser.name.split(' ').map(n => n[0]).join('')}
-                                </div>
+                                <NavLink
+                                    to="/dashboard/perfil"
+                                    className="flex items-center space-x-2 hover:opacity-80 transition"
+                                >
+                                    <div className="text-right">
+                                        <p className="font-medium">{nombre}</p>
+                                        <p className="text-xs text-muted-foreground">{id_club}</p>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
+                                        {mockUser.name.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                </NavLink>
                                 <Button variant="outline" size="sm" onClick={logout}>
                                     Logout
                                 </Button>
@@ -394,6 +403,7 @@ export default function DashboardComponent() {
                                 <Route path='usuarios' element={<UsuarioRolModule />} />
                                 <Route path='usuarios/new' element={<UsuarioRolModule />} />
                                 <Route path='usuarios/:id/edit/' element={<UsuarioRolModule />} />
+                                <Route path='usuarios/:id/view/' element={<UsuarioRolModule />} />
                                 <Route path='roles' element={<UsuarioRolModule />} />
                                 <Route path='roles/new' element={<UsuarioRolModule />} />
                                 <Route path='roles/:id/edit/' element={<UsuarioRolModule />} />
@@ -418,15 +428,30 @@ export default function DashboardComponent() {
                                 <Route path='historial' element={<RegistroJugadoresModule />} />
                             </Route>
                             <Route path="entrenamiento" element={<MatchesTrainingModule />} />
+                            <Route path="partidos" element={<PartidosModule />}>
+                                <Route index element={<PartidosModule />} />
+                                <Route path='new' element={<PartidosModule />} />
+                                <Route path=':id_partido' element={<PartidosModule />} />
+                                <Route path=':id_partido/edit' element={<PartidosModule />} />
+                            </Route>
                             <Route path="scoreboard" element={<Scoreboard />} />
                             <Route path="meetings" element={<MeetingsModule />} />
-                            <Route path="fields" element={<CanchasModule />} />
+                            <Route path="canchas" element={<CanchasModule />}>
+                                <Route index element={<PartidosModule />} />
+                                <Route path='new' element={<PartidosModule />} />
+                                <Route path=':id_cancha/edit' element={<PartidosModule />} />
+                                <Route path='new' element={<PartidosModule />} />
+                                <Route path='programacion' element={<PartidosModule />} />
+                                <Route path='mantenimiento' element={<PartidosModule />} />
+                                <Route path='historial' element={<PartidosModule />} />
+                            </Route>
                             <Route path="finanzas" element={<FinanzasModule />}>
-                                <Route index element={<FinanzasModule/>}/>
-                                <Route path='new' element={<FinanzasModule/>}/>
-                                <Route path=':id_orden' element={<FinanzasModule/>}/>
-                                <Route path=':id_orden/edit' element={<FinanzasModule/>}/>
-                                <Route path=':id_orden/pay' element={<FinanzasModule/>}/>
+                                <Route index element={<FinanzasModule />} />
+                                <Route path='new' element={<FinanzasModule />} />
+                                <Route path=':id_orden' element={<FinanzasModule />} />
+                                <Route path=':id_orden/edit' element={<FinanzasModule />} />
+                                <Route path=':id_orden/pay' element={<FinanzasModule />} />
+                                <Route path=':id_orden/pending' element={<FinanzasModule />} />
                             </Route>
                             <Route path="analytics" element={<AnalyticsModule />} />
                             <Route path="audit" element={<AuditModule />} />
@@ -434,6 +459,7 @@ export default function DashboardComponent() {
                             <Route path="penalties" element={<PenaltiesModule />} />
                             <Route path="calendar" element={<CalendarioModule />} />
                             <Route path="admin" element={<div>Panel Administrativo</div>} />
+                            <Route path="perfil" element={<PerfilUsuarioModule />} />
 
                             <Route path="*" element={<Dashboard />} />
                         </Routes>
