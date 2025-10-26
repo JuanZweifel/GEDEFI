@@ -565,7 +565,7 @@ export const FinanzasModule: React.FC = () => {
 
             {action === "new" && (
                 <DialogHandle
-                    size='w-full'
+                    size='max-w-2xl'
                     title="Crear orden de pago"
                     trigger={<div />}
                     open={isDialogOpen}
