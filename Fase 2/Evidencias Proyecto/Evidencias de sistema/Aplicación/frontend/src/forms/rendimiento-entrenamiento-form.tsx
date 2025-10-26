@@ -5,7 +5,6 @@ import { Trash2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { toast } from "sonner";
-import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from "../components/ui/select";
 import { deleteRendimientoEntrenamiento } from "../services/rendimientoEntrenamientoService";
 import { putRendimientoEntrenamiento } from "../services/rendimientoEntrenamientoService"; //
 import { useAuth } from "../contexts/authContext";
@@ -23,6 +22,14 @@ type RendimientoEntrenamiento = {
     fecha_entrenamiento?: string;
     hora_ini?: string;
     hora_fin?: string;
+    primer_nombre: string;
+    segundo_nombre: string;
+    primer_apellido: string;
+    segundo_apellido: string;
+    frecuencia_cardiaca: number;
+    velocidad: number;
+    duracion_recorrido: number;
+    nivel_oxigeno: number;
 };
 
 type DialogViewRendimientoEntrenamientoProps = {
@@ -40,7 +47,7 @@ type ButtonDeleteRendimientoEntrenamientoProps = {
     refreshRendimientos: () => Promise<void>;
 };
 
-export const DialogViewRendimientoEntrenamiento: React.FC< DialogViewRendimientoEntrenamientoProps > = ({ rendimiento }) => {
+export const DialogViewRendimientoEntrenamiento: React.FC<DialogViewRendimientoEntrenamientoProps> = ({ rendimiento }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     if (!rendimiento) return null;
@@ -84,10 +91,42 @@ export const DialogViewRendimientoEntrenamiento: React.FC< DialogViewRendimiento
                     </div>
 
                     {/* 👤 Jugador */}
-                    <div className="flex flex-col">
-                        <label className="text-sm font-medium">Jugador (RUT):</label>
-                        <Input value={rendimiento.rut_jugador} disabled />
+                    <div className="flex gap-4">
+                        <div className="flex flex-col flex-1">
+                            <label className="text-sm font-medium">RUT Jugador:</label>
+                            <Input value={rendimiento.rut_jugador} disabled />
+                        </div>
+                        <div className="flex flex-col flex-1">
+                            <label className="text-sm font-medium">Nombre jugador:</label>
+                            <Input value={`${rendimiento.primer_nombre} ${rendimiento.segundo_nombre} ${rendimiento.primer_apellido} ${rendimiento.segundo_apellido}`} disabled />
+                        </div>
                     </div>
+
+
+                    <div className="flex gap-4">
+                        <div className="flex flex-col flex-1">
+                            <label className="text-sm font-medium">Frecuencia cardiaca:</label>
+                            <Input value={rendimiento.frecuencia_cardiaca} disabled />
+                        </div>
+                        <div className="flex flex-col flex-1">
+                            <label className="text-sm font-medium">Velocidad:</label>
+                            <Input value={rendimiento.velocidad} disabled />
+                        </div>
+                    </div>
+
+
+                    <div className="flex gap-4">
+                        <div className="flex flex-col flex-1">
+                            <label className="text-sm font-medium">Duración de recorrido:</label>
+                            <Input value={rendimiento.duracion_recorrido} disabled />
+                        </div>
+                        <div className="flex flex-col flex-1">
+                            <label className="text-sm font-medium">Nivel de oxígeno:</label>
+                            <Input value={rendimiento.nivel_oxigeno} disabled />
+                        </div>
+                    </div>
+
+
 
                     {/* 🟢 Asistencia */}
                     <div className="flex flex-col">
@@ -98,16 +137,6 @@ export const DialogViewRendimientoEntrenamiento: React.FC< DialogViewRendimiento
                         />
                     </div>
 
-                    {/* 🧩 Calificaciones */}
-                    <div className="flex flex-col">
-                        <label className="text-sm font-medium">Calificación Técnica:</label>
-                        <Input value={rendimiento.calificacion_tecnica ?? "-"} disabled />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label className="text-sm font-medium">Calificación Física:</label>
-                        <Input value={rendimiento.calificacion_fisica ?? "-"} disabled />
-                    </div>
 
                     {/* 📝 Observaciones */}
                     <div className="flex flex-col">
@@ -127,32 +156,52 @@ export const DialogViewRendimientoEntrenamiento: React.FC< DialogViewRendimiento
 };
 
 
-export const DialogEditRendimientoEntrenamiento: React.FC< DialogEditRendimientoEntrenamientoProps > = ({ rendimiento, refreshRendimientos }) => {
+export const DialogEditRendimientoEntrenamiento: React.FC<DialogEditRendimientoEntrenamientoProps> = ({
+    rendimiento,
+    refreshRendimientos,
+}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
-    const [asistencia, setAsistencia] = useState(rendimiento.asistencia);
-    const [calTecnica, setCalTecnica] = useState(rendimiento.calificacion_tecnica ?? "");
-    const [calFisica, setCalFisica] = useState(rendimiento.calificacion_fisica ?? "");
-    const [observaciones, setObservaciones] = useState(rendimiento.observaciones ?? "");
+    // 🧠 Estados para los campos editables
+    const [frecuenciaCardiaca, setFrecuenciaCardiaca] = useState<number | null>(rendimiento.frecuencia_cardiaca ?? null);
+    const [velocidad, setVelocidad] = useState<number | null>(rendimiento.velocidad ?? null);
+    const [duracionRecorrido, setDuracionRecorrido] = useState<number | null>(rendimiento.duracion_recorrido ?? null);
+    const [nivelOxigeno, setNivelOxigeno] = useState<number | null>(rendimiento.nivel_oxigeno ?? null);
+    const [observaciones, setObservaciones] = useState<string>(rendimiento.observaciones ?? "");
 
     const { token } = useAuth();
 
+    const fechaFormateada = rendimiento.fecha_entrenamiento
+        ? new Date(rendimiento.fecha_entrenamiento).toLocaleDateString("es-CL", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        })
+        : "-";
+
+    const horaInicio = rendimiento.hora_ini ?? "-";
+    const horaFin = rendimiento.hora_fin ?? "-";
+
+    // 💾 Guardar cambios
     const handleSave = async () => {
         if (!token) return;
         setIsLoading(true);
         try {
             await putRendimientoEntrenamiento(
-                rendimiento.id_rendimiento,
+                rendimiento.rut_jugador,
+                rendimiento.id_entrenamiento,
                 {
-                    asistencia,
-                    calificacion_tecnica: Number(calTecnica) || null,
-                    calificacion_fisica: Number(calFisica) || null,
+                    frecuencia_cardiaca: frecuenciaCardiaca,
+                    velocidad,
+                    duracion_recorrido: duracionRecorrido,
+                    nivel_oxigeno: nivelOxigeno,
                     observaciones,
                 },
                 token
             );
+
             toast.success("Rendimiento actualizado correctamente");
             await refreshRendimientos();
             setIsOpen(false);
@@ -165,10 +214,12 @@ export const DialogEditRendimientoEntrenamiento: React.FC< DialogEditRendimiento
 
     return (
         <>
+            {/* ✏️ Botón para abrir modal */}
             <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
                 <Edit className="w-4 h-4" />
             </Button>
 
+            {/* 🪟 Modal */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
@@ -180,50 +231,83 @@ export const DialogEditRendimientoEntrenamiento: React.FC< DialogEditRendimiento
                             e.preventDefault();
                             setIsConfirmDialogOpen(true);
                         }}
-                        className="flex flex-col gap-4"
+                        className="space-y-4"
                     >
+                        {/* 📅 Fecha y Horario */}
                         <div className="flex flex-col">
-                            <label>Asistencia</label>
-                            <Select
-                                value={asistencia ? "true" : "false"}
-                                onValueChange={(v: any) => setAsistencia(v === "true")}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="true">Presente</SelectItem>
-                                    <SelectItem value="false">Ausente</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <label className="text-sm font-medium">Fecha y Horario:</label>
+                            <Input value={`${fechaFormateada} — ${horaInicio} a ${horaFin}`} disabled />
                         </div>
 
-                        <div className="flex flex-col">
-                            <label>Calificación Técnica</label>
-                            <Input
-                                type="number"
-                                value={calTecnica}
-                                onChange={(e) => setCalTecnica(e.target.value)}
-                            />
+                        {/* 👤 Jugador */}
+                        <div className="flex gap-4">
+                            <div className="flex flex-col flex-1">
+                                <label className="text-sm font-medium">RUT Jugador:</label>
+                                <Input value={rendimiento.rut_jugador} disabled />
+                            </div>
+                            <div className="flex flex-col flex-1">
+                                <label className="text-sm font-medium">Nombre jugador:</label>
+                                <Input
+                                    value={`${rendimiento.primer_nombre ?? ""} ${rendimiento.segundo_nombre ?? ""} ${rendimiento.primer_apellido ?? ""} ${rendimiento.segundo_apellido ?? ""}`}
+                                    disabled
+                                />
+                            </div>
                         </div>
 
-                        <div className="flex flex-col">
-                            <label>Calificación Física</label>
-                            <Input
-                                type="number"
-                                value={calFisica}
-                                onChange={(e) => setCalFisica(e.target.value)}
-                            />
+                        {/* 🫀 Datos físicos (EDITABLES) */}
+                        <div className="flex gap-4">
+                            <div className="flex flex-col flex-1">
+                                <label className="text-sm font-medium">Frecuencia cardiaca:</label>
+                                <Input
+                                    type="number"
+                                    value={frecuenciaCardiaca ?? ""}
+                                    onChange={(e) => setFrecuenciaCardiaca(Number(e.target.value))}
+                                    placeholder="Ej: 120"
+                                />
+                            </div>
+                            <div className="flex flex-col flex-1">
+                                <label className="text-sm font-medium">Velocidad:</label>
+                                <Input
+                                    type="number"
+                                    value={velocidad ?? ""}
+                                    onChange={(e) => setVelocidad(Number(e.target.value))}
+                                    placeholder="Ej: 10"
+                                />
+                            </div>
                         </div>
 
+                        <div className="flex gap-4">
+                            <div className="flex flex-col flex-1">
+                                <label className="text-sm font-medium">Duración de recorrido (min):</label>
+                                <Input
+                                    type="number"
+                                    value={duracionRecorrido ?? ""}
+                                    onChange={(e) => setDuracionRecorrido(Number(e.target.value))}
+                                    placeholder="Ej: 30"
+                                />
+                            </div>
+                            <div className="flex flex-col flex-1">
+                                <label className="text-sm font-medium">Nivel de oxígeno (%):</label>
+                                <Input
+                                    type="number"
+                                    value={nivelOxigeno ?? ""}
+                                    onChange={(e) => setNivelOxigeno(Number(e.target.value))}
+                                    placeholder="Ej: 97"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 📝 Observaciones */}
                         <div className="flex flex-col">
-                            <label>Observaciones</label>
+                            <label className="text-sm font-medium">Observaciones:</label>
                             <Input
                                 value={observaciones}
                                 onChange={(e) => setObservaciones(e.target.value)}
+                                placeholder="Escribe tus observaciones..."
                             />
                         </div>
 
+                        {/* 🔘 Botones de acción */}
                         <div className="flex justify-end gap-2 mt-4">
                             <Button variant="outline" type="button" onClick={() => setIsOpen(false)}>
                                 Cancelar
@@ -236,6 +320,7 @@ export const DialogEditRendimientoEntrenamiento: React.FC< DialogEditRendimiento
                 </DialogContent>
             </Dialog>
 
+            {/* ⚠️ Confirmación */}
             <AlertDialogHandle
                 title="Confirmar modificación"
                 description="¿Desea guardar los cambios en el rendimiento?"
@@ -253,7 +338,7 @@ export const DialogEditRendimientoEntrenamiento: React.FC< DialogEditRendimiento
 };
 
 
-export const ButtonDeleteRendimientoEntrenamiento: React.FC< ButtonDeleteRendimientoEntrenamientoProps > = ({ id_rendimiento, jugador_nombre, refreshRendimientos }) => {
+export const ButtonDeleteRendimientoEntrenamiento: React.FC<ButtonDeleteRendimientoEntrenamientoProps> = ({ id_rendimiento, jugador_nombre, refreshRendimientos }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
