@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Calendar, Clock, MapPin, Trophy, Target, Users, Star, Activity, TrendingUp, BarChart3, CheckCircle, Edit, Eye, Plus } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle, Plus } from 'lucide-react';
 import { getEntrenamientos } from '../services/entrenamientoServices';
 import { useAuth } from "../contexts/authContext";
 import { toast } from 'sonner';
 import { getSeries } from "../services/serieService";
-import { getClubs } from '../services/clubServices';
+import { getClub } from '../services/clubServices';
 import { getUsers } from '../services/usuarioService';
 import { getCanchas } from '../services/canchaService';
 import { DialogEditEntrenamiento, DialogViewEntrenamiento, ButtonDeleteEntrenamiento, DialogAddEntrenamiento } from '../forms/entrenamiento-form';
 import { getRendimientosEntrenamiento } from '../services/rendimientoEntrenamientoService';
 import { getFichasPorFiltro } from '../services/fichaJugadorService';
 import { getJugadores } from '../services/jugadoresService';
-import { DialogViewRendimientoEntrenamiento } from '../forms/rendimiento-entrenamiento-form';
+import { DialogViewRendimientoEntrenamiento, DialogEditRendimientoEntrenamiento } from '../forms/rendimiento-entrenamiento-form';
 
 interface Match {
     id: number;
@@ -42,7 +43,6 @@ interface Training {
     club_nombre: string;
     entrenador_nombre: string;
     tipo_entrenamiento: string;
-    objetivos: string;
     participantes: number;
     cancha_nombre: string;
     id_serie: number;
@@ -51,6 +51,10 @@ interface Training {
     id_cancha: number;
     descripcion_entrenamiento: string;
     activo: boolean;
+    primer_nombre: string;
+    segundo_nombre: string;
+    primer_apellido: string;
+    segundo_apellido: string;
 }
 
 interface MatchPerformance {
@@ -77,10 +81,17 @@ interface TrainingPerformance {
     rut_jugador: string;
     primer_nombre: string;
     primer_apellido: string;
-    fecha_entrenamiento: string;
-    hora_ini: string;
-    hora_fin: string;
+    fecha_entrenamiento?: string;
+    hora_ini?: string;
+    hora_fin?: string;
     id_rendimiento: number;
+    segundo_nombre: string;
+    segundo_apellido: string;
+    frecuencia_cardiaca: number;
+    velocidad: number;
+    duracion_recorrido: number;
+    nivel_oxigeno: number;
+
 }
 
 interface HistoryItem {
@@ -99,58 +110,79 @@ interface MatchesTrainingModuleProps {
 
 
 
-export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ }) => {
+export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () => {
     const [activeTab, setActiveTab] = useState("matches");
     const [trainingsFromDB, setTrainingsFromDB] = useState<Training[]>([]);
     const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
-    const [clubs, setClubs] = useState<{ id_club: number; nombre_club: string }[]>([]);
+    const [club, setClub] = useState<{ id_club: number; nombre_club: string } | null>(null);
     const [users, setUsers] = useState<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>([]);
     const [canchas, setCanchas] = useState<{ id_cancha: number; nombre_cancha: string }[]>([]);
     const [trainingPerformanceFromDB, setTrainingPerformanceFromDB] = useState<TrainingPerformance[]>([]);
     const [selectedTrainingId, setSelectedTrainingId] = useState<number | null>(null);
 
-    const { token } = useAuth();
+    const { id_club, token } = useAuth();
 
-    // ✅ 1. Definir la función de carga de datos
+    // enrutamiento react router
+    const navigate = useNavigate();
+    const location = useLocation();
+    const params = useParams();
+
+    //Use effect de ruta dashboard
+    useEffect(() => {
+    const path = location.pathname;
+
+    switch (true) {
+        case path === "/dashboard":
+        case path === "/dashboard/":
+            navigate("/dashboard/entrenamientos", { replace: true });
+            setActiveTab("entrenamientos");
+            break;
+
+        case path.includes("rendimiento_entrenamiento"):
+            setActiveTab("rendimiento_entrenamiento");
+            break;
+
+        case path.includes("entrenamientos"):
+            setActiveTab("entrenamientos");
+            break;
+
+        default:
+            navigate("/dashboard/entrenamientos", { replace: true });
+            setActiveTab("entrenamientos");
+            break;
+    }
+}, [location.pathname, navigate]);
+
     const fetchData = async () => {
-        if (!token) return;
+        if (!token || !id_club) return;
 
         try {
-            // 🔹 Obtener rendimientos
             const rendimientosEntrenamientos = await getRendimientosEntrenamiento<TrainingPerformance[]>(token);
 
-            // 🔹 Obtener entrenamientos y tablas relacionadas
+            const clubId = Number(id_club);
+
             const [entrenamientos, seriesData, clubsData, usersData, canchasData, fichasData, jugadoresData] =
                 await Promise.all([
                     getEntrenamientos<Training[]>(token),
                     getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token),
-                    getClubs<{ id_club: number; nombre_club: string }[]>(token),
+                    getClub<{ id_club: number; nombre_club: string }>(clubId, token),
                     getUsers<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>(token),
                     getCanchas<{ id_cancha: number; nombre_cancha: string }[]>(token),
-                    getFichasPorFiltro<any[]>(token), // jugadores por serie
-                    getJugadores<any[]>(token), // 👈 traemos también todos los jugadores
+                    getFichasPorFiltro<any[]>(token),
+                    getJugadores<any[]>(token),
                 ]);
 
-            // 🔹 Fusionar entrenamientos con datos relacionados
             const mergedTrainings = entrenamientos.map((t: any) => {
                 const serie = seriesData.find((s: any) => s.id_serie === t.id_serie);
-                const club = clubsData.find((c: any) => c.id_club === serie?.id_club);
-
-
-                const normalizeRut = (rut: string) => rut?.replace(/\D/g, "");
-                const usuario = usersData.find(
-                    (u: any) => normalizeRut(u.rut_usuario || (u as any).rut) === normalizeRut(t.rut_usuario)
-                );
                 const cancha = canchasData.find((c: any) => c.id_cancha === t.id_cancha);
-
-                // ✅ Contar jugadores de la serie
+                const usuario = usersData.find((u: any) => u.rut_usuario === t.rut_usuario);
                 const jugadoresDeSerie = fichasData.filter((f: any) => f.id_serie === t.id_serie);
                 const totalJugadores = jugadoresDeSerie.length;
 
                 return {
                     ...t,
                     nombre_serie: serie?.nombre_serie || "Sin serie",
-                    club_nombre: club?.nombre_club || "Sin club",
+                    club_nombre: clubsData?.nombre_club || "Sin club",
                     entrenador_nombre: usuario
                         ? `${usuario.nombre_usuario} ${usuario.apellido_usuario}`
                         : "Sin asignar",
@@ -159,7 +191,6 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
                 };
             });
 
-            // 🔹 Fusionar rendimientos con datos del jugador
             const mergedPerformance = rendimientosEntrenamientos.map((r) => {
                 const jugador = jugadoresData.find((j: any) => j.rut_jugador === r.rut_jugador);
                 const entrenamiento = entrenamientos.find((t: any) => t.id_entrenamiento === r.id_entrenamiento);
@@ -167,18 +198,19 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
                 return {
                     ...r,
                     primer_nombre: jugador?.primer_nombre || "Desconocido",
+                    segundo_nombre: jugador?.segundo_nombre || "",
                     primer_apellido: jugador?.primer_apellido || "",
+                    segundo_apellido: jugador?.segundo_apellido || "",
                     fecha_entrenamiento: entrenamiento?.fecha_entrenamiento || null,
                     hora_ini: entrenamiento?.hora_ini || null,
                     hora_fin: entrenamiento?.hora_fin || null,
                 };
             });
 
-            // 🔹 Guardar en estado
             setTrainingsFromDB(mergedTrainings);
             setTrainingPerformanceFromDB(mergedPerformance);
             setSeries(seriesData);
-            setClubs(clubsData);
+            setClub(clubsData);
             setUsers(usersData);
             setCanchas(canchasData);
         } catch (error) {
@@ -187,12 +219,13 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
         }
     };
 
-    // ✅ 2. Ejecutar la carga al montar el componente
+    // ✅ Ejecutar al montar o si cambia el token o id_club
     useEffect(() => {
-        if (token) {
+        if (token && id_club) {
+            console.log("🏟️ ID del club desde contexto:", id_club);
             fetchData();
         }
-    }, [token]);
+    }, [token, id_club]);
 
     return (
         <div className="space-y-6">
@@ -208,15 +241,15 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="trainings">Entrenamientos</TabsTrigger>
+                    <TabsTrigger value="entrenamientos" onClick={() => navigate("/dashboard/entrenamientos")}>Entrenamientos</TabsTrigger>
 
-                    <TabsTrigger value="training-performance">Rendimiento Entrenamientos</TabsTrigger>
+                    <TabsTrigger value="rendimiento_entrenamiento" onClick={() => navigate("/dashboard/entrenamientos/rendimiento_entrenamiento")}>Rendimiento Entrenamientos</TabsTrigger>
                     <TabsTrigger value="history">Historial</TabsTrigger>
                 </TabsList>
 
 
                 {/* TAB ENTRENAMIENTOS */}
-                <TabsContent value="trainings" className="space-y-4">
+                <TabsContent value="entrenamientos" className="space-y-4">
                     <Card>
                         <CardHeader>
                             <CardTitle>Gestión de Entrenamientos</CardTitle>
@@ -233,6 +266,7 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
                                             "Entrenador",
                                             "Cancha",
                                             "Participantes",
+                                            "Estado",
                                             "Acciones",
                                         ].map((header, i) => (
                                             <TableHead key={i}>{header}</TableHead>
@@ -251,10 +285,10 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
                                                             <Calendar className="w-4 h-4 mr-1" />
                                                             {training.fecha_entrenamiento
                                                                 ? training.fecha_entrenamiento
-                                                                    .split("T")[0]                
-                                                                    .split("-")                   
-                                                                    .reverse()                    
-                                                                    .join("/")                    
+                                                                    .split("T")[0]
+                                                                    .split("-")
+                                                                    .reverse()
+                                                                    .join("/")
                                                                 : "—"}
                                                         </div>
                                                         <div className="flex items-center">
@@ -287,6 +321,18 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
                                                         <Users className="w-4 h-4 mr-1" />
                                                         {training.participantes ?? 0}
                                                     </div>
+                                                </TableCell>
+
+                                                {/* Estado */}
+                                                <TableCell>
+                                                    {training.activo ? (
+                                                        <Badge className="bg-green-500 flex items-center">
+                                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                                            Programado
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge className="bg-red-500">Finalizado</Badge>
+                                                    )}
                                                 </TableCell>
 
                                                 {/* ⚙️ Acciones */}
@@ -327,7 +373,7 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
                 </TabsContent>
 
                 {/* TAB RENDIMIENTO ENTRENAMIENTOS */}
-                <TabsContent value="training-performance" className="space-y-4">
+                <TabsContent value="rendimiento_entrenamiento" className="space-y-4">
                     <Card key={selectedTrainingId}>
                         <CardHeader className="flex justify-between items-center">
                             <CardTitle>Rendimiento en Entrenamientos</CardTitle>
@@ -442,7 +488,13 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = ({ })
 
                                             {/* ⚙️ Acciones */}
                                             <TableCell>
-                                                <DialogViewRendimientoEntrenamiento rendimiento={perf} />
+                                                <div className="flex space-x-1">
+                                                    <DialogViewRendimientoEntrenamiento rendimiento={perf} />
+                                                    <DialogEditRendimientoEntrenamiento
+                                                        rendimiento={perf}
+                                                        refreshRendimientos={fetchData}
+                                                    />
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}

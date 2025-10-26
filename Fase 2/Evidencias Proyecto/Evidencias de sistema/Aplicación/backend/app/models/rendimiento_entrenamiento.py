@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer
+from sqlalchemy import String, Integer, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
 from app.db import Base
@@ -13,6 +13,7 @@ class RendimientoEntrenamiento(Base):
     duracion_recorrido:Mapped[int] = mapped_column(Integer, nullable=True)
     nivel_oxigeno:Mapped[int] = mapped_column(Integer,  nullable=True)
     observaciones: Mapped[str] = mapped_column(String, nullable=True)
+    asistencia: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     rut_jugador:Mapped[str] = mapped_column(String(10), ForeignKey("JUGADOR.rut_jugador"), primary_key=True, nullable=False)
     id_entrenamiento:Mapped[int] = mapped_column(Integer, ForeignKey("ENTRENAMIENTO.id_entrenamiento"), primary_key=True, nullable=False, index=True)
 

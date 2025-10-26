@@ -7,6 +7,7 @@ class RendimientoEntrenamientoBase(BaseModel):
     duracion_recorrido: Optional [int] = None
     nivel_oxigeno: Optional [int] = None
     observaciones: Optional [str] = None
+    asistencia: bool
 
 class RendimientoEntrenamientoCreate(RendimientoEntrenamientoBase):
     rut_jugador: str
@@ -22,4 +23,5 @@ class RendimientoEntrenamientoUpdate(BaseModel):
     velocidad: Optional[int] = None
     duracion_recorrido: Optional[int] = None
     nivel_oxigeno: Optional[int] = None
+    observaciones: Optional [str] = None
 

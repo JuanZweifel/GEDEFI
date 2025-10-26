@@ -47,7 +47,7 @@ import { FinanzasModule } from './finanzas.tsx';
 import { RegistroJugadoresModule } from './registro-jugadores.tsx';
 import { PartidosModule } from './partidos.tsx';
 import { PerfilUsuarioModule } from './perfilUsuario.tsx';
-import { MatchesTrainingModule } from './entrenamiento.tsx';
+import { MatchesTrainingModule } from './entrenamiento.tsx'; 
 
 
 
@@ -292,7 +292,7 @@ export default function DashboardComponent() {
         { id: 'clubes', label: 'Clubes', icon: Building, component: ClubModule, permission: 'clubs' },
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
-        { id: 'matches-training', label: 'Partidos y Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
+        { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
         { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidosModule, permission: 'matches' },
         { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
@@ -427,7 +427,12 @@ export default function DashboardComponent() {
                                 <Route path='fichas' element={<RegistroJugadoresModule />} />
                                 <Route path='historial' element={<RegistroJugadoresModule />} />
                             </Route>
-                            <Route path="entrenamiento" element={<MatchesTrainingModule />} />
+                            <Route path="entrenamientos" element={<MatchesTrainingModule />} >
+                                <Route index element={<MatchesTrainingModule />} />
+                                <Route path='new' element={<MatchesTrainingModule />} />
+                                <Route path=':id_entrenamiento' element={<MatchesTrainingModule />} />
+                                <Route path=':id_entrenamiento/edit' element={<MatchesTrainingModule />} />
+                            </Route>
                             <Route path="partidos" element={<PartidosModule />}>
                                 <Route index element={<PartidosModule />} />
                                 <Route path='new' element={<PartidosModule />} />

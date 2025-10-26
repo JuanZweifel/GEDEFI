@@ -9,12 +9,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return response.json() as Promise<T>;
 }
 
+
+
 // Obtener todos los entrenamientos
 export async function getRendimientosEntrenamiento<T>(token?: string): Promise<T> {
     const response = await fetch(URL_BASE, {
         method: "GET",
         headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}), 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
     });
     return handleResponse<T>(response);
@@ -39,23 +41,31 @@ export async function postRendimientoEntrenamiento<T>(
     return handleResponse<T>(response);
 }
 
+
+
 //  Modificar rendimiento
 export async function putRendimientoEntrenamiento<T>(
-    id: number,
+    rut_jugador: string,
+    id_entrenamiento: number,
     data: Record<string, any>,
     token?: string
 ): Promise<T> {
-    const response = await fetch(URL_RENDIMIENTO_BY_ID(id), {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(data),
-    });
+    const response = await fetch(
+        `${URL_BASE}${rut_jugador}/${id_entrenamiento}`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(data),
+        }
+    );
 
     return handleResponse<T>(response);
 }
+
+
 
 //  Eliminar rendimiento
 export async function deleteRendimientoEntrenamiento(
