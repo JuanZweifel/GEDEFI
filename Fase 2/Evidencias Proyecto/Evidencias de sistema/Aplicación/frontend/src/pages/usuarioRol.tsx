@@ -96,7 +96,7 @@ export const UsuarioRolModule: React.FC = () => {
         let data: ClubType[] = [];
         try {
             setIsFetchingClubs(true);
-            data = await getClubs(token);
+            data = await getClubs(1, 30, undefined, undefined, token);
             setClubs(data);
             if (data.length === 0) toast.info("No hay clubes registrados en la base de datos.");
         } catch (err: any) {
@@ -344,7 +344,7 @@ export const UsuarioRolModule: React.FC = () => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Todos</SelectItem>
-                                            {clubs.map((club) => (
+                                            {clubs?.items?.map((club) => (
                                                 <SelectItem key={club.id_club} value={club.id_club.toString()}>
                                                     {club.nombre_club}
                                                 </SelectItem>
@@ -393,7 +393,7 @@ export const UsuarioRolModule: React.FC = () => {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                {clubs.find(c => c.id_club === user.id_club)?.nombre_club || "N/A"}
+                                                {clubs?.items?.find(c => c.id_club === user.id_club)?.nombre_club || "N/A"}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className={user.usuario_activo ? "bg-green-500" : "bg-red-500"}>
