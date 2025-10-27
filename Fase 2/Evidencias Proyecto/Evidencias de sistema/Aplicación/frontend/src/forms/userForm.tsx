@@ -245,7 +245,7 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
           >
             <option value="">Seleccione un club</option>
             <option value="null">Sin club</option>
-            {clubs.map((club) => (
+            {clubs?.items?.map((club) => (
               <option key={club.id_club} value={club.id_club}>
                 {club.nombre_club}
               </option>
