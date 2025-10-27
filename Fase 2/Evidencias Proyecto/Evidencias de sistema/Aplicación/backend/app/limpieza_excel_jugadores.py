@@ -4,20 +4,16 @@ from sqlalchemy.orm import Session
 from io import BytesIO
 import pandas as pd
 from datetime import date
+import magic  # 👈 para validar el tipo real del archivo
 from app.db import get_db
 from app.models import Jugador, FichaJugador, Serie, Usuario, DetalleClubJugador
 from app.utils.validaciones import validar_rut
-from app.security import get_current_user  # autenticación
+from app.security import get_current_user
 
 router = APIRouter()
 
 
 def crear_fichas_jugadores(db: Session, rut_jugadores: list[str], id_serie: int):
-    """
-    Crea fichas básicas para los jugadores cuyos RUTs están en rut_jugadores,
-    pertenecientes a la serie id_serie.
-    Los demás campos se inicializan en None.
-    """
     resultados = []
     for rut in rut_jugadores:
         existente = db.query(FichaJugador).filter(
@@ -42,23 +38,14 @@ def crear_fichas_jugadores(db: Session, rut_jugadores: list[str], id_serie: int)
             Peso=None,
             imc=None
         )
-
         db.add(ficha)
         resultados.append({"rut": rut, "status": "success"})
 
     return resultados
 
 
-
-def crear_detalle_club_jugadores(
-    db: Session, rut_jugadores: list[str], id_club: int
-):
-    """
-    Crea registros en DetalleClubJugador para los jugadores cuyos RUTs están en rut_jugadores,
-    pertenecientes al club id_club.
-    """
+def crear_detalle_club_jugadores(db: Session, rut_jugadores: list[str], id_club: int):
     resultados = []
-
     for rut in rut_jugadores:
         existente = db.query(DetalleClubJugador).filter(
             DetalleClubJugador.rut_jugador == rut,
@@ -80,7 +67,6 @@ def crear_detalle_club_jugadores(
     return resultados
 
 
-
 @router.post("/upload_excel")
 async def upload_excel(
     file: UploadFile = File(...),
@@ -90,11 +76,46 @@ async def upload_excel(
     try:
         id_club = current_user["id_club"]
 
-        # Leer archivo Excel
-        contents = await file.read()
-        df = pd.read_excel(BytesIO(contents), header=2)
+        # ✅ 1️⃣ Validar tipo MIME real (no solo extensión)
+        head = await file.read(2048)
+        mime_type = magic.from_buffer(head, mime=True)
+        await file.seek(0)
 
-        # Limpieza básica de columnas
+        valid_mimes = [
+            "application/vnd.ms-excel",  # .xls
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"  # .xlsx
+        ]
+
+        if mime_type not in valid_mimes:
+            return JSONResponse(
+                content={"message": f"Archivo no válido. Tipo detectado: {mime_type}"},
+                status_code=400
+            )
+
+        # ✅ 2️⃣ Validar extensión del nombre
+        if not (file.filename.endswith(".xls") or file.filename.endswith(".xlsx")):
+            return JSONResponse(
+                content={"message": "Formato de archivo no válido. Solo se permiten .xls o .xlsx."},
+                status_code=400
+            )
+
+        # ✅ 3️⃣ Leer contenido (el middleware ya limitó el tamaño)
+        contents = await file.read()
+
+        # Detectar motor según extensión
+        ext = file.filename.lower().split(".")[-1]
+        engine = "openpyxl" if ext == "xlsx" else "xlrd"
+
+        # ✅ 4️⃣ Procesar Excel
+        try:
+            df = pd.read_excel(BytesIO(contents), header=2, engine=engine)
+        except Exception:
+            return JSONResponse(
+                content={"message": "El archivo no es un Excel válido o está dañado."},
+                status_code=400
+            )
+
+        # Limpieza de columnas
         df = df.drop(df.columns[[0, 1, 9]], axis=1, errors='ignore')
         df.columns = df.columns.str.strip()
         df['CÉDULA DE IDENTIDAD'] = (
@@ -107,14 +128,15 @@ async def upload_excel(
 
         nombre_serie_excel = df['NOMBRE DE LA SERIE'].dropna().iloc[0].strip().title()
 
-        # ✅ Verificar si el club tiene esa serie
+        # ✅ 5️⃣ Verificar que la serie pertenezca al club
         serie_obj = db.query(Serie).filter(
             Serie.nombre_serie == nombre_serie_excel,
             Serie.id_club == id_club
         ).first()
+
         if not serie_obj:
             return JSONResponse(
-                content={"message": f"La serie '{nombre_serie_excel}' no pertenece al club del usuario"},
+                content={"message": f"La serie '{nombre_serie_excel}' no pertenece al club del usuario."},
                 status_code=400
             )
 
@@ -124,7 +146,7 @@ async def upload_excel(
         jugadores_validos = []
         seen_ruts = set()
 
-        # Procesar filas del Excel
+        # ✅ 6️⃣ Procesar filas del Excel
         for idx, row in df.iterrows():
             fila = idx + 1
             rut = str(row.get('CÉDULA DE IDENTIDAD', '')).strip()
@@ -166,13 +188,11 @@ async def upload_excel(
             if genero_bool is None:
                 errores.append("Género inválido")
 
-            # Duplicados en archivo
             if rut in seen_ruts:
                 errores.append("RUT duplicado en archivo")
             else:
                 seen_ruts.add(rut)
 
-            # Duplicados en BD
             if db.query(Jugador).filter(Jugador.rut_jugador == rut).first():
                 errores.append("Jugador ya existe")
 
@@ -183,14 +203,13 @@ async def upload_excel(
                     "fila": fila,
                     "rut": rut,
                     "primer_nombre": primer_nombre,
-                    "segundo_nombre": segundo_nombre,
-                    "primer_apellido": primer_apellido,
-                    "segundo_apellido": segundo_apellido,
+                    "segundo_nombre":segundo_nombre,
+                    "primer_apellido":primer_apellido,
+                    "segundo_apellido":segundo_apellido,
                     "reason": "; ".join(errores)
                 })
                 continue
 
-            # Crear jugador válido
             jugador = Jugador(
                 rut_jugador=rut,
                 primer_nombre=primer_nombre,
@@ -202,20 +221,16 @@ async def upload_excel(
             )
             jugadores_validos.append(jugador)
             inserted += 1
-            results.append({"status": "success", "fila": fila, "rut": rut,
-                            "primer_nombre":primer_nombre, "segundo_nombre":segundo_nombre,
-                            "primer_apellido":primer_apellido, "segundo_apellido":segundo_apellido})
+            results.append({"status": "success", "fila": fila, "rut": rut})
 
-        # Insertar jugadores
+        # ✅ 7️⃣ Guardar registros
         db.add_all(jugadores_validos)
         db.commit()
 
-        # Crear fichas para los jugadores insertados
         rut_insertados = [j.rut_jugador for j in jugadores_validos]
-        fichas_resultado = crear_fichas_jugadores(db, rut_insertados, serie_obj.id_serie)
+        crear_fichas_jugadores(db, rut_insertados, serie_obj.id_serie)
         db.commit()
 
-        # Crear registros en DetalleClubJugador
         for rut in rut_insertados:
             detalle = DetalleClubJugador(
                 rut_jugador=rut,
@@ -224,20 +239,14 @@ async def upload_excel(
                 fecha_fin=None
             )
             db.add(detalle)
+        db.commit()
 
-        db.commit()  # ✅ Aquí se guardan realmente en la base de datos
-
-
-        # Totales finales
-        total_procesados = len(df)
-        total_insertados = inserted
-        total_errores = skipped
-
+        # ✅ 8️⃣ Respuesta final
         return JSONResponse({
             "message": "Archivo procesado ✅",
-            "total_procesados": total_procesados,
-            "total_insertados": total_insertados,
-            "total_errores": total_errores,
+            "total_procesados": len(df),
+            "total_insertados": inserted,
+            "total_errores": skipped,
             "results": results
         })
 
@@ -245,4 +254,7 @@ async def upload_excel(
         db.rollback()
         import traceback
         traceback.print_exc()
-        return JSONResponse({"message": f"Error general: {str(e)}"}, status_code=500)
+        return JSONResponse(
+            {"message": f"Error general: {str(e)}"},
+            status_code=500
+        )

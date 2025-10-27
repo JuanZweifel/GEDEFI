@@ -432,22 +432,39 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
     const [enfermedadesCronicas, setEnfermedadesCronicas] = useState("");
     const [fonoJugador, setFonoJugador] = useState("");
     const [jugadorActivo, setJugadorActivo] = useState<string>("true");
+    const [tieneEnfermedades, setTieneEnfermedades] = useState<boolean | null>(null);
+    const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
+    const [selectedSerie, setSelectedSerie] = useState<number | null>(null);
 
     const [isEditFormOpen, setIsEditFormOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
-    // ✅ Función para validar número de celular chileno
+    const { id_club, token } = useAuth();
+
+    // ✅ Cargar series del club
+    useEffect(() => {
+        getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token)
+            .then(data => {
+                if (id_club) {
+                    const filtradas = data.filter(s => s.id_club === Number(id_club));
+                    setSeries(filtradas);
+                }
+            })
+            .catch(err => console.error("Error al cargar series:", err));
+    }, [id_club]);
+
+    // ✅ Validar formato de celular
     const validarCelularChile = (numero: string): string => {
         const tel = numero.trim();
-        const patrones = [/^\+569\d{8}$/, /^9\d{8}$/, /^41\d{8}$/]; // +569XXXXXXXX, 9XXXXXXXX, 41XXXXXXXX
+        const patrones = [/^\+569\d{8}$/, /^9\d{8}$/, /^41\d{8}$/];
         if (!patrones.some((p) => p.test(tel))) {
             throw new Error("Número de celular inválido");
         }
         return tel;
     };
 
-    // ✅ Cargar datos cuando se abra el diálogo
+    // ✅ Cargar datos del jugador al abrir el diálogo
     useEffect(() => {
         if (jugador && isEditFormOpen) {
             setPrimerNombreJugador(jugador.primer_nombre || "");
@@ -456,13 +473,21 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
             setSegundoApellidoJugador(jugador.segundo_apellido || "");
             setGenero(jugador.genero ? "true" : "false");
             setFechaNacimiento(jugador.fecha_nacimiento || "");
-            setEnfermedadesCronicas(jugador.enfermedades_cronicas || "");
             setFonoJugador(jugador.fono_jugador || "");
             setJugadorActivo(jugador.jugador_activo ? "true" : "false");
+
+            // ✅ Si tiene texto en enfermedades_cronicas → true, si está vacío o null → false
+            if (jugador.enfermedades_cronicas && jugador.enfermedades_cronicas.trim() !== "") {
+                setTieneEnfermedades(true);
+                setEnfermedadesCronicas(jugador.enfermedades_cronicas);
+            } else {
+                setTieneEnfermedades(false);
+                setEnfermedadesCronicas("");
+            }
         }
     }, [jugador, isEditFormOpen]);
 
-    // ✅ Resetea el formulario
+    // ✅ Resetear formulario
     const resetForm = () => {
         if (!jugador) return;
         setPrimerNombreJugador(jugador.primer_nombre || "");
@@ -471,12 +496,13 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
         setSegundoApellidoJugador(jugador.segundo_apellido || "");
         setGenero(jugador.genero ? "true" : "false");
         setFechaNacimiento(jugador.fecha_nacimiento || "");
-        setEnfermedadesCronicas(jugador.enfermedades_cronicas || "");
         setFonoJugador(jugador.fono_jugador || "");
         setJugadorActivo(jugador.jugador_activo ? "true" : "false");
+        setTieneEnfermedades(jugador.enfermedades_cronicas?.trim() ? true : false);
+        setEnfermedadesCronicas(jugador.enfermedades_cronicas || "");
     };
 
-    // ✅ Al presionar "Guardar Cambios", abre el diálogo de confirmación
+    // ✅ Confirmar antes de guardar
     const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -485,7 +511,7 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
         }
     };
 
-    // ✅ Confirmar y guardar cambios
+    // ✅ Guardar cambios
     const handleSave = async () => {
         if (!jugador || jugador.rut_jugador === undefined) {
             console.error("❌ Jugador no válido");
@@ -494,6 +520,17 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
 
         setIsLoading(true);
         try {
+            // 🔹 Normalización del campo enfermedades_cronicas
+            let enfermedadesValue: string | null = null;
+
+            if (tieneEnfermedades === true) {
+                enfermedadesValue =
+                    enfermedadesCronicas.trim() !== "" ? enfermedadesCronicas.trim() : null;
+            } else {
+                enfermedadesValue = null;
+                setEnfermedadesCronicas(""); // Limpia visualmente el input
+            }
+
             const updatedData = {
                 primer_nombre: primerNombreJugador,
                 segundo_nombre: segundoNombreJugador || null,
@@ -501,8 +538,8 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
                 segundo_apellido: segundoApellidoJugador || null,
                 genero: genero === "true",
                 fecha_nacimiento: fechaNacimiento,
-                enfermedades_cronicas: enfermedadesCronicas || null,
-                fono_jugador: fonoJugador || null,
+                enfermedades_cronicas: enfermedadesValue, // 👈 Aquí se controla null correctamente
+                fono_jugador: fonoJugador.trim() === "" ? null : fonoJugador.trim(),
                 jugador_activo: jugadorActivo === "true",
             };
 
@@ -510,7 +547,6 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
             toast.success("El jugador fue modificado correctamente");
             await refreshJugadores();
 
-            // 🔹 Espera un instante antes de cerrar para asegurar re-render
             setTimeout(() => setIsEditFormOpen(false), 100);
         } catch (error: any) {
             console.error("❌ Error al modificar jugador:", error);
@@ -599,13 +635,55 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
                                     max={new Date().toISOString().split("T")[0]}
                                 />
                             </div>
+
+
+
+
+                            {/* ✅ Pregunta Enfermedades Crónicas */}
                             <div className="col-span-2 flex flex-col">
-                                <label className="block mb-1">Enfermedades Crónicas</label>
-                                <Input
-                                    value={enfermedadesCronicas}
-                                    onChange={(e) => setEnfermedadesCronicas(e.target.value)}
-                                />
+                                <label className="block mb-1">¿El jugador tiene enfermedades crónicas?</label>
+                                <div className="flex gap-6 mt-1">
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="enfermedades"
+                                            value="si"
+                                            checked={tieneEnfermedades === true}
+                                            onChange={() => setTieneEnfermedades(true)}
+                                        />
+                                        Sí
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="enfermedades"
+                                            value="no"
+                                            checked={tieneEnfermedades === false}
+                                            onChange={() => {
+                                                setTieneEnfermedades(false);
+                                                setEnfermedadesCronicas("");
+                                            }}
+                                        />
+                                        No
+                                    </label>
+                                </div>
                             </div>
+
+                            {/* ✅ Campo solo si elige "Sí" */}
+                            {tieneEnfermedades && (
+                                <div className="col-span-2 flex flex-col">
+                                    <label className="block mb-1">Enfermedades Crónicas</label>
+                                    <Input
+                                        value={enfermedadesCronicas}
+                                        onChange={(e) => setEnfermedadesCronicas(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            )}
+
+
+
+
                             <div className="col-span-2 flex flex-col">
                                 <label className="block mb-1">Teléfono</label>
                                 <Input
@@ -624,6 +702,32 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
                                     title="Ingrese un número de celular chileno válido (+569XXXXXXXX, 9XXXXXXXX o 41XXXXXXXX)"
                                 />
                             </div>
+
+
+
+                            {/* Serie */}
+                            <div className="col-span-2 flex flex-col">
+                                <label className="block mb-1">Serie *</label>
+                                <Select
+                                    value={selectedSerie?.toString() || ""}
+                                    onValueChange={(value: string) => setSelectedSerie(Number(value))}
+                                    required
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccione Serie" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {series.map((s) => (
+                                            <SelectItem key={s.id_serie} value={s.id_serie.toString()}>
+                                                {s.nombre_serie}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+
+
                         </div>
 
                         <p className="text-sm text-gray-600 mt-2">
