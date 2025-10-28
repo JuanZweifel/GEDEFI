@@ -117,13 +117,28 @@ export type BalanceType = {
     variacion?: string;
 }
 
+export type SuperficiesEnum =
+    | "Césped Natural"
+    | "Césped Sintético"
+    | "Tierra"
+
+export type InstalacionesEnum =
+    | "Iluminación"
+    | "Tribunas"
+    | "Camarines"
+    | "Estacionamiento"
+    | "Baños"
+    | "Enfermería"
+
 export type CanchaType = {
     id_cancha: number;
     nombre_cancha: string;
-    tipo_cancha: number;
+    superficie_cancha: SuperficiesEnum;
     direccion?: string;
-    disponibilidad: boolean;
     cancha_activa: boolean;
+    ultimo_mantenimiento?: string | null;
+    observaciones?: string | null;
+    instalaciones: InstalacionesEnum[];
     fecha_creacion: string;
     fecha_modificacion: string;
 }

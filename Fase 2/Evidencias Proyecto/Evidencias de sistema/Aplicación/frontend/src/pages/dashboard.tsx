@@ -48,7 +48,7 @@ import { FinanzasModule } from './finanzas.tsx';
 import { RegistroJugadoresModule } from './registro-jugadores.tsx';
 import { PartidosModule } from './partidos.tsx';
 import { PerfilUsuarioModule } from './perfilUsuario.tsx';
-import { MatchesTrainingModule } from './entrenamiento.tsx'; 
+import { MatchesTrainingModule } from './entrenamiento.tsx';
 
 
 
@@ -191,7 +191,7 @@ export default function DashboardComponent() {
     const [activeModule, setActiveModule] = useState('dashboard');
     const [resetToken, setResetToken] = useState<string | null>(null);
 
-    const { token, rol, nombre, id_club, logout } = useAuth();
+    const { token, rol, nombre, club_nombre, logout } = useAuth();
 
     // Si no tiene token de login, lo redirecciona a la landing page
     if (!token) {
@@ -329,7 +329,7 @@ export default function DashboardComponent() {
                                 >
                                     <div className="text-right">
                                         <p className="font-medium">{nombre}</p>
-                                        <p className="text-xs text-muted-foreground">{id_club}</p>
+                                        <p className="text-xs text-muted-foreground">{club_nombre}</p>
                                     </div>
                                     <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
                                         {mockUser.name.split(' ').map(n => n[0]).join('')}

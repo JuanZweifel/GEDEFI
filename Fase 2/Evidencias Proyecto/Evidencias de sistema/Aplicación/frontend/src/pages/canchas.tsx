@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { DialogHandle } from "../components/dialog-component.tsx";
 import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
 import { NavLink, useLocation, useNavigate, useParams } from 'react-router';
-import { Plus, Edit, Trash2, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, RefreshCcw } from 'lucide-react';
 import { CanchaForm } from '../forms/canchaForm.tsx';
 import type { CanchaType } from '../types.tsx';
 import { deleteCancha, getCanchas } from '../services/canchaService.ts';
@@ -100,6 +100,16 @@ export const CanchasModule: React.FC = () => {
       <div className="flex justify-between items-center">
         <h2>Administración de Canchas de Fútbol</h2>
         <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={fetchCanchas}
+            disabled={isFetchingCanchas}
+          >
+            <RefreshCcw className="w-4 h-4 mr-1" />
+            {isFetchingCanchas ? "Recargando..." : "Recargar"}
+          </Button>
           <NavLink to="/dashboard/canchas/new">
             <Button style={{ backgroundColor: "#0000db" }} className="text-white">
               <Plus className="w-4 h-4 mr-2" /> Nueva cancha
@@ -115,9 +125,6 @@ export const CanchasModule: React.FC = () => {
               <div className="flex items-start justify-between">
                 <CardTitle className="text-lg">{cancha.nombre_cancha}</CardTitle>
                 <div className="flex flex-col space-y-1">
-                  <Badge className={cancha.disponibilidad ? "bg-green-500" : "bg-red-500"}>
-                    {cancha.disponibilidad ? "Disponible" : "No Disponible"}
-                  </Badge>
                   <Badge className={cancha.cancha_activa ? "bg-blue-500" : "bg-gray-400"}>
                     {cancha.cancha_activa ? "Activa" : "Inactiva"}
                   </Badge>
@@ -126,17 +133,41 @@ export const CanchasModule: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {cancha.direccion && (
-                  <div className="flex items-start">
-                    <MapPin className="w-4 h-4 mr-2 mt-1 text-gray-500" />
-                    <p className="text-sm text-gray-600">{cancha.direccion}</p>
-                  </div>
-                )}
+                <div className="flex items-start">
+                  <MapPin className="w-4 h-4 mr-2 mt-1 text-gray-500" />
+                  <p className="text-sm text-gray-600">{cancha.direccion ? cancha.direccion : "N/A"}</p>
+                </div>
+
                 <div className="text-sm space-y-1">
                   <p>
-                    <span className="font-medium">Tipo de superficie:</span>{" "}
-                    {getTipoCancha(cancha.tipo_cancha)}
+                    <span className="font-medium">Superficie:</span> {cancha.superficie_cancha}
                   </p>
+
+                  <p>
+                    <span className="font-medium">Último mantenimiento:</span>{" "}
+                    {cancha.ultimo_mantenimiento
+                      ? new Date(cancha.ultimo_mantenimiento).toLocaleDateString()
+                      : "N/A"}
+                  </p>
+
+                  <span className="font-medium">Instalaciones:</span>
+                  <div className="flex flex-wrap gap-1 mt-2 mb-2">
+                    {cancha.instalaciones.map((inst) => (
+                      <div
+                        key={inst}
+                        className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-md border border-gray-300 text-xs font-medium"
+                      >
+                        {inst}
+                      </div>
+                    ))}
+                  </div>
+
+                  {cancha.observaciones && (
+                    <p>
+                      <span className="font-medium">Observaciones:</span> {cancha.observaciones}
+                    </p>
+                  )}
+
                   <p>
                     <span className="font-medium">Creada:</span>{" "}
                     {new Date(cancha.fecha_creacion).toLocaleDateString()}
@@ -149,11 +180,19 @@ export const CanchasModule: React.FC = () => {
               </div>
 
               <div className="mt-4 flex gap-2">
-                <NavLink to={`/dashboard/canchas/${cancha.id_cancha}/edit`}>
-                  <Button variant="outline" size="sm" className="flex-1">
+                <NavLink
+                  to={`/dashboard/canchas/${cancha.id_cancha}/edit`}
+                  className="flex-1"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full flex-1"
+                  >
                     <Edit className="w-4 h-4 mr-1" /> Editar
                   </Button>
                 </NavLink>
+
                 <Button
                   onClick={() => setOpenSelected(cancha.id_cancha)}
                   variant="destructive"
@@ -165,10 +204,10 @@ export const CanchasModule: React.FC = () => {
               </div>
 
               <AlertDialogHandle
-                title={`Eliminacion de cancha ${cancha.nombre_cancha}`}
-                description={`¿Estas seguro de querer eliminar la cancha ${cancha.nombre_cancha}?`}
-                confirmLabel='Eliminar'
-                cancelLabel='Cancelar'
+                title={`Eliminación de cancha ${cancha.nombre_cancha}`}
+                description={`¿Estás seguro de querer eliminar la cancha ${cancha.nombre_cancha}?`}
+                confirmLabel="Eliminar"
+                cancelLabel="Cancelar"
                 onConfirm={() => handleDeleteCancha(cancha.id_cancha)}
                 open={openSelected === cancha.id_cancha}
                 onOpenChange={(open) => {
@@ -185,6 +224,7 @@ export const CanchasModule: React.FC = () => {
           title="Registrar Nueva Cancha"
           trigger={<div />}
           open={true}
+          size="max-w-2xl"
           onOpenChange={(open) => { if (!open) navigate("/dashboard/canchas/"); }}
         >
           {(close) => (
