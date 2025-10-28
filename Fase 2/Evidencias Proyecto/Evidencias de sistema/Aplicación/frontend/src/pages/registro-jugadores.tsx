@@ -19,6 +19,7 @@ import { DialogAddJugador, DialogEditJugador, DialogViewJugador, ButtonDeleteJug
 import { DialogAddLesion, DialogEditLesion, DialogViewLesion, ButtonDeleteLesion } from '../forms/lesion-form';
 import { DialogEditFichaJugador, DialogViewFichaJugador, DialogDeleteFichaJugador } from '../forms/ficha-jugador-form';
 import { Input } from '../components/ui/input';
+import { Loader2 } from 'lucide-react';
 
 // Exportaciones de type
 import type { UploadExcelProps, JugadorType } from "../types.tsx"
@@ -37,6 +38,12 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
     const [alertMessage, setAlertMessage] = useState("");
     const [pendingFile, setPendingFile] = useState<FormData | null>(null);
 
+    // 🕓 Estado de carga
+    const [isLoading, setIsLoading] = useState(false);
+
+    const MAX_FILE_SIZE_MB = 5;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
     const showAlert = (message: string) => {
         setAlertMessage(message);
         setIsAlertOpen(true);
@@ -46,8 +53,17 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
         const file = event.target.files?.[0];
         if (!file) return;
 
+        // Validar extensión del nombre
         if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
             showAlert("Por favor seleccione un archivo Excel (.xlsx o .xls)");
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
+
+        // Validar tamaño
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            toast.error(`El archivo excede el tamaño máximo permitido de ${MAX_FILE_SIZE_MB} MB.`);
+            if (fileInputRef.current) fileInputRef.current.value = "";
             return;
         }
 
@@ -61,15 +77,16 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
     };
 
     const handleConfirmUpload = async () => {
-        // Validamos que haya archivo y token
         if (!pendingFile) return;
         if (!token) {
             toast.error("No se encontró token de autenticación. Por favor inicia sesión.");
             return;
         }
 
+        // 🕓 Activar estado de carga
+        setIsLoading(true);
+
         try {
-            // ✅ Cast a string para que TypeScript no se queje
             const response = await uploadExcel<{
                 message: string;
                 insertados: number;
@@ -78,6 +95,7 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
             }>(pendingFile, token);
 
             const results = response.results ?? [];
+            console.log(results)
 
             const processedResults = results.map(item => ({
                 ...item,
@@ -90,12 +108,19 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
 
             await refreshJugadores();
 
-            toast.success("Archivo procesado correctamente");
+            toast.success("Archivo procesado correctamente ✅");
             if (openHistory) openHistory();
         } catch (error: any) {
             console.error(error);
-            toast.warning("Error al subir el archivo ⚠️");
+
+            if (error.message) {
+                toast.error(error.message);
+            } else {
+                toast.warning("Error al subir el archivo ⚠️");
+            }
         } finally {
+            // 🕓 Desactivar estado de carga
+            setIsLoading(false);
             setPendingFile(null);
         }
     };
@@ -113,16 +138,39 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
             <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                style={{ borderColor: "#0000db", color: "#0000db" }}
+                disabled={isLoading} // ❌ Desactivar mientras carga
+                style={{
+                    borderColor: "#0000db",
+                    color: "#0000db",
+                    opacity: isLoading ? 0.6 : 1, // efecto visual
+                    cursor: isLoading ? "not-allowed" : "pointer"
+                }}
             >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Excel
+                {isLoading ? (
+                    <>
+                        <span className="animate-spin mr-2">🔄</span> Cargando...
+                    </>
+                ) : (
+                    <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload Excel
+                    </>
+                )}
             </Button>
 
             <AlertDialogHandle
                 title="Mensaje"
                 description={alertMessage}
-                confirmLabel="Aceptar"
+                confirmLabel={
+                    isLoading ? (
+                        <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
+                            Cargando...
+                        </>
+                    ) : (
+                        "Aceptar"
+                    )
+                }
                 cancelLabel="Cancelar"
                 open={isAlertOpen}
                 onOpenChange={(open) => {
@@ -133,8 +181,9 @@ export const UploadExcel: React.FC<UploadExcelProps> = ({
                     if (alertMessage.includes("¿Desea agregar")) {
                         await handleConfirmUpload();
                     }
-                    setIsAlertOpen(false);
+                    if (!isLoading) setIsAlertOpen(false);
                 }}
+                confirmDisabled={isLoading}
             />
         </>
     );
@@ -215,7 +264,7 @@ export const RegistroJugadoresModule: React.FC = () => {
     // 🔹 Obtener clubes
     const fetchClubs = async () => {
         try {
-            const data = await getClubs<any[]>(token);
+            const data = await getClubs<any[]>();
             const mapped = data.map(club => ({
                 id_club: club.id_club,
                 nombre: club.nombre_club
@@ -244,7 +293,7 @@ export const RegistroJugadoresModule: React.FC = () => {
         fetchSeries();
     }, []);
 
-    // 🔹 Preseleccionar club y filtrar series automáticamente
+
     useEffect(() => {
         if (id_club && allSeries.length > 0) {
             setSelectedClub(String(id_club));
@@ -254,11 +303,6 @@ export const RegistroJugadoresModule: React.FC = () => {
                 .map((s) => ({ id_serie: s.id_serie, nombre_serie: s.nombre_serie }));
 
             setSeries(filtered);
-
-            // 👇 Aquí se preselecciona automáticamente la primera serie
-            if (filtered.length > 0 && !selectedSerie) {
-                setSelectedSerie(filtered[0].id_serie.toString());
-            }
         }
     }, [id_club, allSeries]);
 
@@ -581,7 +625,13 @@ export const RegistroJugadoresModule: React.FC = () => {
                                                         {player.primer_nombre} {player.segundo_nombre || ''} {player.primer_apellido} {player.segundo_apellido || ''}
                                                     </TableCell>
                                                     <TableCell>
-                                                        {new Date(player.fecha_nacimiento).toLocaleDateString('es-CL')}
+                                                        {player.fecha_nacimiento
+                                                            ? player.fecha_nacimiento
+                                                                .split("T")[0]
+                                                                .split("-")
+                                                                .reverse()
+                                                                .join("/")
+                                                            : "—"}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge variant={player.enfermedades_cronicas === "Ninguna" ? "outline" : "destructive"}>
@@ -634,6 +684,17 @@ export const RegistroJugadoresModule: React.FC = () => {
                             </div>
                         </CardHeader>
                         <CardContent>
+                            {/* 🔹 Input de búsqueda */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <Input
+                                    type="text"
+                                    placeholder="Buscar por RUT, tipo de lesión o estado..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-64"
+                                />
+                            </div>
+
                             {injuries.length === 0 ? (
                                 <div className="text-center py-8 text-gray-500">
                                     <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -653,39 +714,73 @@ export const RegistroJugadoresModule: React.FC = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {injuries.map((injury) => (
-                                            <TableRow key={injury.id}>
-                                                <TableCell className="font-medium">{injury.rut_jugador}</TableCell>
-                                                <TableCell>{injury.tipo_lesion ? "Grave" : "Leve"}</TableCell>
-                                                <TableCell className="max-w-xs truncate">{injury.descripcion}</TableCell>
-                                                <TableCell>{injury.fecha_lesion}</TableCell>
-                                                <TableCell>{injury.tiempo_recuperacion}</TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        className={
-                                                            injury.fecha_fin_lesion
+                                        {injuries
+                                            .filter((injury) => {
+                                                const rut = (injury.rut_jugador || "").toLowerCase();
+                                                const tipo = injury.tipo_lesion
+                                                    ? "fuera del club"
+                                                    : "dentro del club";
+                                                const estado = injury.fecha_fin_lesion
+                                                    ? new Date(injury.fecha_fin_lesion) >= new Date()
+                                                        ? "lesión activa"
+                                                        : "lesión terminada"
+                                                    : "lesión activa";
+
+                                                const term = searchTerm.toLowerCase();
+                                                return (
+                                                    rut.includes(term) ||
+                                                    tipo.includes(term) ||
+                                                    estado.includes(term)
+                                                );
+                                            })
+                                            .map((injury) => (
+                                                <TableRow key={injury.id}>
+                                                    <TableCell className="font-medium">
+                                                        {injury.rut_jugador}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {injury.tipo_lesion ? "Fuera del club" : "Dentro del club"}
+                                                    </TableCell>
+                                                    <TableCell className="max-w-xs truncate">
+                                                        {injury.descripcion}
+                                                    </TableCell>
+                                                    <TableCell>{injury.fecha_lesion}</TableCell>
+                                                    <TableCell>{injury.tiempo_recuperacion}</TableCell>
+                                                    <TableCell>
+                                                        <Badge
+                                                            className={
+                                                                injury.fecha_fin_lesion
+                                                                    ? new Date(injury.fecha_fin_lesion) >= new Date()
+                                                                        ? "bg-red-500"
+                                                                        : "bg-green-500"
+                                                                    : "bg-red-500"
+                                                            }
+                                                        >
+                                                            {injury.fecha_fin_lesion
                                                                 ? new Date(injury.fecha_fin_lesion) >= new Date()
-                                                                    ? 'bg-red-500'
-                                                                    : 'bg-green-500'
-                                                                : 'bg-red-500'
-                                                        }
-                                                    >
-                                                        {injury.fecha_fin_lesion
-                                                            ? new Date(injury.fecha_fin_lesion) >= new Date()
-                                                                ? 'Lesión Activa'
-                                                                : 'Lesión Terminada'
-                                                            : 'Lesión Activa'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex space-x-1">
-                                                        <DialogEditLesion lesion={injury} refreshLesiones={fetchLesiones} />
-                                                        <DialogViewLesion lesion={injury} refreshLesiones={fetchLesiones} />
-                                                        <ButtonDeleteLesion id_lesion={injury.id_lesion} refreshLesiones={fetchLesiones} />
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                                                    ? "Lesión Activa"
+                                                                    : "Lesión Terminada"
+                                                                : "Lesión Activa"}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex space-x-1">
+                                                            <DialogEditLesion
+                                                                lesion={injury}
+                                                                refreshLesiones={fetchLesiones}
+                                                            />
+                                                            <DialogViewLesion
+                                                                lesion={injury}
+                                                                refreshLesiones={fetchLesiones}
+                                                            />
+                                                            <ButtonDeleteLesion
+                                                                id_lesion={injury.id_lesion}
+                                                                refreshLesiones={fetchLesiones}
+                                                            />
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
                                     </TableBody>
                                 </Table>
                             )}

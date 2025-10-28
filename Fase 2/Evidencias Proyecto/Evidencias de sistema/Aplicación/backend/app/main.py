@@ -37,6 +37,31 @@ from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_orden
 #Base.metadata.drop_all(bind=engine)
 #Base.metadata.create_all(bind=engine)
 
+
+# validacion de tamaño de archivos
+MAX_FILE_SIZE_MB = 5
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+app = FastAPI()
+
+# 🧩 Middleware para limitar el tamaño del archivo subido
+@app.middleware("http")
+async def limit_upload_size(request: Request, call_next):
+    content_length = request.headers.get("content-length")
+
+    if content_length and int(content_length) > MAX_FILE_SIZE_BYTES:
+        return JSONResponse(
+            content={
+                "message": f"El archivo excede el tamaño máximo permitido de {MAX_FILE_SIZE_MB} MB."
+            },
+            status_code=400,
+        )
+
+    return await call_next(request)
+#---------------------------------
+
+
+
 app = FastAPI(title="API GEDEFI", version="1.0")
 
 @app.exception_handler(RequestValidationError)

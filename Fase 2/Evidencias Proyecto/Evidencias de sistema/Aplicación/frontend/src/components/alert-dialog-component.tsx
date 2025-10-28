@@ -13,11 +13,12 @@ import {
 type AlertDialogHandleProps = {
     title: string;
     description?: string;
-    confirmLabel?: string;
+    confirmLabel?: React.ReactNode;
     cancelLabel?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void
     onConfirm: () => void | Promise<void>; // lo que se ejecuta al aceptar
+    confirmDisabled?: boolean;
 }
 export const AlertDialogHandle: React.FC<AlertDialogHandleProps> = ({
     title,
@@ -27,17 +28,29 @@ export const AlertDialogHandle: React.FC<AlertDialogHandleProps> = ({
     open,
     onOpenChange,
     onConfirm,
+    confirmDisabled = false,
 }) => {
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>
-                        <AlertDialogDescription>{description}</AlertDialogDescription>
+                    {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
                 </AlertDialogHeader>
+
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => onOpenChange(false)}>{cancelLabel}</AlertDialogCancel>
-                    <AlertDialogAction onClick={async(e) => {e.preventDefault(); await onConfirm()}}>
+                    <AlertDialogCancel onClick={() => onOpenChange(false)}>
+                        {cancelLabel}
+                    </AlertDialogCancel>
+
+                    <AlertDialogAction
+                        onClick={async (e) => {
+                            e.preventDefault();
+                            if (!confirmDisabled) await onConfirm();
+                        }}
+                        disabled={confirmDisabled} // 👈 Desactiva botón mientras carga
+                        className={confirmDisabled ? "opacity-60 cursor-not-allowed" : ""}
+                    >
                         {confirmLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>

@@ -38,8 +38,20 @@ export async function uploadExcel<T>(formData: FormData, token?: string): Promis
     });
 
     if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Error al subir el archivo");
+        // ⚠️ Intentamos leer como JSON (si es posible)
+        let errorMessage = "Error al subir el archivo";
+        try {
+            const errorData = await response.json();
+            if (errorData?.message) {
+                errorMessage = errorData.message;
+            }
+        } catch {
+            // Si no es JSON, intentamos leer como texto plano
+            const text = await response.text();
+            if (text) errorMessage = text;
+        }
+
+        throw new Error(errorMessage);
     }
 
     const data: T = await response.json();

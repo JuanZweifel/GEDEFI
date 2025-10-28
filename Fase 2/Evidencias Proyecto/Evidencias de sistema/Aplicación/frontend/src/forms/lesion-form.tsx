@@ -244,6 +244,7 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
                                     value={descripcion}
                                     onChange={(e) => setDescripcion(e.target.value)}
                                     className="w-full border p-2 rounded"
+                                    maxLength={500}
                                     required
                                 />
                             </div>
@@ -392,8 +393,8 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
                                         <SelectValue placeholder="Seleccione tipo de lesión" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="true">Grave</SelectItem>
-                                        <SelectItem value="false">Leve</SelectItem>
+                                        <SelectItem value="true">Fuera del club</SelectItem>
+                                        <SelectItem value="false">Dentro del club</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -434,12 +435,13 @@ export const DialogEditLesion: React.FC<DialogEditLesionProps> = ({ lesion, refr
                             </div>
 
                             {/* Descripción */}
-                            <div className="col-span-1 md:col-span-2 flex flex-col">
+                            <div className="col-span-2 w-full flex flex-col">
                                 <label className="block mb-1">Descripción *</label>
                                 <textarea
                                     value={descripcion}
                                     onChange={(e) => setDescripcion(e.target.value)}
                                     className="w-full border p-2 rounded"
+                                    maxLength={500}
                                     required
                                 />
                             </div>
@@ -568,7 +570,7 @@ export const DialogViewLesion: React.FC<DialogViewLesionProps> = ({ lesion }) =>
                         </div>
 
                         {/* Descripción */}
-                        <div className="col-span-1 md:col-span-2 flex flex-col">
+                        <div className="col-span-2 w-full flex flex-col">
                             <label className="block mb-1">Descripción</label>
                             <textarea value={descripcion} disabled style={{ color: 'black', WebkitTextFillColor: 'black', opacity: 1 }} />
                         </div>

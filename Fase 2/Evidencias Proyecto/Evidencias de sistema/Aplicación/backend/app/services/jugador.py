@@ -36,8 +36,18 @@ def update_jugador(
     db_jugador = get_jugador(db, rut_jugador)
     if not db_jugador:
         return None
-    for key, value in jugador_update.dict(exclude_unset=True).items():
+
+    update_data = jugador_update.dict(exclude_unset=True)
+
+    # ✅ Si enfermedades_cronicas viene explícitamente como None o "", reemplazar por texto
+    if "enfermedades_cronicas" in update_data:
+        if update_data["enfermedades_cronicas"] is None or str(update_data["enfermedades_cronicas"]).strip() == "":
+            update_data["enfermedades_cronicas"] = "Sin enfermedades crónicas"
+
+    # ✅ Asignar los nuevos valores al modelo
+    for key, value in update_data.items():
         setattr(db_jugador, key, value)
+
     db.commit()
     db.refresh(db_jugador)
     return db_jugador
