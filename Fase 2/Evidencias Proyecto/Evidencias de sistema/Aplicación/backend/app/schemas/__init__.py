@@ -21,5 +21,7 @@ from .entrenamiento import *
 from .permiso_rol import *
 from .permiso import *
 from .auth import *
+from .fas import *
+from .uso_fas import *
 
 # WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente

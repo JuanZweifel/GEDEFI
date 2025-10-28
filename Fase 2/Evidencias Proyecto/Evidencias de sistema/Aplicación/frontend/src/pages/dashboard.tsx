@@ -39,7 +39,8 @@ import {
     Building,
     Activity,
     Archive,
-    Building2
+    Building2,
+    Ambulance
 } from 'lucide-react';
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
@@ -182,63 +183,11 @@ const Dashboard = () => (
 
 
 
-const Scoreboard = () => (
-    <div className="space-y-6">
-        <h2>Marcadores de Series</h2>
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Serie A - Jornada 15</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {[
-                        { local: "FC Barcelona", visitante: "Real Madrid", golesLocal: 2, golesVisitante: 1, estado: "Finalizado" },
-                        { local: "Universidad Chile", visitante: "Colo-Colo", golesLocal: 0, golesVisitante: 0, estado: "En Vivo" },
-                        { local: "Católica", visitante: "La Serena", golesLocal: null, golesVisitante: null, estado: "15:00" }
-                    ].map((partido, i) => (
-                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center space-x-8">
-                                <div className="text-center">
-                                    <p className="font-medium">{partido.local}</p>
-                                </div>
-                                <div className="text-center">
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-xl font-medium">{partido.golesLocal ?? "-"}</span>
-                                        <span className="text-muted-foreground">-</span>
-                                        <span className="text-xl font-medium">{partido.golesVisitante ?? "-"}</span>
-                                    </div>
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-medium">{partido.visitante}</p>
-                                </div>
-                            </div>
-                            <Badge
-                                variant={partido.estado === "En Vivo" ? "default" : "secondary"}
-                                style={partido.estado === "En Vivo" ? { backgroundColor: '#FF8C00' } : {}}
-                            >
-                                {partido.estado}
-                            </Badge>
-                        </div>
-                    ))}
-                </div>
-            </CardContent>
-        </Card>
-    </div>
-);
-
-
-
-
-
-
-
 export default function DashboardComponent() {
     const [appState, setAppState] = useState<AppState>({
         showPlayerDetails: false,
         showClubDetails: false
     });
-    const [showLanding, setShowLanding] = useState(true);
     const [activeModule, setActiveModule] = useState('dashboard');
     const [resetToken, setResetToken] = useState<string | null>(null);
 
@@ -294,7 +243,6 @@ export default function DashboardComponent() {
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
         { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
         { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidosModule, permission: 'matches' },
-        { id: 'scoreboard', label: 'Marcadores', icon: Trophy, component: Scoreboard },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
         { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
@@ -303,6 +251,7 @@ export default function DashboardComponent() {
         { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: FingerprintModule, permission: 'fingerprint' },
         { id: 'penalties', label: 'Castigos', icon: AlertTriangle, component: PenaltiesModule, permission: 'penalties' },
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
+        { id: 'fas', label: 'Fas', icon: Ambulance, component: CalendarioModule, permission: 'fas' },
         { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
         { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
     ];
@@ -439,7 +388,6 @@ export default function DashboardComponent() {
                                 <Route path=':id_partido' element={<PartidosModule />} />
                                 <Route path=':id_partido/edit' element={<PartidosModule />} />
                             </Route>
-                            <Route path="scoreboard" element={<Scoreboard />} />
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="canchas" element={<CanchasModule />}>
                                 <Route index element={<PartidosModule />} />
