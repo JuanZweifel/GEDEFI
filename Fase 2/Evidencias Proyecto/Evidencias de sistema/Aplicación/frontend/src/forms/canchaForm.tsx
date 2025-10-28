@@ -6,7 +6,7 @@ import { Textarea } from "../components/ui/textarea";
 import { AlertDialogHandle } from "../components/alert-dialog-component";
 import { toast } from "sonner";
 import { createCancha, updateCancha } from "../services/canchaService.ts";
-import { type CanchaType } from "../types.tsx";
+import { type CanchaType, type InstalacionesEnum, type SuperficiesEnum } from "../types.tsx";
 import { useAuth } from "../contexts/authContext.tsx";
 
 type CanchaFormProps = {
@@ -22,7 +22,7 @@ function InputField({ label, value, onChange, type = "text", ...rest }: any) {
             <label className="block text-sm font-medium">{label}</label>
             <Input
                 type={type}
-                value={value}
+                value={value ?? ""}
                 onChange={(e) => onChange(e.target.value)}
                 className="w-full border rounded p-2"
                 {...rest}
@@ -31,6 +31,17 @@ function InputField({ label, value, onChange, type = "text", ...rest }: any) {
     );
 }
 
+const INSTALACIONES_OPCIONES: InstalacionesEnum[] = [
+    "Iluminación",
+    "Tribunas",
+    "Camarines",
+    "Estacionamiento",
+    "Baños",
+    "Enfermería",
+];
+
+const SUPERFICIES_OPCIONES: SuperficiesEnum = ["Césped Natural", "Césped Sintético", "Tierra"];
+
 export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: CanchaFormProps) {
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -38,10 +49,12 @@ export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: Cancha
         cancha || {
             id_cancha: 0,
             nombre_cancha: "",
-            tipo_cancha: 1,
+            superficie_cancha: SUPERFICIES_OPCIONES[0],
             direccion: "",
-            disponibilidad: true,
             cancha_activa: true,
+            ultimo_mantenimiento: null,
+            observaciones: "",
+            instalaciones: [],
             fecha_creacion: new Date().toISOString(),
             fecha_modificacion: new Date().toISOString(),
         }
@@ -59,6 +72,13 @@ export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: Cancha
     };
 
     const handleSubmit = async () => {
+
+        const hoy = new Date().toISOString().split("T")[0];
+        if (form.ultimo_mantenimiento && form.ultimo_mantenimiento > hoy) {
+            toast.error("La fecha de la lesión no puede ser futura.");
+            return;
+        }
+
         setIsLoading(true);
         try {
             if (isEdit && form.id_cancha) {
@@ -87,7 +107,7 @@ export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: Cancha
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputField
-                    label="Nombre de la Cancha"
+                    label="Nombre de la Cancha *"
                     value={form.nombre_cancha}
                     onChange={(val) => setForm({ ...form, nombre_cancha: val })}
                     required
@@ -97,18 +117,22 @@ export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: Cancha
                 />
 
                 <div>
-                    <label className="block text-sm font-medium">Tipo de Superficie</label>
+                    <label className="block text-sm font-medium mb-1">Superficie de la Cancha *</label>
                     <Select
-                        value={String(form.tipo_cancha)}
-                        onValueChange={(val) => setForm({ ...form, tipo_cancha: parseInt(val) })}
+                        value={form.superficie_cancha}
+                        onValueChange={(val: string) =>
+                            setForm({ ...form, superficie_cancha: val as SuperficiesEnum })
+                        }
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Seleccione tipo" />
+                            <SelectValue placeholder="Seleccione una superficie" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="1">Césped Natural</SelectItem>
-                            <SelectItem value="2">Césped Sintético</SelectItem>
-                            <SelectItem value="3">Tierra</SelectItem>
+                            {SUPERFICIES_OPCIONES.map((sup) => (
+                                <SelectItem key={sup} value={sup}>
+                                    {sup}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
@@ -121,23 +145,47 @@ export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: Cancha
                     title="Máximo 300 caracteres"
                 />
 
-                <label className="flex items-center space-x-2">
-                    <input
-                        type="checkbox"
-                        checked={form.disponibilidad}
-                        onChange={(e) => setForm({ ...form, disponibilidad: e.target.checked })}
-                    />
-                    <span>Disponible</span>
-                </label>
+                <InputField
+                    label="Último Mantenimiento"
+                    type="date"
+                    max={new Date().toISOString().split("T")[0]}
+                    value={form.ultimo_mantenimiento || ""}
+                    onChange={(val) => setForm({ ...form, ultimo_mantenimiento: val })}
+                />
 
-                <label className="flex items-center space-x-2">
-                    <input
-                        type="checkbox"
-                        checked={form.cancha_activa}
-                        onChange={(e) => setForm({ ...form, cancha_activa: e.target.checked })}
+                <div>
+                    <label className="block text-sm font-medium mb-1">Instalaciones</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        {INSTALACIONES_OPCIONES.map((inst) => (
+                            <label key={inst} className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    checked={form.instalaciones.includes(inst)}
+                                    onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setForm({
+                                            ...form,
+                                            instalaciones: checked
+                                                ? [...form.instalaciones, inst]
+                                                : form.instalaciones.filter((i) => i !== inst),
+                                        });
+                                    }}
+                                />
+                                <span>{inst}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="md:col-span-3">
+                    <label className="block text-sm font-medium mb-1">Observaciones</label>
+                    <Textarea
+                        value={form.observaciones || ""}
+                        onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
+                        rows={3}
+                        placeholder="Notas sobre el estado o uso de la cancha..."
                     />
-                    <span>Activa</span>
-                </label>
+                </div>
             </div>
 
             <div className="flex justify-end space-x-2">
