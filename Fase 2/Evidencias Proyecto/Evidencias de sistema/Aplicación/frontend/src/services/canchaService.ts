@@ -21,3 +21,8 @@ export const deleteCancha = <T>(token: string, id: number): Promise<T> =>
     fetchAPI<T>(`/canchas/${id}/`, {
         method: "DELETE",
     }, token);
+
+export const reactivateCancha = <T>(token: string, id: number): Promise<T> =>
+    fetchAPI<T>(`/canchas/${id}/reactivate/`, {
+        method: "POST",
+    }, token);

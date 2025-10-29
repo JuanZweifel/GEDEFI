@@ -30,10 +30,30 @@ def update_cancha(db: Session, cancha_id: int, cancha_update: CanchaUpdate) -> C
     return db_cancha
 
 
-def delete_cancha(db: Session, cancha_id: int) -> bool:
+def delete_cancha(db: Session, cancha_id: int) -> str:
+    db_cancha = db.get(Cancha, cancha_id)
+    if not db_cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+
+    has_related_records = bool(db_cancha.partido or db_cancha.entrenamientos)
+
+    if has_related_records:
+        db_cancha.cancha_activa = False
+        db.commit()
+        db.refresh(db_cancha)
+        return "La cancha tenía registros asociados, se desactivó en lugar de eliminarse."
+    else:
+        db.delete(db_cancha)
+        db.commit()
+        return "Cancha eliminada correctamente."
+
+def reactivate_cancha(db: Session, cancha_id: int) -> Cancha | None:
     db_cancha = get_cancha(db, cancha_id)
     if not db_cancha:
-        return False
-    db.delete(db_cancha)
+        return None
+    if db_cancha.cancha_activa:
+        raise HTTPException(status_code=400, detail="La cancha ya está activa")
+    db_cancha.cancha_activa = True
     db.commit()
-    return True
+    db.refresh(db_cancha)
+    return db_cancha

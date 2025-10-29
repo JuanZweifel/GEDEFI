@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Input } from "../components/ui/input.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select.tsx';
 import { DialogHandle } from "../components/dialog-component.tsx";
 import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
 import { NavLink, useLocation, useNavigate, useParams } from 'react-router';
 import { Plus, Edit, Trash2, MapPin, RefreshCcw } from 'lucide-react';
 import { CanchaForm } from '../forms/canchaForm.tsx';
 import type { CanchaType } from '../types.tsx';
-import { deleteCancha, getCanchas } from '../services/canchaService.ts';
+import { deleteCancha, getCanchas, reactivateCancha } from '../services/canchaService.ts';
 import { toast } from "sonner";
 import { useAuth } from '../contexts/authContext.tsx';
 
@@ -18,6 +19,9 @@ export const CanchasModule: React.FC = () => {
   const [selectedField, setSelectedField] = useState<CanchaType | null>(null);
   const [isFetchingCanchas, setIsFetchingCanchas] = useState(false);
   const [canchas, setCanchas] = useState<CanchaType[]>([]);
+  const [filterNombre, setFilterNombre] = useState('');
+  const [filterSuperficie, setFilterSuperficie] = useState('');
+  const [filterActiva, setFilterActiva] = useState('');
   const { token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,11 +54,22 @@ export const CanchasModule: React.FC = () => {
   const handleDeleteCancha = async (id: number) => {
     try {
       const response = await deleteCancha(token, id);
-      toast.success(response?.detail || "Cancha eliminada correctamente");
-      setOpenSelected(null);
+      toast.success(response.detail);
       fetchCanchas();
-    } catch (error) {
-      toast.error(String(error));
+    } catch (error: any) {
+      toast.error("No se pudo eliminar la cancha");
+    } finally {
+      setOpenSelected(null);
+    }
+  };
+
+  const handleReactivateCancha = async (id: number) => {
+    try {
+      const response = await reactivateCancha(token, id);
+      toast.success(response?.detail || "Cancha reactivada correctamente");
+      fetchCanchas();
+    } catch (error: any) {
+      toast.error("No se pudo reactivar la cancha");
     }
   };
 
@@ -84,19 +99,24 @@ export const CanchasModule: React.FC = () => {
       toast.warning("ID de cancha inválido en la ruta.");
       navigate("/dashboard/canchas/");
     }
-  }, [params.id, canchas, isFetchingCanchas, navigate, isFieldEditRoute]);
+  }, [params.id_cancha, canchas, isFetchingCanchas, navigate, isFieldEditRoute]);
 
-  const getTipoCancha = (tipo: number) => {
-    switch (tipo) {
-      case 1: return "Césped Natural";
-      case 2: return "Césped Sintético";
-      case 3: return "Tierra";
-      default: return "Desconocido";
-    }
-  };
+  const filteredCanchas = canchas.filter((c) => {
+    const matchesNombre = c.nombre_cancha.toLowerCase().includes(filterNombre.toLowerCase());
+    const matchesSuperficie = filterSuperficie
+      ? c.superficie_cancha === filterSuperficie
+      : true;
+    const matchesActiva =
+      filterActiva === 'activa'
+        ? c.cancha_activa === true
+        : filterActiva === 'inactiva'
+          ? c.cancha_activa === false
+          : true;
+    return matchesNombre && matchesSuperficie && matchesActiva;
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" filteredCanchas>
       <div className="flex justify-between items-center">
         <h2>Administración de Canchas de Fútbol</h2>
         <div className="flex space-x-2">
@@ -118,14 +138,58 @@ export const CanchasModule: React.FC = () => {
         </div>
       </div>
 
+      <div className="flex justify-between mb-4 bg-white p-4 rounded-lg shadow border border-gray-200">
+        <Input
+          placeholder="Buscar por nombre de cancha..."
+          value={filterNombre}
+          onChange={(e) => setFilterNombre(e.target.value)}
+          className="w-64"
+        />
+
+        <div className="flex space-x-4">
+          <Select
+            value={filterSuperficie || ""}
+            onValueChange={(value: string) =>
+              setFilterSuperficie(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrar por superficie" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las superficies</SelectItem>
+              <SelectItem value="Césped Natural">Césped Natural</SelectItem>
+              <SelectItem value="Césped Sintético">Césped Sintético</SelectItem>
+              <SelectItem value="Tierra">Tierra</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filterActiva || ""}
+            onValueChange={(value: string) =>
+              setFilterActiva(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las canchas</SelectItem>
+              <SelectItem value="activa">Activas</SelectItem>
+              <SelectItem value="inactiva">Inactivas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {canchas.map((cancha) => (
+        {filteredCanchas.map((cancha) => (
           <Card key={cancha.id_cancha}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <CardTitle className="text-lg">{cancha.nombre_cancha}</CardTitle>
                 <div className="flex flex-col space-y-1">
-                  <Badge className={cancha.cancha_activa ? "bg-blue-500" : "bg-gray-400"}>
+                  <Badge className={cancha.cancha_activa ? "bg-blue-500" : "bg-yellow-500"}>
                     {cancha.cancha_activa ? "Activa" : "Inactiva"}
                   </Badge>
                 </div>
@@ -192,15 +256,25 @@ export const CanchasModule: React.FC = () => {
                     <Edit className="w-4 h-4 mr-1" /> Editar
                   </Button>
                 </NavLink>
-
-                <Button
-                  onClick={() => setOpenSelected(cancha.id_cancha)}
-                  variant="destructive"
-                  size="sm"
-                  className="flex-1"
-                >
-                  <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                </Button>
+                {cancha.cancha_activa ? (
+                  <Button
+                    onClick={() => setOpenSelected(cancha.id_cancha)}
+                    variant="destructive"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => handleReactivateCancha(cancha.id_cancha)}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-green-500 text-white hover:bg-green-500 hover:text-white"
+                  >
+                    Activar
+                  </Button>
+                )}
               </div>
 
               <AlertDialogHandle
