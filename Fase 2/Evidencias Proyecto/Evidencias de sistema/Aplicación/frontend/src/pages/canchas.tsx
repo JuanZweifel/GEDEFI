@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Input } from "../components/ui/input.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select.tsx';
 import { DialogHandle } from "../components/dialog-component.tsx";
 import { AlertDialogHandle } from "../components/alert-dialog-component.tsx";
 import { NavLink, useLocation, useNavigate, useParams } from 'react-router';
@@ -18,6 +19,9 @@ export const CanchasModule: React.FC = () => {
   const [selectedField, setSelectedField] = useState<CanchaType | null>(null);
   const [isFetchingCanchas, setIsFetchingCanchas] = useState(false);
   const [canchas, setCanchas] = useState<CanchaType[]>([]);
+  const [filterNombre, setFilterNombre] = useState('');
+  const [filterSuperficie, setFilterSuperficie] = useState('');
+  const [filterActiva, setFilterActiva] = useState('');
   const { token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -84,19 +88,24 @@ export const CanchasModule: React.FC = () => {
       toast.warning("ID de cancha inválido en la ruta.");
       navigate("/dashboard/canchas/");
     }
-  }, [params.id, canchas, isFetchingCanchas, navigate, isFieldEditRoute]);
+  }, [params.id_cancha, canchas, isFetchingCanchas, navigate, isFieldEditRoute]);
 
-  const getTipoCancha = (tipo: number) => {
-    switch (tipo) {
-      case 1: return "Césped Natural";
-      case 2: return "Césped Sintético";
-      case 3: return "Tierra";
-      default: return "Desconocido";
-    }
-  };
+  const filteredCanchas = canchas.filter((c) => {
+    const matchesNombre = c.nombre_cancha.toLowerCase().includes(filterNombre.toLowerCase());
+    const matchesSuperficie = filterSuperficie
+      ? c.superficie_cancha === filterSuperficie
+      : true;
+    const matchesActiva =
+      filterActiva === 'activa'
+        ? c.cancha_activa === true
+        : filterActiva === 'inactiva'
+          ? c.cancha_activa === false
+          : true;
+    return matchesNombre && matchesSuperficie && matchesActiva;
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" filteredCanchas>
       <div className="flex justify-between items-center">
         <h2>Administración de Canchas de Fútbol</h2>
         <div className="flex space-x-2">
@@ -118,8 +127,52 @@ export const CanchasModule: React.FC = () => {
         </div>
       </div>
 
+      <div className="flex justify-between mb-4 bg-white p-4 rounded-lg shadow border border-gray-200">
+        <Input
+          placeholder="Buscar por nombre de cancha..."
+          value={filterNombre}
+          onChange={(e) => setFilterNombre(e.target.value)}
+          className="w-64"
+        />
+
+        <div className="flex space-x-4">
+          <Select
+            value={filterSuperficie || ""}
+            onValueChange={(value: string) =>
+              setFilterSuperficie(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrar por superficie" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las superficies</SelectItem>
+              <SelectItem value="Césped Natural">Césped Natural</SelectItem>
+              <SelectItem value="Césped Sintético">Césped Sintético</SelectItem>
+              <SelectItem value="Tierra">Tierra</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filterActiva || ""}
+            onValueChange={(value: string) =>
+              setFilterActiva(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las canchas</SelectItem>
+              <SelectItem value="activa">Activas</SelectItem>
+              <SelectItem value="inactiva">Inactivas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {canchas.map((cancha) => (
+        {filteredCanchas.map((cancha) => (
           <Card key={cancha.id_cancha}>
             <CardHeader>
               <div className="flex items-start justify-between">
