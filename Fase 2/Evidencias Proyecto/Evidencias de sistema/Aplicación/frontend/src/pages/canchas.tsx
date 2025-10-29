@@ -10,7 +10,7 @@ import { NavLink, useLocation, useNavigate, useParams } from 'react-router';
 import { Plus, Edit, Trash2, MapPin, RefreshCcw } from 'lucide-react';
 import { CanchaForm } from '../forms/canchaForm.tsx';
 import type { CanchaType } from '../types.tsx';
-import { deleteCancha, getCanchas } from '../services/canchaService.ts';
+import { deleteCancha, getCanchas, reactivateCancha } from '../services/canchaService.ts';
 import { toast } from "sonner";
 import { useAuth } from '../contexts/authContext.tsx';
 
@@ -54,11 +54,22 @@ export const CanchasModule: React.FC = () => {
   const handleDeleteCancha = async (id: number) => {
     try {
       const response = await deleteCancha(token, id);
-      toast.success(response?.detail || "Cancha eliminada correctamente");
-      setOpenSelected(null);
+      toast.success(response.detail);
       fetchCanchas();
-    } catch (error) {
-      toast.error(String(error));
+    } catch (error: any) {
+      toast.error("No se pudo eliminar la cancha");
+    } finally {
+      setOpenSelected(null);
+    }
+  };
+
+  const handleReactivateCancha = async (id: number) => {
+    try {
+      const response = await reactivateCancha(token, id);
+      toast.success(response?.detail || "Cancha reactivada correctamente");
+      fetchCanchas();
+    } catch (error: any) {
+      toast.error("No se pudo reactivar la cancha");
     }
   };
 
@@ -178,7 +189,7 @@ export const CanchasModule: React.FC = () => {
               <div className="flex items-start justify-between">
                 <CardTitle className="text-lg">{cancha.nombre_cancha}</CardTitle>
                 <div className="flex flex-col space-y-1">
-                  <Badge className={cancha.cancha_activa ? "bg-blue-500" : "bg-gray-400"}>
+                  <Badge className={cancha.cancha_activa ? "bg-blue-500" : "bg-yellow-500"}>
                     {cancha.cancha_activa ? "Activa" : "Inactiva"}
                   </Badge>
                 </div>
@@ -245,15 +256,25 @@ export const CanchasModule: React.FC = () => {
                     <Edit className="w-4 h-4 mr-1" /> Editar
                   </Button>
                 </NavLink>
-
-                <Button
-                  onClick={() => setOpenSelected(cancha.id_cancha)}
-                  variant="destructive"
-                  size="sm"
-                  className="flex-1"
-                >
-                  <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                </Button>
+                {cancha.cancha_activa ? (
+                  <Button
+                    onClick={() => setOpenSelected(cancha.id_cancha)}
+                    variant="destructive"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => handleReactivateCancha(cancha.id_cancha)}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-green-500 text-white hover:bg-green-500 hover:text-white"
+                  >
+                    Activar
+                  </Button>
+                )}
               </div>
 
               <AlertDialogHandle

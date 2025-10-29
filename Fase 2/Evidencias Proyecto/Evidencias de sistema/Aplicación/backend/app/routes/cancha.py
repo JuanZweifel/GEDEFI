@@ -32,8 +32,20 @@ def update_cancha(cancha_id: int, cancha: schemas.CanchaUpdate, db: Session = De
     return db_cancha
 
 # Eliminar cancha
-@router.delete("/{cancha_id}", status_code=204)
+@router.delete("/{cancha_id}", status_code=200)
 def delete_cancha(cancha_id: int, db: Session = Depends(get_db)):
-    deleted = services.delete_cancha(db, cancha_id)
-    if not deleted:
+    try:
+        message = services.delete_cancha(db, cancha_id)
+        return {"detail": message}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
         raise HTTPException(status_code=404, detail="Cancha not found")
+
+# Reactivar cancha
+@router.post("/{cancha_id}/reactivate", status_code=200)
+def reactivate_cancha(cancha_id: int, db: Session = Depends(get_db)):
+    db_cancha = services.reactivate_cancha(db, cancha_id)
+    if not db_cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    return {"detail": "Cancha reactivada correctamente"}
