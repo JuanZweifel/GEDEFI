@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models import Fas  
 from app.schemas import FASCreate, FASUpdate
-
+from datetime import datetime
 
 def get_fas(db: Session, fas_id: int) -> Fas | None:
     """Obtiene un registro FAS por ID."""
@@ -14,20 +14,35 @@ def get_fondos_fas(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Fas).offset(skip).limit(limit).all()
 
 
+
 def create_fas(db: Session, fas_data: FASCreate) -> Fas:
-    """Crea un nuevo fondo FAS."""
-    existing_fas = db.query(Fas).filter(Fas.anio_fas == fas_data.anio_fas, Fas.activo == True).first()
+    """Crea un nuevo fondo FAS, limitado a un registro por año (año actual)."""
+    
+    # Obtener el año actual del sistema
+    anio_actual = datetime.now().year
+
+
+    # Validar si ya existe un FAS para el año actual
+    existing_fas = db.query(Fas).filter(Fas.anio_fas == anio_actual).first()
     if existing_fas:
         raise HTTPException(
             status_code=400,
-            detail=f"Ya existe un FAS activo para el año {fas_data.anio_fas}."
+            detail=f"Ya existe un FAS registrado para el año {anio_actual}."
         )
 
-    db_fas = Fas(**fas_data.dict())
+    # Asignar el monto disponible igual al monto inicial
+    fas_dict = fas_data.dict()
+    fas_dict["monto_disponible"] = fas_dict["monto_inicial"]
+    fas_dict["anio_fas"] = anio_actual
+
+    db_fas = Fas(**fas_dict)
     db.add(db_fas)
     db.commit()
     db.refresh(db_fas)
+
     return db_fas
+
+
 
 
 def update_fas(db: Session, fas_id: int, fas_update: FASUpdate) -> Fas | None:

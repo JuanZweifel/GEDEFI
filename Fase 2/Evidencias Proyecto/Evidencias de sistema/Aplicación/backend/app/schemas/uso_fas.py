@@ -4,9 +4,7 @@ from typing import Optional, List
 from .jugador import JugadorBase
 from .fas import FASRead
 
-# -------------------------------------------------------
-# 🧱 UsoFAS Base
-# -------------------------------------------------------
+
 class UsoFASBase(BaseModel):
     id_fas: int = Field(..., description="Identificador del FAS al que pertenece el uso.")
     rut_jugador: str = Field(..., min_length=9, max_length=10, description="RUT del jugador beneficiado.")
