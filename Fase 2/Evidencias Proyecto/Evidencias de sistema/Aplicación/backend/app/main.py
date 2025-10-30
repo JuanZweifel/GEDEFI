@@ -28,6 +28,8 @@ from app.routes import (
     permiso,
     auth,
     calendario,
+    fas,
+    uso_fas
 )
 from app.utils.trigger import create_trigger
 from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo, insertar_clubs_demo
@@ -89,6 +91,8 @@ app.include_router(serie.router)
 app.include_router(auth.router)
 app.include_router(limpieza_excel_jugadores.router)
 app.include_router(calendario.router)
+app.include_router(fas.router)
+app.include_router(uso_fas.router)
 
 app.mount("/images", StaticFiles(directory="../images"), name="images") # Se debe modificar, esto enruta las imagenes del backend como rutas para el frontend
 
