@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 import { getAuditorias, getResumenAuditorias } from '../services/auditoriaServices';
-import { ResumenAuditoriaType, type AuditoriaType } from '../types';
+import type  { ResumenAuditoriaType, AuditoriaType } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/authContext';
 import { Button } from '../components/ui/button';
