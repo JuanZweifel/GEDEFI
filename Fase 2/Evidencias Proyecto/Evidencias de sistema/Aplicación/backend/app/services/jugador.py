@@ -3,7 +3,7 @@ from app.models import Jugador
 from app.schemas import JugadorCreate, JugadorUpdate
 from fastapi import HTTPException
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 def get_jugador(db: Session, rut_jugador: str) -> Jugador | None:
     return db.query(Jugador).filter(Jugador.rut_jugador == rut_jugador).first()
 

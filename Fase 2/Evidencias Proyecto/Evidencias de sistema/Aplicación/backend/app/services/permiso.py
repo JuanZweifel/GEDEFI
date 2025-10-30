@@ -3,7 +3,7 @@ from app.models import permiso
 from app.schemas import PermisoCreate, PermisoUpdate
 from app.utils.decorators import handle_db_exceptions
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 @handle_db_exceptions
 def get_permiso(db: Session, id_permiso: int) -> permiso.Permiso | None:
     return (

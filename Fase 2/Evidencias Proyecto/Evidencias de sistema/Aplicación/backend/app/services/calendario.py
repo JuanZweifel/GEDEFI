@@ -5,6 +5,7 @@ from typing import List
 from datetime import datetime, timedelta, date, time
 from app.models import Partido, Cancha, Club, Serie
 from app.models.partido import EstadoPartidoEnum, TipoPartidoEnum
+from app.utils.decorators import handle_audit
 
 SERIES_SABADO = ["Segunda Infantil", "Primera Infantil", "Juveniles", "Super Seniors"]
 SERIES_DOMINGO = ["Segunda Adulta", "Primera Adulta", "Seniors", "Serie Honor"]
@@ -86,7 +87,7 @@ def generate_year_fixture(db, total_jornadas=17):
 
     return fixture
 
-
+# TODO: SE DEBE MANEJAR DE MANERA INDIVIDUAL SU REGISTRO DE AUDITORIA
 def generate_calendar_for_fixture(
     db, fixture: List[dict], start_date: date
 ) -> List[Partido]:
@@ -131,7 +132,7 @@ def generate_calendar_for_fixture(
                         fecha_partido=saturday_date,
                         hora_ini_partido=time(8, 0),
                         hora_fin_partido=None,
-                        id_cancha=0,  # "Sin asignar"
+                        #id_cancha=None,  # "Sin asignar"
                         id_serie_local=hs.id_serie,
                         id_serie_visitante=as_.id_serie,
                         # TODO: Recibir el tipo de partido como parametro
@@ -150,7 +151,7 @@ def generate_calendar_for_fixture(
                         fecha_partido=sunday_date,
                         hora_ini_partido=time(8, 0),
                         hora_fin_partido=None,
-                        id_cancha=0,
+                        #id_cancha=0,
                         id_serie_local=hs.id_serie,
                         id_serie_visitante=as_.id_serie,
                         # TODO: Recibir el tipo de partido como parametro

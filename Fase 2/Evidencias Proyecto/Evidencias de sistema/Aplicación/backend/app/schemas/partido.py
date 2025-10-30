@@ -13,7 +13,7 @@ class PartidoBase(BaseModel):
     estado_partido: EstadoPartidoEnum = EstadoPartidoEnum.PROGRAMADO
     tipo_partido: TipoPartidoEnum = TipoPartidoEnum.CAMPEONATO
     observaciones: str
-    id_cancha: int
+    id_cancha: Optional[int] = None
     id_serie_local: int
     id_serie_visitante: int
 

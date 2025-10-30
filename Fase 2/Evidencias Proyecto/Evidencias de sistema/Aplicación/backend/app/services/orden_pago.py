@@ -13,18 +13,16 @@ from app.schemas import (
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, Depends, status
 
-from app.utils.decorators import handle_db_exceptions
+from app.utils.decorators import handle_audit, handle_db_exceptions
 from app.security import get_current_user
 from datetime import datetime, timedelta, timezone
 from calendar import monthrange
-
 
 @handle_db_exceptions
 def get_orden_pago(
     db: Session, id_orden: str, current_user: Usuario = Depends(get_current_user)
 ) -> OrdenPago | None:
     return db.query(OrdenPago).filter(OrdenPago.id_orden_pago == id_orden).first()
-
 
 @handle_db_exceptions
 def get_ordenes_pago(db: Session, current_user: dict):
@@ -81,7 +79,7 @@ def get_ordenes_pago(db: Session, current_user: dict):
     return ordenes_salida
 
 
-@handle_db_exceptions
+@handle_audit("CREATE", "OrdenPago")
 def create_orden_pago(
     db: Session, orden_pago: OrdenPagoCreate, current_user: dict
 ) -> OrdenPago:
@@ -119,7 +117,7 @@ def create_orden_pago(
         ) from e
 
 
-@handle_db_exceptions
+@handle_audit("DELETE", "OrdenPago")
 def delete_orden_pago(
     db: Session, id_orden: str, current_user: dict
 ) -> bool:
@@ -134,7 +132,6 @@ def delete_orden_pago(
     db.delete(db_orden)
     db.commit()
     return True
-
 
 @handle_db_exceptions
 def get_ingresos(db: Session) -> IngresosMes:
@@ -253,7 +250,7 @@ def get_egresos(db: Session) -> EgresosMes:
     return EgresosMes(total_egresos=total_str, variacion=variacion)
 
 
-@handle_db_exceptions
+@handle_audit("UPDATE", "OrdenPago")
 def cancel_orden(
     db: Session, id_orden_pago: str, current_user: dict
 ) -> EstadoOrdenEnum:
@@ -289,7 +286,7 @@ def cancel_orden(
     return db_orden.estado_orden
 
 
-@handle_db_exceptions
+@handle_audit("UPDATE", "OrdenPago")
 def pay_orden(db: Session, id_orden_pago: str, orden: OrdenPagoPay, current_user: dict) -> EstadoOrdenEnum:
 
     if not current_user.get("admin"):
@@ -327,7 +324,7 @@ def pay_orden(db: Session, id_orden_pago: str, orden: OrdenPagoPay, current_user
     db.refresh(db_orden)
     return db_orden.estado_orden
 
-@handle_db_exceptions
+@handle_audit("UPDATE", "OrdenPago")
 def pending_orden(db: Session, id_orden_pago: str, current_user: dict) -> bool:
     if not current_user.get("admin"):
         raise HTTPException(

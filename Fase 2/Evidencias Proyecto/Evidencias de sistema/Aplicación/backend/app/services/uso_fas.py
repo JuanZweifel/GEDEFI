@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from app.models import UsoFas, Fas, Jugador
 from app.schemas import UsoFASCreate, UsoFASUpdate
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 def get_uso_fas(db: Session, uso_id: int) -> UsoFas | None:
     """Obtiene un registro de uso FAS por ID."""
     return db.query(UsoFas).filter(UsoFas.id_uso_fas == uso_id).first()

@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from app.models import Fas  
 from app.schemas import FASCreate, FASUpdate
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 def get_fas(db: Session, fas_id: int) -> Fas | None:
     """Obtiene un registro FAS por ID."""
     return db.query(Fas).filter(Fas.id_fas == fas_id).first()
