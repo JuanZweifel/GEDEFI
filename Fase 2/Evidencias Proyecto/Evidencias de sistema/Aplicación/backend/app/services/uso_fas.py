@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models import UsoFas, Fas, Jugador
-from app.schemas import UsoFASCreate, UsoFASUpdate
+from app.schemas import UsoFasCreate, UsoFasUpdate
 
 
 def get_uso_fas(db: Session, uso_id: int) -> UsoFas | None:
@@ -14,7 +14,7 @@ def get_usos_fas(db: Session, skip: int = 0, limit: int = 100):
     return db.query(UsoFas).offset(skip).limit(limit).all()
 
 
-def create_uso_fas(db: Session, uso_data: UsoFASCreate) -> UsoFas:
+def create_uso_fas(db: Session, uso_data: UsoFasCreate) -> UsoFas:
     """Crea un nuevo registro de uso de fondo FAS."""
     # Verificar si el jugador existe
     jugador = db.query(Jugador).filter(Jugador.rut_jugador == uso_data.rut_jugador).first()
@@ -22,7 +22,7 @@ def create_uso_fas(db: Session, uso_data: UsoFASCreate) -> UsoFas:
         raise HTTPException(status_code=404, detail="No se encontró un jugador con el RUT ingresado.")
 
     # Verificar si el FAS existe y está activo
-    fas = db.query(Fas).filter(Fas.id_fas == uso_data.id_fas, Fas.activo == True).first()
+    fas = db.query(Fas).filter(Fas.id_fas == uso_data.id_fas).first()
     if not fas:
         raise HTTPException(status_code=404, detail="No se encontró un fondo FAS activo con el ID ingresado.")
 
@@ -45,7 +45,7 @@ def create_uso_fas(db: Session, uso_data: UsoFASCreate) -> UsoFas:
     return db_uso
 
 
-def update_uso_fas(db: Session, uso_id: int, uso_update: UsoFASUpdate) -> UsoFas | None:
+def update_uso_fas(db: Session, uso_id: int, uso_update: UsoFasUpdate) -> UsoFas | None:
     """Actualiza un registro de uso FAS."""
     db_uso = get_uso_fas(db, uso_id)
     if not db_uso:

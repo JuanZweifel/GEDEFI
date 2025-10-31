@@ -13,7 +13,7 @@ type UsoFas = {
     id_uso_fas: number;
     id_fas: number;
     rut_jugador: string;
-    monto_utilizado: number;
+    monto_usado: number;
     fecha_uso: string;
     descripcion?: string;
 };
@@ -56,13 +56,14 @@ export const DialogAddUsoFas: React.FC<DialogAddUsoFasProps> = ({ fasList, refre
 
     const [id_fas, setIdFas] = useState<number | "">("")
     const [rutJugador, setRutJugador] = useState("");
-    const [montoUtilizado, setMontoUtilizado] = useState<number | "">("");
+    const [montoUsado, setMontoUsado] = useState<number | "">("");
     const [descripcion, setDescripcion] = useState("");
 
     const { token } = useAuth();
 
     const currentYear = new Date().getFullYear();
     const fasActual = fasList?.find(f => f.anio_fas === currentYear);
+
 
     const handleSave = async () => {
         setIsLoading(true);
@@ -71,18 +72,18 @@ export const DialogAddUsoFas: React.FC<DialogAddUsoFasProps> = ({ fasList, refre
                 {
                     id_fas: fasActual?.id_fas,
                     rut_jugador: rutJugador.trim(),
-                    monto_utilizado: Number(montoUtilizado),
+                    monto_usado: Number(montoUsado),
                     descripcion,
                     fecha_uso: new Date().toISOString().split("T")[0],
                 },
-                token
+                token!
             );
             toast.success("Uso de FAS registrado correctamente");
             await refreshUsosFas();
             setIsOpen(false);
             setIdFas("");
             setRutJugador("");
-            setMontoUtilizado("");
+            setMontoUsado("");
             setDescripcion("");
             
         } catch (error: any) {
@@ -123,8 +124,8 @@ export const DialogAddUsoFas: React.FC<DialogAddUsoFasProps> = ({ fasList, refre
                             <Input
                                 type="number"
                                 min="0"
-                                value={montoUtilizado}
-                                onChange={(e) => setMontoUtilizado(Number(e.target.value))}
+                                value={montoUsado}
+                                onChange={(e) => setMontoUsado(Number(e.target.value))}
                                 required
                             />
                         </div>
@@ -183,7 +184,7 @@ export const DialogViewUsoFas: React.FC<DialogViewUsoFasProps> = ({ uso }) => {
 
                 <div className="space-y-3">
                     <div><label>RUT Jugador:</label><Input value={uso.rut_jugador} disabled /></div>
-                    <div><label>Monto Utilizado:</label><Input value={`$${uso.monto_utilizado.toLocaleString("es-CL")}`} disabled /></div>
+                    <div><label>Monto Utilizado:</label><Input value={`$${uso.monto_usado.toLocaleString("es-CL")}`} disabled /></div>
                     <div><label>Fecha de Uso:</label><Input value={new Date(uso.fecha_uso).toLocaleDateString("es-CL")} disabled /></div>
                     <div><label>Descripción:</label><Input value={uso.descripcion || "-"} disabled /></div>
 
@@ -202,7 +203,7 @@ export const DialogEditUsoFas: React.FC<DialogEditUsoFasProps> = ({ uso, refresh
     const [isLoading, setIsLoading] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
-    const [montoUtilizado, setMontoUtilizado] = useState(uso.monto_utilizado);
+    const [montoUtilizado, setMontoUtilizado] = useState(uso.monto_usado);
     const [descripcion, setDescripcion] = useState(uso.descripcion || "");
 
     const handleSave = async () => {

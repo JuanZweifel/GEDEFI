@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import Jugador
 from app.schemas import JugadorCreate, JugadorUpdate
 from fastapi import HTTPException
-
+from sqlalchemy.exc import IntegrityError
 
 def get_jugador(db: Session, rut_jugador: str) -> Jugador | None:
     return db.query(Jugador).filter(Jugador.rut_jugador == rut_jugador).first()
@@ -54,9 +54,28 @@ def update_jugador(
 
 
 def delete_jugador(db: Session, rut_jugador: str) -> bool:
+    """Elimina un jugador. Si tiene registros asociados, lanza un error controlado."""
     db_jugador = get_jugador(db, rut_jugador)
     if not db_jugador:
         return False
-    db.delete(db_jugador)
-    db.commit()
-    return True
+
+    try:
+        db.delete(db_jugador)
+        db.commit()
+        return True
+
+    except IntegrityError:
+        db.rollback()  # 👈 Revertimos la transacción
+        # Lanzamos un error manejado con mensaje claro para el frontend
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar el jugador porque tiene registros asociados (por ejemplo: fichas, asistencias o usos de FAS)."
+        )
+
+    except Exception as e:
+        db.rollback()
+        # Cualquier otro error no previsto
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno del servidor: {str(e)}"
+        )

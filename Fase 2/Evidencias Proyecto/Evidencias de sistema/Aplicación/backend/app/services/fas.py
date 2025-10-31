@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.models import Fas  
-from app.schemas import FASCreate, FASUpdate
+from app.models import Fas, UsoFas  
+from app.schemas import FasCreate, FasUpdate
 from datetime import datetime
 
 def get_fas(db: Session, fas_id: int) -> Fas | None:
@@ -15,7 +15,7 @@ def get_fondos_fas(db: Session, skip: int = 0, limit: int = 100):
 
 
 
-def create_fas(db: Session, fas_data: FASCreate) -> Fas:
+def create_fas(db: Session, fas_data: FasCreate) -> Fas:
     """Crea un nuevo fondo FAS, limitado a un registro por año (año actual)."""
     
     # Obtener el año actual del sistema
@@ -45,12 +45,21 @@ def create_fas(db: Session, fas_data: FASCreate) -> Fas:
 
 
 
-def update_fas(db: Session, fas_id: int, fas_update: FASUpdate) -> Fas | None:
-    """Actualiza un fondo FAS existente."""
-    db_fas = get_fas(db, fas_id)
+def update_fas(db: Session, fas_id: int, fas_update: FasUpdate) -> Fas | None:
+    """Actualiza un fondo FAS existente, solo si no tiene usos registrados."""
+    db_fas = db.query(Fas).filter(Fas.id_fas == fas_id).first()
     if not db_fas:
-        return None
+        raise HTTPException(status_code=404, detail="Fondo FAS no encontrado")
 
+    # 🔹 Verificar si este fondo ya tiene algún uso asociado
+    usos_existentes = db.query(UsoFas).filter(UsoFas.id_fas == fas_id).count()
+    if usos_existentes > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede modificar un FAS que ya tiene usos registrados."
+        )
+
+    # 🔹 Actualizar solo los campos enviados
     for key, value in fas_update.dict(exclude_unset=True).items():
         setattr(db_fas, key, value)
 
@@ -60,11 +69,19 @@ def update_fas(db: Session, fas_id: int, fas_update: FASUpdate) -> Fas | None:
 
 
 def delete_fas(db: Session, fas_id: int) -> bool:
-    """Elimina un fondo FAS por ID."""
-    db_fas = get_fas(db, fas_id)
-    if not db_fas:
-        return False
+    """Elimina un fondo FAS solo si no tiene usos asociados."""
+    fas = db.query(Fas).filter(Fas.id_fas == fas_id).first()
+    if not fas:
+        raise HTTPException(status_code=404, detail="Fondo FAS no encontrado")
 
-    db.delete(db_fas)
+    # Verificar si tiene usos asociados
+    usos_asociados = db.query(UsoFas).filter(UsoFas.id_fas == fas_id).count()
+    if usos_asociados > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar un FAS que tiene usos registrados."
+        )
+
+    db.delete(fas)
     db.commit()
     return True

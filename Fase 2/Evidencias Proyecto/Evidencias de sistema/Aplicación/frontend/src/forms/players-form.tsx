@@ -913,23 +913,29 @@ export const DialogViewJugador: React.FC<DialogViewJugadorProps> = ({
 
 
 //aqui comienza la logica de eliminar un jugador
-export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({ rutJugador, primerNombre, primerApellido, refreshJugadores }) => {
+export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({
+    rutJugador,
+    primerNombre,
+    primerApellido,
+    refreshJugadores,
+}) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleDelete = async () => {
         try {
-            toast.success("El jugador fue eliminado correctamente!");
             setIsLoading(true);
             await deleteJugador(rutJugador);
             await refreshJugadores();
-        } catch (error) {
+            toast.success(`Jugador ${primerNombre} ${primerApellido} eliminado correctamente`);
+            setIsDialogOpen(false);
+        } catch (error: any) {
             console.error("❌ Error al eliminar jugador:", error);
+            toast.error(error.message || "No se pudo eliminar el jugador. Intenta nuevamente.");
         } finally {
             setIsLoading(false);
         }
     };
-
     return (
         <>
             <Button

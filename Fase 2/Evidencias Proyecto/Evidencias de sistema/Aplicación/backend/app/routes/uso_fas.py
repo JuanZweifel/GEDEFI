@@ -2,15 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
-from app.models import DetalleClubJugador
+from app.models import DetalleClubJugador, UsoFas
 from app.security import get_current_user
 
 router = APIRouter(prefix="/uso_fas", tags=["Usos del Fondo FAS"])
 
 
-@router.post("/", response_model=schemas.UsoFASRead)
+@router.post("/", response_model=schemas.UsoFasRead)
 def create_uso_fas(
-    uso_fas: schemas.UsoFASCreate,
+    uso_fas: schemas.UsoFasCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -18,22 +18,26 @@ def create_uso_fas(
     Registra un nuevo uso del fondo FAS por un jugador.
     """
     # Validar que el jugador pertenezca al mismo club del usuario
-    detalle = db.query(DetalleClubJugador).filter(
-        DetalleClubJugador.rut_jugador == uso_fas.rut_jugador,
-        DetalleClubJugador.id_club == current_user["id_club"]
-    ).first()
+    detalle = (
+        db.query(DetalleClubJugador)
+        .filter(
+            DetalleClubJugador.rut_jugador == uso_fas.rut_jugador,
+            DetalleClubJugador.id_club == current_user["id_club"],
+        )
+        .first()
+    )
 
     if not detalle:
         raise HTTPException(
             status_code=403,
-            detail="No puedes registrar usos del FAS para jugadores de otro club."
+            detail="No puedes registrar usos del FAS para jugadores de otro club.",
         )
 
     nuevo_uso = services.create_uso_fas(db, uso_fas)
     return nuevo_uso
 
 
-@router.get("/{id_uso_fas}", response_model=schemas.UsoFASWithDetails)
+@router.get("/{id_uso_fas}", response_model=schemas.UsoFasWithDetails)
 def read_uso_fas(id_uso_fas: int, db: Session = Depends(get_db)):
     """
     Obtiene un uso del FAS por su ID.
@@ -44,7 +48,7 @@ def read_uso_fas(id_uso_fas: int, db: Session = Depends(get_db)):
     return db_uso
 
 
-@router.get("/", response_model=list[schemas.UsoFASWithDetails])
+@router.get("/", response_model=list[schemas.UsoFasWithDetails])
 def read_usos_fas(
     skip: int = 0,
     limit: int = 100,
@@ -52,9 +56,21 @@ def read_usos_fas(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Lista todos los usos del FAS de los jugadores del club del usuario logeado.
+    Lista los usos del FAS.
+    - Si el usuario pertenece a un club, solo se muestran los usos de jugadores de ese club.
+    - Si el usuario no tiene club (por ejemplo, es administrador o asociación), se muestran todos los usos.
     """
-    # Obtener los RUTs de los jugadores del club del usuario
+
+    # 🔹 Caso 1: Usuario sin club → devolver todos los usos
+    if not current_user.get("id_club"):
+        return (
+            db.query(UsoFas)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    # 🔹 Caso 2: Usuario con club → filtrar por jugadores de ese club
     ruts_club = (
         db.query(DetalleClubJugador.rut_jugador)
         .filter(DetalleClubJugador.id_club == current_user["id_club"])
@@ -63,8 +79,8 @@ def read_usos_fas(
     ruts_club = [r[0] for r in ruts_club]
 
     usos = (
-        db.query(schemas.UsoFAS.model_config["orm_model"])
-        .filter(schemas.UsoFAS.model_config["orm_model"].rut_jugador.in_(ruts_club))
+        db.query(UsoFas)
+        .filter(UsoFas.rut_jugador.in_(ruts_club))
         .offset(skip)
         .limit(limit)
         .all()
@@ -73,10 +89,10 @@ def read_usos_fas(
     return usos
 
 
-@router.put("/{id_uso_fas}", response_model=schemas.UsoFASRead)
+@router.put("/{id_uso_fas}", response_model=schemas.UsoFasRead)
 def update_uso_fas(
     id_uso_fas: int,
-    uso_update: schemas.UsoFASUpdate,
+    uso_update: schemas.UsoFasUpdate,
     db: Session = Depends(get_db),
 ):
     """
@@ -96,4 +112,3 @@ def delete_uso_fas(id_uso_fas: int, db: Session = Depends(get_db)):
     deleted = services.delete_uso_fas(db, id_uso_fas)
     if not deleted:
         raise HTTPException(status_code=404, detail="Uso FAS no encontrado")
-    

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
@@ -237,6 +237,19 @@ export const DialogEditFas: React.FC<DialogEditFasProps> = ({ fas, refreshFas })
     const [montoDisponible, setMontoDisponible] = useState(fas.monto_disponible);
     const [descripcion, setDescripcion] = useState(fas.descripcion || "");
 
+    // 🔹 Función para restaurar los valores originales del FAS
+    const resetForm = () => {
+        setAnioFas(fas.anio_fas);
+        setMontoInicial(fas.monto_inicial);
+        setMontoDisponible(fas.monto_disponible);
+        setDescripcion(fas.descripcion || "");
+    };
+
+    // 🔹 Cada vez que se abra el modal o cambie el FAS, se resetea el formulario
+    useEffect(() => {
+        if (isOpen) resetForm();
+    }, [isOpen, fas]);
+
     const handleSave = async () => {
         setIsLoading(true);
         try {
@@ -246,22 +259,20 @@ export const DialogEditFas: React.FC<DialogEditFasProps> = ({ fas, refreshFas })
                 monto_disponible: Number(montoInicial),
                 descripcion,
             });
+
             toast.success("Fondo FAS actualizado correctamente");
             await refreshFas();
-            setIsOpen(false);
+            setIsOpen(false); // 🔹 Cierra el modal al guardar correctamente
         } catch (error: any) {
             console.error("Error al actualizar FAS:", error);
             toast.error(error.message || "Error al actualizar el Fondo FAS");
+
+            // 🔹 Si el backend rechaza la edición, restaurar los valores originales
+            resetForm();
+            await refreshFas();
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const resetForm = () => {
-        setAnioFas(fas.anio_fas);
-        setMontoInicial(fas.monto_inicial);
-        setMontoDisponible(fas.monto_disponible);
-        setDescripcion(fas.descripcion || "");
     };
 
     return (
@@ -283,7 +294,6 @@ export const DialogEditFas: React.FC<DialogEditFasProps> = ({ fas, refreshFas })
                         }}
                         className="space-y-4"
                     >
-
                         <div className="flex flex-col">
                             <label>Monto Inicial *</label>
                             <Input
@@ -308,7 +318,7 @@ export const DialogEditFas: React.FC<DialogEditFasProps> = ({ fas, refreshFas })
                                 variant="outline"
                                 type="button"
                                 onClick={() => {
-                                    resetForm();
+                                    resetForm(); // 🔹 Vuelve a los valores originales
                                     setIsOpen(false);
                                 }}
                             >
@@ -332,6 +342,7 @@ export const DialogEditFas: React.FC<DialogEditFasProps> = ({ fas, refreshFas })
                 onConfirm={async () => {
                     setIsConfirmDialogOpen(false);
                     await handleSave();
+                    setTimeout(() => setIsOpen(false), 10);
                 }}
             />
         </>
@@ -360,7 +371,7 @@ export const ButtonDeleteFas: React.FC<ButtonDeleteFasProps> = ({
             if (error.status === 404) {
                 toast.error("El fondo FAS no existe o ya fue eliminado.");
             } else if (error.status === 400) {
-                toast.error("No se puede eliminar este FAS.");
+                toast.error("No se puede eliminar un FAS que ya tiene usos.");
             } else {
                 toast.error(error.message || "Error al eliminar el Fondo FAS.");
             }

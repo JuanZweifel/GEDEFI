@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
+import { useLocation, useNavigate } from "react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
-import { Eye, Edit, Plus, DollarSign, Calendar, User, ClipboardList } from "lucide-react";
+import { DollarSign, Calendar, User } from "lucide-react";
 import { toast } from "sonner";
-import { DialogHandle } from "../components/dialog-component";
 import { useAuth } from "../contexts/authContext";
-
 import { getFas, getUsosFas } from "../services/fasServices";
 import { DialogAddFas, DialogViewFas, DialogEditFas, ButtonDeleteFas } from "../forms/fas-form";
 import { DialogAddUsoFas } from "../forms/usosFasForm";
@@ -38,15 +34,27 @@ type UsoFas = {
 };
 
 export const FasModule: React.FC = () => {
-    const [activeTab, setActiveTab] = useState("fondos");
+    const navigate = useNavigate();
+    const location = useLocation();
+
+
+    const params = new URLSearchParams(location.search);
+    const initialTab = params.get("tab") || "fondos";
+
+    // 🔹 Estado con valor inicial dinámico
+    const [activeTab, setActiveTab] = useState(initialTab);
+
     const [fasList, setFasList] = useState<Fas[]>([]);
     const [usosList, setUsosList] = useState<UsoFas[]>([]);
     const [isFetching, setIsFetching] = useState(true);
 
     const { token } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
 
+
+    const handleTabChange = (value: string) => {
+        setActiveTab(value);
+        navigate(`?tab=${value}`, { replace: true });
+    };
 
     const currentYear = new Date().getFullYear();
     const fasDelAnioActual = fasList.some(fas => fas.anio_fas === currentYear);
@@ -70,19 +78,24 @@ export const FasModule: React.FC = () => {
         if (!token) return;
         try {
             const data = await getUsosFas<UsoFas[]>(token);
+            console.log(data)
+            console.log("✅ Datos obtenidos de uso_fas:", data);
             setUsosList(data);
         } catch (error) {
-            console.error(error);
+            console.error("❌ Error al obtener usos FAS:", error);
             toast.error("Error al obtener los registros de uso del FAS");
         }
     };
 
     useEffect(() => {
         if (token) {
-            fetchFas();
-            fetchUsosFas();
+            if (activeTab === "fondos") {
+                fetchFas();
+            } else if (activeTab === "usos") {
+                fetchUsosFas();
+            }
         }
-    }, [token]);
+    }, [activeTab]);
 
 
     return (
@@ -92,11 +105,12 @@ export const FasModule: React.FC = () => {
                 <div className="flex space-x-2">
                     {/* Solo muestra el botón si NO existe un FAS del año actual */}
                     {!fasDelAnioActual && <DialogAddFas refreshFas={fetchFas} />}
-                    <DialogAddUsoFas refreshUsosFas={fetchUsosFas} />
+                    <DialogAddUsoFas refreshUsosFas={fetchUsosFas}
+                        fasList={fasList} />
                 </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="fondos">Fondos</TabsTrigger>
                     <TabsTrigger value="usos">Usos del Fondo</TabsTrigger>
