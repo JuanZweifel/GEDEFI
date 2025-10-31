@@ -11,25 +11,26 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export async function getClubs<T>(
-    page = 1,          // página 1 = primer bloque
-    limit = 10,        // cantidad de items por página
-    search?: string,
-    estado?: string,
-    token?: string | null
+    token?: string | null,
+    search: string| null = null,
+    estado: string | null = null,
+    page: number | null = null,
+    limit: number | null = null
 ): Promise<T> {
-    // --- calcular skip consistente con backend ---
-    // página 1 => skip = 0
-    // página 2 => skip = 20
-    // página 3 => skip = 40
-    const skip = (page - 1) * limit;
-
     const params = new URLSearchParams();
-    params.append("skip", String(skip));
-    params.append("limit", String(limit));
+
+    // Solo enviar skip y limit si ambos fueron proporcionados
+    if (page != null && limit != null) {
+        const skip = (page - 1) * limit;
+        params.append("skip", String(skip));
+        params.append("limit", String(limit));
+    }
+
     if (search) params.append("search", search);
     if (estado) params.append("estado", estado);
 
-    const url = `${URL_BASE}?${params.toString()}`;
+    const queryString = params.toString();
+    const url = queryString ? `${URL_BASE}?${queryString}` : URL_BASE;
 
     const response = await fetch(url, {
         method: "GET",

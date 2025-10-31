@@ -1,5 +1,4 @@
 from datetime import date, datetime
-from fastapi import UploadFile
 from pydantic import BaseModel, Field, ConfigDict, field_validator, EmailStr
 from typing import Optional, List, Union
 from .orden_pago import OrdenPagoRead

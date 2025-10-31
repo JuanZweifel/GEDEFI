@@ -378,16 +378,15 @@ export const ClubModule: React.FC = () => {
         try {
             setIsFetching(true);
             data = await getClubs<{ items: ClubType[]; total: number }>(
-                page,
-                10,
+                token,
                 search,
                 estado,
-                token
+                page,
+                10,
             );
             setClubList(data.items);
             setTotalPages(Math.ceil(data.total / 10));
-            console.log(data.total)
-            if (data.items.length === 0) {
+            if (data.items.length === 0 && !search && !estado) {
                 toast.info("No hay clubs registrados en la base de datos.");
             }
         } catch (error: any) {
@@ -408,7 +407,6 @@ export const ClubModule: React.FC = () => {
             } else {
                 const data = await getClub<ClubType>(id_club, token);
                 if (data) {
-                    console.log(data)
                     setSelectedClub(data);
                 } else {
                     toast.warning("El club solicitado no existe.");

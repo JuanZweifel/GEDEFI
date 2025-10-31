@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import Partido
 from app.schemas import PartidoCreate, PartidoUpdate
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 def get_partido(db: Session, partido_id: int) -> Partido | None:
     return db.query(Partido).filter(Partido.id_partido == partido_id).first()
 

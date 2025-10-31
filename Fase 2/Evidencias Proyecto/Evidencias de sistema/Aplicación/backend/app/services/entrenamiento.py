@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import entrenamiento
 from app.schemas import EntrenamientoCreate, EntrenamientoUpdate
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 def get_entrenamiento(
     db: Session, id_entrenamiento: int
 ) -> entrenamiento.Entrenamiento | None:

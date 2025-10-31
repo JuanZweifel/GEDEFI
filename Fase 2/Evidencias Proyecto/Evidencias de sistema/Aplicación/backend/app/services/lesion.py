@@ -4,7 +4,7 @@ from app.schemas import LesionCreate, LesionUpdate
 from app.models import Jugador
 from fastapi import HTTPException
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 def get_lesion(db: Session, lesion_id: int) -> Lesion | None:
     return db.query(Lesion).filter(Lesion.id_lesion == lesion_id).first()
 

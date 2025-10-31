@@ -4,7 +4,7 @@ from app.schemas import ReunionCreate, ReunionUpdate
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, NoResultFound
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 def get_reunion(db: Session, reunion_id: int) -> Reunion | None:
     try:
         return db.query(Reunion).filter(Reunion.id_reunion == reunion_id).first()

@@ -4,7 +4,7 @@ from app.schemas import SerieWithDetails, JugadorRead, SerieCreate
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError, OperationalError, DisconnectionError
 import psycopg2
-from app.utils.decorators import handle_db_exceptions
+from app.utils.decorators import handle_db_exceptions, handle_audit
 from fastapi import HTTPException, status
 from datetime import date
 from app.utils.constantes import lista_series
@@ -171,7 +171,7 @@ def get_series_with_details(db: Session, current_user: dict) -> list[SerieWithDe
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Serie no encontrada.")
 
-@handle_db_exceptions
+@handle_audit("UPDATE", "Serie")
 def update_state_serie(db: Session, id_serie: int, current_user: dict):
     """
     Actualiza el estado (activo/inactivo) de una serie en la base de datos.

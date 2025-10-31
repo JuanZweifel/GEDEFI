@@ -211,4 +211,3 @@ export async function getSeries<T>(token?: string): Promise<T> {
 
     return handleResponse<T>(response);
 }
-
