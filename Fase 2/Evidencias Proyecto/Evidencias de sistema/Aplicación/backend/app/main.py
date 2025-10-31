@@ -28,14 +28,19 @@ from app.routes import (
     permiso,
     auth,
     calendario,
+    solicitud,
 )
 from app.utils.trigger import create_trigger
-from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo, insertar_clubs_demo
+from app.utils.ejecutar_sql import (
+    insertar_ordenes_egresos_demo,
+    insertar_ordenes_ingresos_demo,
+    insertar_clubs_demo,
+)
 
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
-#Base.metadata.drop_all(bind=engine)
-#Base.metadata.create_all(bind=engine)
+# Base.metadata.drop_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 
 # validacion de tamaño de archivos
@@ -43,6 +48,7 @@ MAX_FILE_SIZE_MB = 5
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 app = FastAPI()
+
 
 # 🧩 Middleware para limitar el tamaño del archivo subido
 @app.middleware("http")
@@ -58,18 +64,18 @@ async def limit_upload_size(request: Request, call_next):
         )
 
     return await call_next(request)
-#---------------------------------
 
+
+# ---------------------------------
 
 
 app = FastAPI(title="API GEDEFI", version="1.0")
 
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()}
-    )
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
 
 app.include_router(permiso.router)
 app.include_router(permiso_rol.router)
@@ -94,8 +100,11 @@ app.include_router(serie.router)
 app.include_router(auth.router)
 app.include_router(limpieza_excel_jugadores.router)
 app.include_router(calendario.router)
+app.include_router(solicitud.router)
 
-app.mount("/images", StaticFiles(directory="../images"), name="images") # Se debe modificar, esto enruta las imagenes del backend como rutas para el frontend
+app.mount(
+    "/images", StaticFiles(directory="../images"), name="images"
+)  # Se debe modificar, esto enruta las imagenes del backend como rutas para el frontend
 
 # Configurar CORS para permitir el frontend
 origins = [
@@ -112,12 +121,13 @@ app.add_middleware(
 )
 
 # TODO: CREACIÓN DE TRIGGER, SE DEBE DESCOMENTAR JUNTO A LA ELIMINACION DE TODO EN LA BASE DE DATOS, WARNING DE ARRIBA
-#@app.on_event("startup")
-#def startup_event():
+# @app.on_event("startup")
+# def startup_event():
 #    insertar_ordenes_egresos_demo()
 #    insertar_ordenes_ingresos_demo()
 #    insertar_clubs_demo()
 #    create_trigger()
+
 
 @app.get("/api")
 def root():

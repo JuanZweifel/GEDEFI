@@ -183,3 +183,15 @@ export type RendimientoPartidoType = {
     calificacion: number;
     observaciones: string;
 }
+
+export type Solicitud = {
+    id_solicitud: number;
+    usuario_solicitud: number;
+    usuario_respuesta?: number | null;
+    categoria: number;
+    descripcion?: string;
+    estado: boolean;
+    respuesta?: string;
+    fecha_creacion: string;
+    fecha_modificacion: string;
+}

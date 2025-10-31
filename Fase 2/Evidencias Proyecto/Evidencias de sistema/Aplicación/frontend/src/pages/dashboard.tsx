@@ -20,6 +20,7 @@ import { Login } from './login.tsx'
 import { ResetPassword } from './reset-password'
 import { CalendarioModule } from './calendario.tsx';
 import { CanchasModule } from './canchas.tsx';
+import { SolicitudesModule } from './solicitudes.tsx';
 import {
     Home,
     Users,
@@ -253,6 +254,7 @@ export default function DashboardComponent() {
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
         { id: 'fas', label: 'Fas', icon: Ambulance, component: CalendarioModule, permission: 'fas' },
         { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
+        { id: 'solicitudes', label: 'Solicitudes', icon: Settings, component: SolicitudesModule, permission: 'admin' },
         { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
     ];
 
@@ -412,6 +414,9 @@ export default function DashboardComponent() {
                             <Route path="penalties" element={<PenaltiesModule />} />
                             <Route path="calendar" element={<CalendarioModule />} />
                             <Route path="admin" element={<div>Panel Administrativo</div>} />
+                            <Route path="solicitudes" element={<SolicitudesModule />} >
+                                <Route index element={<SolicitudesModule />} />
+                            </Route>
                             <Route path="perfil" element={<PerfilUsuarioModule />} />
 
                             <Route path="*" element={<Dashboard />} />

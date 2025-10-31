@@ -140,6 +140,7 @@ export const CanchasModule: React.FC = () => {
 
       <div className="flex justify-between mb-4 bg-white p-4 rounded-lg shadow border border-gray-200">
         <Input
+          type='text'
           placeholder="Buscar por nombre de cancha..."
           value={filterNombre}
           onChange={(e) => setFilterNombre(e.target.value)}
