@@ -205,3 +205,15 @@ export type ResumenAuditoriaType = {
     errores_hoy: number;
     modulos_auditados: number;
 }
+
+export type Solicitud = {
+    id_solicitud: number;
+    usuario_solicitud: number;
+    usuario_respuesta?: number | null;
+    categoria: number;
+    descripcion?: string;
+    estado: boolean;
+    respuesta?: string;
+    fecha_creacion: string;
+    fecha_modificacion: string;
+}

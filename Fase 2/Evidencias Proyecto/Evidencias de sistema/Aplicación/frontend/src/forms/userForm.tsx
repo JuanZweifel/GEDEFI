@@ -36,8 +36,12 @@ function InputField({ label, value, onChange, type = "text", ...rest }: any) {
 }
 
 const hasChanges = (current: UsuarioFormType, original: UsuarioFormType) => {
+  if (current.pass_usuario && current.pass_usuario.trim() !== "") {
+    return true;
+  }
+
   for (const key in original) {
-    if (key === "pass_usuario") continue;
+    if (key === "pass_usuario") continue; // we already handled it
     if (current[key as keyof UsuarioFormType] !== original[key as keyof UsuarioFormType]) {
       return true;
     }

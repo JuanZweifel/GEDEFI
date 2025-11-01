@@ -20,6 +20,7 @@ import { Login } from './login.tsx'
 import { ResetPassword } from './reset-password'
 import { CalendarioModule } from './calendario.tsx';
 import { CanchasModule } from './canchas.tsx';
+import { SolicitudesModule } from './solicitudes.tsx';
 import {
     Home,
     Users,
@@ -253,6 +254,7 @@ export default function DashboardComponent() {
         { id: 'fas', label: 'FAS', icon: Ambulance, component: FasModule, permission: 'fas' },
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
         { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
+        { id: 'solicitudes', label: 'Solicitudes', icon: Settings, component: SolicitudesModule, permission: 'admin' },
         { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
     ];
 
@@ -412,6 +414,12 @@ export default function DashboardComponent() {
                             <Route path="fas" element={<FasModule />} />
                             <Route path="calendar" element={<CalendarioModule />} />
                             <Route path="admin" element={<div>Panel Administrativo</div>} />
+                            <Route path="solicitudes" element={<SolicitudesModule />} >
+                                <Route index element={<SolicitudesModule />} />
+                                <Route path='new' element={<SolicitudesModule />} />
+                                <Route path=':id' element={<SolicitudesModule />} />
+                                <Route path=':id/:action' element={<SolicitudesModule />} />
+                            </Route>
                             <Route path="perfil" element={<PerfilUsuarioModule />} />
 
                             <Route path="*" element={<Dashboard />} />

@@ -27,6 +27,7 @@ from .partido import *
 
 from .fas import *
 from .uso_fas import *
+from .solicitud import *
 
 
 # WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente
