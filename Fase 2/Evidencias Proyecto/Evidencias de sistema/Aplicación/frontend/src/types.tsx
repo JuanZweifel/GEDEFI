@@ -172,16 +172,18 @@ export type PartidoType = {
 }
 
 export type RendimientoPartidoType = {
-    id: number;
     id_partido: number;
-    jugador_nombre: string;
+    rut_jugador: string;
     goles: number;
     asistencias: number;
-    tarjetas_amarillas: number;
-    tarjetas_rojas: number;
-    minutos_jugados: number;
-    calificacion: number;
-    observaciones: string;
+    amonestaciones: number;
+    amonestaciones_amarillas: Boolean;
+    amonestaciones_rojas: boolean;
+    tiempo_jugado: number;
+    primer_nombre: string;
+    segundo_nombre: string | null;
+    primer_apellido: string;
+    segundo_apellido: string | null;
 }
 
 export type AuditoriaType = {
@@ -202,4 +204,16 @@ export type ResumenAuditoriaType = {
     exitos_hoy: number;
     errores_hoy: number;
     modulos_auditados: number;
+}
+
+export type Solicitud = {
+    id_solicitud: number;
+    usuario_solicitud: number;
+    usuario_respuesta?: number | null;
+    categoria: number;
+    descripcion?: string;
+    estado: boolean;
+    respuesta?: string;
+    fecha_creacion: string;
+    fecha_modificacion: string;
 }

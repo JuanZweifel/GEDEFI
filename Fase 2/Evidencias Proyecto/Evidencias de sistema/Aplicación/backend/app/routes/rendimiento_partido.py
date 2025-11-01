@@ -3,17 +3,12 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
 
-router = APIRouter(prefix="/rendimientos_partido", tags=["Rendimientos Partido"])
-
-# Crear rendimiento partido
-@router.post("/", response_model=schemas.RendimientoPartidoRead)
-def create_rendimiento_partido(rendimiento: schemas.RendimientoPartidoCreate, db: Session = Depends(get_db)):
-    return services.create_rendimiento_partido(db, rendimiento)
+router = APIRouter(prefix="/rendimientos-partido", tags=["Rendimientos Partido"])
 
 # Obtener rendimiento por jugador, serie y partido
-@router.get("/{rut_jugador}/{id_serie}/{id_partido}", response_model=schemas.RendimientoPartidoRead)
-def read_rendimiento_partido(rut_jugador: str, id_serie: int, id_partido: int, db: Session = Depends(get_db)):
-    db_rendimiento = services.get_rendimiento_partido(db, rut_jugador, id_serie, id_partido)
+@router.get("/{id_club}/{id_partido}", response_model=list[schemas.RendimientoPartidoRead])
+def read_rendimiento_partido(id_club:int, id_partido: int, db: Session = Depends(get_db)):
+    db_rendimiento = services.get_rendimientos_partido_club(db, id_club, id_partido)
     if not db_rendimiento:
         raise HTTPException(status_code=404, detail="Rendimiento partido not found")
     return db_rendimiento

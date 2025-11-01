@@ -22,10 +22,12 @@ from .detalle_club_jugador import *
 from .ficha_jugador import *
 from .cancha import *
 from .rendimiento_entrenamiento import *
+from .rendimiento_partido import *
 from .partido import *
 
 from .fas import *
 from .uso_fas import *
+from .solicitud import *
 
 
 # WARNING: Ahora se manejara el __all__ a nivel de cada modulo individualmente

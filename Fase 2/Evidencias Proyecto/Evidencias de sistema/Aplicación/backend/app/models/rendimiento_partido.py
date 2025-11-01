@@ -9,7 +9,7 @@ from datetime import date
 class RendimientoPartido(Base):
     __tablename__ = "RENDIMIENTO_PARTIDO"
 
-    tiempo_jugado: Mapped[int] = mapped_column(Integer, index=True)
+    tiempo_jugado: Mapped[int] = mapped_column(Integer, nullable=True)
     goles: Mapped[str] = mapped_column(String(50), nullable=False)
     asistencias: Mapped[int] = mapped_column(Integer, nullable=False)
     amonestaciones: Mapped[str] = mapped_column(String(300), nullable=True)
@@ -22,9 +22,8 @@ class RendimientoPartido(Base):
         nullable=False,
         index=True,
     )
-    fecha_ini: Mapped[date] = mapped_column(Date, nullable=False)
     rut_jugador: Mapped[str] = mapped_column(
-        String(10), ForeignKey("JUGADOR.rut_jugador"), nullable=False
+        String(10), ForeignKey("JUGADOR.rut_jugador"), nullable=False, primary_key=True, index=True
     )
     id_serie: Mapped[int] = mapped_column(Integer, nullable=False)
 
