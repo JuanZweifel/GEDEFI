@@ -12,12 +12,14 @@ MAILTRAP_PASS = "56d9db479081a8"
 FROM_EMAIL = "no-reply@gedefi.cl"
 
 
-def send_email(to_email: str, subject: str, html_body: str):
-    """Utility function to send HTML email using Mailtrap."""
+def send_email(to_emails, subject: str, html_body: str):
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
     message["From"] = FROM_EMAIL
-    message["To"] = to_email
+    message["To"] = "Destinatarios ocultos"
 
     part = MIMEText(html_body, "html")
     message.attach(part)
@@ -25,8 +27,8 @@ def send_email(to_email: str, subject: str, html_body: str):
     try:
         with smtplib.SMTP(MAILTRAP_HOST, MAILTRAP_PORT) as server:
             server.login(MAILTRAP_USER, MAILTRAP_PASS)
-            server.sendmail(FROM_EMAIL, to_email, message.as_string())
-            print(f"Email sent to {to_email} (Mailtrap)")
+            server.sendmail(FROM_EMAIL, to_emails, message.as_string())
+            print(f"Email sent to {len(to_emails)} recipients via BCC (Mailtrap)")
     except Exception as e:
         print("Error sending email:", e)
 

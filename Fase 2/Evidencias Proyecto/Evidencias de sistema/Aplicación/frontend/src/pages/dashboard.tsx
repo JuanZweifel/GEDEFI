@@ -41,7 +41,8 @@ import {
     Activity,
     Archive,
     Building2,
-    Ambulance
+    Ambulance,
+    Mail,
 } from 'lucide-react';
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
@@ -51,7 +52,7 @@ import { PartidosModule } from './partidos.tsx';
 import { PerfilUsuarioModule } from './perfilUsuario.tsx';
 import { MatchesTrainingModule } from './entrenamiento.tsx';
 import { FasModule } from './fas.tsx';
-
+import { ComunicadosModule } from './comunicados.tsx';
 
 
 
@@ -255,6 +256,7 @@ export default function DashboardComponent() {
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
         { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
         { id: 'solicitudes', label: 'Solicitudes', icon: Settings, component: SolicitudesModule, permission: 'admin' },
+        { id: 'comunicados', label: 'Comunicados', icon: Mail, component: ComunicadosModule, permission: 'admin' },
         { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
     ];
 
@@ -420,6 +422,7 @@ export default function DashboardComponent() {
                                 <Route path=':id' element={<SolicitudesModule />} />
                                 <Route path=':id/:action' element={<SolicitudesModule />} />
                             </Route>
+                            <Route path="comunicados" element={<ComunicadosModule />} />
                             <Route path="perfil" element={<PerfilUsuarioModule />} />
 
                             <Route path="*" element={<Dashboard />} />

@@ -30,7 +30,8 @@ from app.routes import (
     calendario,
     solicitud,
     fas,
-    uso_fas
+    uso_fas,
+    correos,
 )
 from app.utils.trigger import create_trigger
 from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo, insertar_clubs_demo, insertar_jugadores_demo
@@ -96,6 +97,7 @@ app.include_router(calendario.router)
 app.include_router(fas.router)
 app.include_router(uso_fas.router)
 app.include_router(solicitud.router)
+app.include_router(correos.router)
 
 app.mount(
     "/images", StaticFiles(directory="../images"), name="images"
@@ -118,10 +120,10 @@ app.add_middleware(
 # TODO: CREACIÓN DE TRIGGER, SE DEBE DESCOMENTAR JUNTO A LA ELIMINACION DE TODO EN LA BASE DE DATOS, WARNING DE ARRIBA
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
-#Base.metadata.drop_all(bind=engine)
-#Base.metadata.create_all(bind=engine)
-#@app.on_event("startup")
-#def startup_event():
+# Base.metadata.drop_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
+# @app.on_event("startup")
+# def startup_event():
 #    insertar_ordenes_egresos_demo()
 #    insertar_ordenes_ingresos_demo()
 #    insertar_clubs_demo()
