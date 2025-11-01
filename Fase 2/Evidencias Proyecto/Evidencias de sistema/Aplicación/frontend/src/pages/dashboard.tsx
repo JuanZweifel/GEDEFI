@@ -416,6 +416,9 @@ export default function DashboardComponent() {
                             <Route path="admin" element={<div>Panel Administrativo</div>} />
                             <Route path="solicitudes" element={<SolicitudesModule />} >
                                 <Route index element={<SolicitudesModule />} />
+                                <Route path='new' element={<SolicitudesModule />} />
+                                <Route path=':id' element={<SolicitudesModule />} />
+                                <Route path=':id/:action' element={<SolicitudesModule />} />
                             </Route>
                             <Route path="perfil" element={<PerfilUsuarioModule />} />
 
