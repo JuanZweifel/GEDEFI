@@ -22,6 +22,7 @@ from .detalle_club_jugador import *
 from .ficha_jugador import *
 from .cancha import *
 from .rendimiento_entrenamiento import *
+from .rendimiento_partido import *
 from .partido import *
 
 from .fas import *

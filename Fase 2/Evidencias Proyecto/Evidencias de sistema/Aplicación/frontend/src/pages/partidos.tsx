@@ -31,6 +31,8 @@ export const PartidosModule: React.FC = () => {
 
   const { token, admin } = useAuth();
 
+  const trainer = true // !admin
+
   // Enrutamiento
   const location = useLocation();
   const navigate = useNavigate();
@@ -171,115 +173,70 @@ export const PartidosModule: React.FC = () => {
           </Button>
         </div>
       </div>
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="matches">Partidos</TabsTrigger>
-          <TabsTrigger value="match-performance">Rendimiento</TabsTrigger>
-        </TabsList>
+      <Card>
+        <CardHeader>
+          <CardTitle>Gestión de Partidos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {[
+                  "Fecha/Hora",
+                  "Serie",
+                  "Partido",
+                  "Tipo",
+                  "Resultado",
+                  "Cancha",
+                  "Estado",
+                  "Acciones"
+                ].map((h, i) => (
+                  <TableHead key={i}>{h}</TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {partidos.map((match: PartidoType) => {
+                const localSerie = seriesMap[match.id_serie_local];
+                const visitaSerie = seriesMap[match.id_serie_visitante];
 
-        {/* TAB PARTIDOS */}
-        <TabsContent value="matches" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gestión de Partidos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {[
-                      "Fecha/Hora",
-                      "Serie",
-                      "Partido",
-                      "Tipo",
-                      "Resultado",
-                      "Cancha",
-                      "Estado",
-                      "Acciones"
-                    ].map((h, i) => (
-                      <TableHead key={i}>{h}</TableHead>
-                    ))}
+                return (
+                  <TableRow key={match.id_partido}>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {match.fecha_partido} {match.hora_ini_partido}
+                      </div>
+                    </TableCell>
+                    <TableCell>{localSerie?.nombre_serie ?? "-"}</TableCell>
+                    <TableCell>
+                      {localSerie?.nombre_club ?? "-"} vs {visitaSerie?.nombre_club ?? "-"}
+                    </TableCell>
+                    <TableCell>
+                      {match.tipo_partido.charAt(0).toUpperCase() + match.tipo_partido.slice(1)}
+                    </TableCell>
+                    <TableCell>
+                      {match.goles_local !== null && match.goles_visita !== null
+                        ? `${match.goles_local} - ${match.goles_visita}`
+                        : "-"}
+                    </TableCell>
+                    <TableCell>{canchasMap[match.id_cancha]?.nombre_cancha ?? "-"}</TableCell>
+                    <TableCell>{renderBadge(match.estado_partido.charAt(0).toUpperCase() + match.estado_partido.slice(1))}</TableCell>
+                    <TableCell className="flex space-x-1">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/${match.id_partido}`, { replace: true })}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/${match.id_partido}/edit`, { replace: true })}>
+                        <Edit className="w-4 h-4 mr-1" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {partidos.map((match: PartidoType) => {
-                    const localSerie = seriesMap[match.id_serie_local];
-                    const visitaSerie = seriesMap[match.id_serie_visitante];
-
-                    return (
-                      <TableRow key={match.id_partido}>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" />
-                            {match.fecha_partido} {match.hora_ini_partido}
-                          </div>
-                        </TableCell>
-                        <TableCell>{localSerie?.nombre_serie ?? "-"}</TableCell>
-                        <TableCell>
-                          {localSerie?.nombre_club ?? "-"} vs {visitaSerie?.nombre_club ?? "-"}
-                        </TableCell>
-                        <TableCell>
-                          {match.tipo_partido.charAt(0).toUpperCase() + match.tipo_partido.slice(1)}
-                        </TableCell>
-                        <TableCell>
-                          {match.goles_local !== null && match.goles_visita !== null
-                            ? `${match.goles_local} - ${match.goles_visita}`
-                            : "-"}
-                        </TableCell>
-                        <TableCell>{canchasMap[match.id_cancha]?.nombre_cancha ?? "-"}</TableCell>
-                        <TableCell>{renderBadge(match.estado_partido.charAt(0).toUpperCase() + match.estado_partido.slice(1))}</TableCell>
-                        <TableCell className="flex space-x-1">
-                          <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/${match.id_partido}`, { replace: true })}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/${match.id_partido}/edit`, { replace: true })}>
-                            <Edit className="w-4 h-4 mr-1" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* TAB RENDIMIENTO */}
-        <TabsContent value="match-performance" className="space-y-4">
-          <Card>
-            <CardHeader><CardTitle>Rendimiento en Partidos</CardTitle></CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {['Jugador', 'Goles', 'Asistencias', 'Tarjetas', 'Minutos', 'Calificación', 'Observaciones'].map((h, i) => (
-                      <TableHead key={i}>{h}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rendimientoPartido.map((perf) => (
-                    <TableRow key={perf.id}>
-                      <TableCell>{perf.jugador_nombre}</TableCell>
-                      <TableCell className="flex items-center"><Trophy className="w-4 h-4 mr-1 text-[#FF8C00]" />{perf.goles}</TableCell>
-                      <TableCell className="flex items-center"><Target className="w-4 h-4 mr-1 text-blue-500" />{perf.asistencias}</TableCell>
-                      <TableCell className="flex space-x-1">
-                        {perf.tarjetas_amarillas > 0 && <Badge className="bg-yellow-500">{perf.tarjetas_amarillas}A</Badge>}
-                        {perf.tarjetas_rojas > 0 && <Badge className="bg-red-500">{perf.tarjetas_rojas}R</Badge>}
-                        {perf.tarjetas_amarillas === 0 && perf.tarjetas_rojas === 0 && <span className="text-gray-500">-</span>}
-                      </TableCell>
-                      <TableCell className="flex items-center"><Clock className="w-4 h-4 mr-1" />{perf.minutos_jugados}'</TableCell>
-                      <TableCell className="flex items-center"><Star className="w-4 h-4 mr-1 text-[#FFD700]" />{perf.calificacion}</TableCell>
-                      <TableCell>{perf.observaciones}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {action === "new" && (
         <DialogHandle<PartidoType>
@@ -288,12 +245,13 @@ export const PartidosModule: React.FC = () => {
           open={isDialogOpen}
           onOpenChange={handleCloseDialog}
         >
-          {() => <PartidoForm isEdit={false} onSuccess={handleCloseDialog} />}
+          {() => <PartidoForm isEdit={false} onSuccess={handleCloseDialog} trainer={false} />}
         </DialogHandle>
       )}
 
       {action === "edit" && (
         <DialogHandle<PartidoType>
+          size={!!trainer ? "w-full" : "w-auto"}
           title={selectedPartido ? `Modificar partido del ${selectedPartido.fecha_partido}` : "Cargando..."}
           trigger={<div />}
           open={isDialogOpen}
@@ -308,7 +266,7 @@ export const PartidosModule: React.FC = () => {
               );
             }
 
-            return <PartidoForm partido={selectedPartido} isEdit={true} onSuccess={handleCloseDialog} />
+            return <PartidoForm partido={selectedPartido} isEdit={true} onSuccess={handleCloseDialog} trainer={trainer} />
           }}
         </DialogHandle>
       )}

@@ -1,5 +1,9 @@
 from datetime import datetime, timedelta, date, timezone
+from random import randint, choice
 from app.db import SessionLocal
+from app.models.jugador import Jugador
+from app.models.ficha_jugador import FichaJugador
+from app.models.detalle_club_jugador import DetalleClubJugador
 from app.models.orden_pago import OrdenPago, EstadoOrdenEnum, TipoPagoEnum, TipoMovimientoEnum
 from app.models.club import Club
 from app.services.serie import create_massive_series
@@ -262,8 +266,6 @@ def insertar_clubs_demo():
                 color_secundario=color_secundario,
                 color_respaldo=color_respaldo,
                 club_activo=True,
-                fecha_creacion=datetime.now(timezone.utc),
-                fecha_modificacion=datetime.now(timezone.utc),
             )
 
             db.add(club)
@@ -281,5 +283,82 @@ def insertar_clubs_demo():
     finally:
         db.close()
 
-# Para ejecutar:
-# insertar_clubs_demo()
+# Listas de nombres y apellidos para síntesis
+PRIMEROS_NOMBRES = ["Juan", "Pedro", "Luis", "Carlos", "Diego", "Matías", "Andrés", "Jorge", "Fernando", "Ricardo"]
+SEGUNDOS_NOMBRES = ["Ignacio", "Alberto", "Sebastián", "Emiliano", "Martín", "Alejandro", None, None]
+APELLIDOS = ["González", "Pérez", "Ramírez", "Soto", "Rojas", "Fernández", "Morales", "Vega", "Torres", "Molina"]
+
+def insertar_jugadores_demo():
+    db = SessionLocal()
+    try:
+        jugadores_info = [
+            # id_serie, id_club, cantidad de jugadores
+            (14, 2, 10),
+            (4, 1, 10)
+        ]
+
+        for id_serie, id_club, cantidad in jugadores_info:
+            for i in range(1, cantidad + 1):
+                rut = generar_rut_ficticio(randint(1, 9999999))
+                primer_nombre = choice(PRIMEROS_NOMBRES)
+                segundo_nombre = choice(SEGUNDOS_NOMBRES)
+                primer_apellido = choice(APELLIDOS)
+                segundo_apellido = choice(APELLIDOS)
+                genero = choice([True, False])
+                fecha_nacimiento = date(2000 + randint(0, 5), randint(1, 12), randint(1, 28))
+                fono_jugador = f"9{randint(10000000, 99999999)}"
+
+                # Crear Jugador
+                jugador = Jugador(
+                    rut_jugador=rut,
+                    primer_nombre=primer_nombre,
+                    segundo_nombre=segundo_nombre,
+                    primer_apellido=primer_apellido,
+                    segundo_apellido=segundo_apellido,
+                    genero=genero,
+                    fecha_nacimiento=fecha_nacimiento,
+                    enfermedades_cronicas="Sin enfermedades crónicas",
+                    fono_jugador=fono_jugador,
+                    jugador_activo=True,
+                )
+                db.add(jugador)
+                db.flush()
+                db.refresh(jugador)
+
+                # Crear FichaJugador
+                fecha_ini = date(2025, 1, 1)
+                ficha = FichaJugador(
+                    rut_jugador=jugador.rut_jugador,
+                    id_serie=id_serie,
+                    fecha_ini=fecha_ini,
+                    fecha_fin=None,
+                    talla_camiseta=str(randint(1, 3)),
+                    talla_short=str(randint(1, 3)),
+                    talla_media=str(randint(36, 44)),
+                    talla_botin=str(randint(36, 44)),
+                    estatura=randint(160, 200),
+                    Peso=randint(55, 100),
+                    imc=randint(18, 30),
+                )
+                db.add(ficha)
+                db.flush()
+                db.refresh(ficha)
+
+                # Crear DetalleClubJugador
+                detalle = DetalleClubJugador(
+                    rut_jugador=jugador.rut_jugador,
+                    id_club=id_club,
+                    fecha_ini=fecha_ini,
+                    fecha_fin=None,
+                )
+                db.add(detalle)
+                db.flush()
+                db.refresh(detalle)
+
+        db.commit()
+        print("✅ Se insertaron jugadores, fichas y detalles de club correctamente.")
+    except Exception as e:
+        print("❌ Error al insertar jugadores:", e)
+        db.rollback()
+    finally:
+        db.close()

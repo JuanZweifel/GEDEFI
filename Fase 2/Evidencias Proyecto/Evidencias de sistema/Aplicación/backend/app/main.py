@@ -32,7 +32,7 @@ from app.routes import (
     uso_fas
 )
 from app.utils.trigger import create_trigger
-from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo, insertar_clubs_demo
+from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo, insertar_clubs_demo, insertar_jugadores_demo
 
 
 # validacion de tamaño de archivos
@@ -121,6 +121,7 @@ app.add_middleware(
 #    insertar_ordenes_ingresos_demo()
 #    insertar_clubs_demo()
 #    create_trigger()
+#    insertar_jugadores_demo()
 
 @app.get("/api")
 def root():

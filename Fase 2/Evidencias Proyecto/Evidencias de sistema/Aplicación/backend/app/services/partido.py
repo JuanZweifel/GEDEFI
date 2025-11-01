@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import Partido
 from app.schemas import PartidoCreate, PartidoUpdate
+from app.services import create_rendimiento_partido
 
 # TODO: Aplicar auth security para poder implementar auditoria
 def get_partido(db: Session, partido_id: int) -> Partido | None:
@@ -23,10 +24,20 @@ def update_partido(db: Session, partido_id: int, partido_update: PartidoUpdate) 
     db_partido = get_partido(db, partido_id)
     if not db_partido:
         return None
+    data = partido_update.dict(exclude_unset=True)
+
+    if data.get("id_cancha") == 0:
+        data.pop("id_cancha")
     for key, value in partido_update.dict(exclude_unset=True).items():
         setattr(db_partido, key, value)
-    db.commit()
+    
+
+    db.flush()
     db.refresh(db_partido)
+
+    if data.get("estado_partido") == "finalizado":
+        create_rendimiento_partido(db, partido_id)
+    db.commit()
     return db_partido
 
 

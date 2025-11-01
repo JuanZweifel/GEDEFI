@@ -172,16 +172,18 @@ export type PartidoType = {
 }
 
 export type RendimientoPartidoType = {
-    id: number;
     id_partido: number;
-    jugador_nombre: string;
+    rut_jugador: string;
     goles: number;
     asistencias: number;
-    tarjetas_amarillas: number;
-    tarjetas_rojas: number;
-    minutos_jugados: number;
-    calificacion: number;
-    observaciones: string;
+    amonestaciones: number;
+    amonestaciones_amarillas: Boolean;
+    amonestaciones_rojas: boolean;
+    tiempo_jugado: number;
+    primer_nombre: string;
+    segundo_nombre: string | null;
+    primer_apellido: string;
+    segundo_apellido: string | null;
 }
 
 export type AuditoriaType = {
