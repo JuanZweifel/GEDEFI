@@ -69,10 +69,12 @@ def get_clubs_with_details(
     current_user: dict = Depends(get_current_user),
     search: str | None = Query(None, description="Buscar por nombre, rut o email"),
     estado: int | None = Query(None, description="1=activos, 2=inactivos"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=30)
+    skip: int | None = Query(None, ge=0),
+    limit: int | None = Query(None, ge=1, le=30)
 ):
     try:
+        print("lucho")
+        print(skip, limit)
         info = services.get_clubs_with_details(db, current_user, search=search, estado=estado, skip=skip, limit=limit)
         return info
     except HTTPException as e:

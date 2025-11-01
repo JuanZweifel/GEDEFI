@@ -96,7 +96,7 @@ export const UsuarioRolModule: React.FC = () => {
         let data: ClubType[] = [];
         try {
             setIsFetchingClubs(true);
-            data = await getClubs(1, 30, undefined, undefined, token);
+            data = await getClubs(token);
             setClubs(data);
             if (data.length === 0) toast.info("No hay clubes registrados en la base de datos.");
         } catch (err: any) {

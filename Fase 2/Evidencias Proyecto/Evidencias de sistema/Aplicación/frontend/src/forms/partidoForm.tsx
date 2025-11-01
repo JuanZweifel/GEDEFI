@@ -61,10 +61,10 @@ export function PartidoForm({ partido, isEdit, onSuccess }: PartidoFormProps) {
 
     useEffect(() => {
         // Actualiza los nombres de los clubes cada vez que cambian los clubes o los IDs seleccionados
-        const clubLocal = clubes.find(c => c.id_club === idClubLocal);
+        const clubLocal = clubes.items?.find(c => c.id_club === idClubLocal);
         setNombreClubLocal(clubLocal ? clubLocal.nombre_club : '');
 
-        const clubVisitante = clubes.find(c => c.id_club === idClubVisitante);
+        const clubVisitante = clubes.items?.find(c => c.id_club === idClubVisitante);
         setNombreClubVisitante(clubVisitante ? clubVisitante.nombre_club : '');
 
         // Si no está en modo edición o no hay partido, resetea la inicialización y retorna
@@ -98,8 +98,8 @@ export function PartidoForm({ partido, isEdit, onSuccess }: PartidoFormProps) {
             setIdClubLocal(serieLocal.id_club);
             setIdClubVisitante(serieVisitante.id_club);
 
-            const clubLocalFromSerie = clubes.find(c => c.id_club === serieLocal.id_club);
-            const clubVisitFromSerie = clubes.find(c => c.id_club === serieVisitante.id_club);
+            const clubLocalFromSerie = clubes.items?.find(c => c.id_club === serieLocal.id_club);
+            const clubVisitFromSerie = clubes.items?.find(c => c.id_club === serieVisitante.id_club);
             setNombreClubLocal(clubLocalFromSerie ? clubLocalFromSerie.nombre_club : '');
             setNombreClubVisitante(clubVisitFromSerie ? clubVisitFromSerie.nombre_club : '');
         }
@@ -116,7 +116,7 @@ export function PartidoForm({ partido, isEdit, onSuccess }: PartidoFormProps) {
                 const [seriesData, canchasData, clubesData] = await Promise.all([
                     getSeries<SerieType[]>(token),
                     getCanchas<CanchaType[]>(token),
-                    getClubs<ClubType[]>(token),
+                    getClubs<ClubType[]>(token, null, null, null, null),
                 ]);
                 if (!mounted) return;
                 setSeries(seriesData);

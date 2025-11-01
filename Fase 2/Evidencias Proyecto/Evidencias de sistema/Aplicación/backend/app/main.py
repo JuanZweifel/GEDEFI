@@ -29,18 +29,11 @@ from app.routes import (
     auth,
     calendario,
     solicitud,
+    fas,
+    uso_fas
 )
 from app.utils.trigger import create_trigger
-from app.utils.ejecutar_sql import (
-    insertar_ordenes_egresos_demo,
-    insertar_ordenes_ingresos_demo,
-    insertar_clubs_demo,
-)
-
-# WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
-# Configuracion para desarrollo
-# Base.metadata.drop_all(bind=engine)
-# Base.metadata.create_all(bind=engine)
+from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo, insertar_clubs_demo
 
 
 # validacion de tamaño de archivos
@@ -100,6 +93,8 @@ app.include_router(serie.router)
 app.include_router(auth.router)
 app.include_router(limpieza_excel_jugadores.router)
 app.include_router(calendario.router)
+app.include_router(fas.router)
+app.include_router(uso_fas.router)
 app.include_router(solicitud.router)
 
 app.mount(
@@ -121,8 +116,12 @@ app.add_middleware(
 )
 
 # TODO: CREACIÓN DE TRIGGER, SE DEBE DESCOMENTAR JUNTO A LA ELIMINACION DE TODO EN LA BASE DE DATOS, WARNING DE ARRIBA
-# @app.on_event("startup")
-# def startup_event():
+# WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
+# Configuracion para desarrollo
+#Base.metadata.drop_all(bind=engine)
+#Base.metadata.create_all(bind=engine)
+#@app.on_event("startup")
+#def startup_event():
 #    insertar_ordenes_egresos_demo()
 #    insertar_ordenes_ingresos_demo()
 #    insertar_clubs_demo()

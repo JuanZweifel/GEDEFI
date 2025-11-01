@@ -184,6 +184,26 @@ export type RendimientoPartidoType = {
     observaciones: string;
 }
 
+export type AuditoriaType = {
+    id_auditoria: number;
+    recurso: string;
+    id_recurso: string;
+    descripcion: string;
+    fecha_cambio: string;
+    accion_realizada: string;
+    error: boolean;
+    rut_usuario: string;
+    nombre_usuario: string;
+    apellido_usuario: string
+}
+
+export type ResumenAuditoriaType = {
+    acciones_hoy: number;
+    exitos_hoy: number;
+    errores_hoy: number;
+    modulos_auditados: number;
+}
+
 export type Solicitud = {
     id_solicitud: number;
     usuario_solicitud: number;

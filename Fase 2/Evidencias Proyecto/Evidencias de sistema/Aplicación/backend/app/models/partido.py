@@ -51,13 +51,13 @@ class Partido(Base):
         onupdate=datetime.now(timezone.utc),
     )
     id_cancha: Mapped[int] = mapped_column(
-        Integer, ForeignKey("CANCHA.id_cancha"), nullable=False, index=True
+        Integer, ForeignKey("CANCHA.id_cancha"), nullable=True #TODO: SE DEBE VIGILAR LA OBLIGACIÓN DE CANCHA PARA UN PARTIDO
     )
     id_serie_local: Mapped[int] = mapped_column(
-        Integer, ForeignKey("SERIE.id_serie"), nullable=False, index=True
+        Integer, ForeignKey("SERIE.id_serie"), nullable=False
     )
     id_serie_visitante: Mapped[int] = mapped_column(
-        Integer, ForeignKey("SERIE.id_serie"), nullable=False, index=True
+        Integer, ForeignKey("SERIE.id_serie"), nullable=False
     )
 
     # relaciones

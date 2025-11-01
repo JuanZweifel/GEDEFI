@@ -12,7 +12,7 @@ class UsoFas(Base):
     rut_jugador: Mapped[str] = mapped_column(ForeignKey("JUGADOR.rut_jugador"), nullable=False)
 
     descripcion_gasto: Mapped[str] = mapped_column(String(500), nullable=True)
-    monto_usado: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
+    monto_usado: Mapped[int] = mapped_column(Integer, nullable=False)
     fecha_uso: Mapped[Date] = mapped_column(Date, nullable=False)
 
     fecha_creacion: Mapped[datetime] = mapped_column(

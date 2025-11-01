@@ -258,10 +258,12 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                         {/* Descripción */}
                         <div className="flex flex-col">
                             <label>Descripción *</label>
-                            <Input
+                            <textarea
                                 value={descripcion}
-                                onChange={(e) => setDescripcion(e.target.value)}
-                                required
+                                    onChange={(e) => setDescripcion(e.target.value)}
+                                    className="w-full border p-2 rounded"
+                                    maxLength={500}
+                                    required
                             />
                         </div>
 

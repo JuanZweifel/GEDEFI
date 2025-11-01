@@ -12,7 +12,6 @@ class Fas(Base):
     monto_inicial: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)  
     monto_disponible: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)  
     descripcion: Mapped[str] = mapped_column(String(255), nullable=True)
-    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     fecha_creacion: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(timezone.utc), nullable=False

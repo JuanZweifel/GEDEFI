@@ -50,6 +50,7 @@ import { RegistroJugadoresModule } from './registro-jugadores.tsx';
 import { PartidosModule } from './partidos.tsx';
 import { PerfilUsuarioModule } from './perfilUsuario.tsx';
 import { MatchesTrainingModule } from './entrenamiento.tsx';
+import { FasModule } from './fas.tsx';
 
 
 
@@ -59,7 +60,7 @@ const mockUser = {
     name: "Juan Pérez",
     role: "admin", // admin, club_manager, player, referee
     club: "FC Barcelona Santiago",
-    permissions: ["users", "clubs", "players", "matches", "finances", "analytics", "meetings", "penalties", "fields", "audit", "fingerprint", "calendar", "admin"]
+    permissions: ["users", "clubs", "players", "matches", "finances", "analytics", "meetings", "fas", "fields", "audit", "fingerprint", "calendar", "admin"]
 };
 
 // Application state
@@ -250,9 +251,8 @@ export default function DashboardComponent() {
         { id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
         { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
         { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: FingerprintModule, permission: 'fingerprint' },
-        { id: 'penalties', label: 'Castigos', icon: AlertTriangle, component: PenaltiesModule, permission: 'penalties' },
+        { id: 'fas', label: 'FAS', icon: Ambulance, component: FasModule, permission: 'fas' },
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
-        { id: 'fas', label: 'Fas', icon: Ambulance, component: CalendarioModule, permission: 'fas' },
         { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
         { id: 'solicitudes', label: 'Solicitudes', icon: Settings, component: SolicitudesModule, permission: 'admin' },
         { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
@@ -411,7 +411,7 @@ export default function DashboardComponent() {
                             <Route path="analytics" element={<AnalyticsModule />} />
                             <Route path="audit" element={<AuditModule />} />
                             <Route path="fingerprint" element={<FingerprintModule />} />
-                            <Route path="penalties" element={<PenaltiesModule />} />
+                            <Route path="fas" element={<FasModule />} />
                             <Route path="calendar" element={<CalendarioModule />} />
                             <Route path="admin" element={<div>Panel Administrativo</div>} />
                             <Route path="solicitudes" element={<SolicitudesModule />} >

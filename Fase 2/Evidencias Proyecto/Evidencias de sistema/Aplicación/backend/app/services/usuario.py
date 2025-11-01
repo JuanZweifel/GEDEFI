@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from app.services.emails import send_user_deactivated_email
 from datetime import datetime
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
 @handle_db_exceptions
 def get_usuario(db: Session, rut_usu: str) -> Usuario | None:
     return db.query(Usuario).filter(Usuario.rut_usuario == rut_usu).first()

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(prefix="/jugadores", tags=["Jugadores"])
 
@@ -45,4 +46,4 @@ def update_jugador(
 def delete_jugador(rut_jugador: str, db: Session = Depends(get_db)):
     deleted = services.delete_jugador(db, rut_jugador)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Jugador not found")
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
