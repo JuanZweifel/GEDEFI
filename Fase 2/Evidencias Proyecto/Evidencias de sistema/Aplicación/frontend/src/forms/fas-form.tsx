@@ -111,7 +111,6 @@ export const DialogAddFas: React.FC<DialogAddFasProps> = ({ refreshFas }) => {
                         <div className="flex flex-col">
                             <label>Monto Inicial *</label>
                             <Input
-                                type="number"
                                 min="0"
                                 value={montoInicial}
                                 onChange={(e) => setMontoInicial(Number(e.target.value))}
@@ -297,8 +296,6 @@ export const DialogEditFas: React.FC<DialogEditFasProps> = ({ fas, refreshFas })
                         <div className="flex flex-col">
                             <label>Monto Inicial *</label>
                             <Input
-                                type="number"
-                                step="0.01"
                                 value={montoInicial}
                                 onChange={(e) => setMontoInicial(Number(e.target.value))}
                                 required

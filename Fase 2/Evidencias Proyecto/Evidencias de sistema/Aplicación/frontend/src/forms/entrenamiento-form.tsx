@@ -482,9 +482,11 @@ export const DialogEditEntrenamiento: React.FC<DialogEditEntrenamientoProps> = (
                         {/* 📝 Descripción */}
                         <div className="flex flex-col">
                             <label>Descripción *</label>
-                            <Input
+                            <textarea
                                 value={descripcion}
                                 onChange={(e) => setDescripcion(e.target.value)}
+                                className="w-full border p-2 rounded"
+                                maxLength={500}
                                 required
                                 disabled={soloLectura} // 👈 Bloqueado si finalizado
                             />
@@ -657,7 +659,7 @@ export const DialogViewEntrenamiento: React.FC<DialogViewEntrenamientoProps> = (
                     {/* 🔹 Fila 4: Descripción */}
                     <div className="flex flex-col">
                         <label>Descripción:</label>
-                        <Input value={entrenamiento.descripcion_entrenamiento} disabled />
+                        <textarea value={entrenamiento.descripcion_entrenamiento} className="w-full border p-2 rounded" disabled/>
                     </div>
 
                     {/* 🔹 Fila 5: Activo */}

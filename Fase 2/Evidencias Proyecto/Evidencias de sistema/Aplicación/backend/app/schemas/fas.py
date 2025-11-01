@@ -31,3 +31,11 @@ class FasUpdate(BaseModel):
 
 class FasList(BaseModel):
     fondos: List[FasRead] = Field(default_factory=list)
+
+
+
+class FasPublicRead(BaseModel):
+    anio_fas: int
+    monto_disponible: int
+
+    model_config = ConfigDict(from_attributes=True)

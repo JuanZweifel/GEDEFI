@@ -1,6 +1,9 @@
 const URL_BASE_FAS = "http://localhost:8000/fas/";
 const URL_MODIFICAR_FAS = (id: number) => `${URL_BASE_FAS}${id}`;
 const URL_BASE_USO_FAS = "http://localhost:8000/uso_fas/";
+const URL_FAS_PUBLICO = "http://localhost:8000/fas/publico";
+const URL_FAS_USOS_PUBLICO = "http://localhost:8000/uso_fas/publico";
+
 
 //  Manejo genérico de respuestas
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -169,4 +172,33 @@ export async function deleteUsoFas(id: number, token?: string): Promise<void> {
         error.status = response.status;
         throw error;
     }
+}
+
+
+export async function getFasPublico(): Promise<any> {
+    const response = await fetch(URL_FAS_PUBLICO, {
+        method: "GET",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Error al obtener FAS público");
+    }
+
+    return response.json();
+}
+
+
+
+export async function getFasUsosPublico(): Promise<any[]> {
+    const response = await fetch(URL_FAS_USOS_PUBLICO, { 
+        method: "GET" 
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Error al obtener usos públicos del FAS");
+    }
+
+    return response.json();
 }
