@@ -1,9 +1,34 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.models import UsoFas, Fas, Jugador
+from app.models import UsoFas, Fas, Jugador, DetalleClubJugador, Club
 from app.schemas import UsoFasCreate, UsoFasUpdate
+from sqlalchemy import func
 
 # TODO: Aplicar auth security para poder implementar auditoria
+
+def get_usos_fas_publico(db: Session):
+    """
+    Devuelve un resumen público de los usos del FAS agrupados por club.
+    """
+    resultados = (
+        db.query(
+            Club.nombre_club.label("club"),
+            func.count(UsoFas.rut_jugador.distinct()).label("personas"),
+            func.sum(UsoFas.monto_usado).label("monto")
+        )
+        .join(DetalleClubJugador, DetalleClubJugador.rut_jugador == UsoFas.rut_jugador)
+        .join(Club, Club.id_club == DetalleClubJugador.id_club)
+        .group_by(Club.nombre_club)
+        .order_by(func.sum(UsoFas.monto_usado).desc())
+        .all()
+    )
+
+    return [
+        {"club": r.club, "personas": r.personas, "monto": r.monto or 0}
+        for r in resultados
+    ]
+
+
 def get_uso_fas(db: Session, uso_id: int) -> UsoFas | None:
     """Obtiene un registro de uso FAS por ID."""
     return db.query(UsoFas).filter(UsoFas.id_uso_fas == uso_id).first()

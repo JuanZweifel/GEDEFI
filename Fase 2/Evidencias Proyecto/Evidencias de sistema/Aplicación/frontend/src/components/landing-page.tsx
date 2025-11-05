@@ -1,21 +1,37 @@
 import React, { useState, useEffect, useRef } from "react";
-import { NavLink } from 'react-router';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Calendar, Trophy, Users, MapPin, Clock, LogIn } from 'lucide-react';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select';
-import { getSeries } from "../services/jugadoresService";
+import { NavLink } from "react-router";
 import { createPortal } from "react-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Trophy, LogIn } from "lucide-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "./ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { getSeries } from "../services/jugadoresService";
+import { getFasPublico, getFasUsosPublico } from "../services/fasServices";
 
-
+// 🔹 Tooltip de encabezados abreviados
 type AbbrevThProps = {
   abbr: string;
   hint: string;
   className?: string;
 };
 
-const AbbrevTh: React.FC<AbbrevThProps> = ({ abbr, hint, className = "" }) => {
+const AbbrevTh: React.FC<AbbrevThProps> = ({
+  abbr,
+  hint,
+  className = "",
+}) => {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -23,7 +39,6 @@ const AbbrevTh: React.FC<AbbrevThProps> = ({ abbr, hint, className = "" }) => {
   useEffect(() => {
     if (!open || !ref.current) return;
     const r = ref.current.getBoundingClientRect();
-    // Centro horizontal del th y justo arriba (8px de separación)
     setPos({ x: r.left + r.width / 2, y: r.top - r.height - 10 });
   }, [open]);
 
@@ -38,7 +53,8 @@ const AbbrevTh: React.FC<AbbrevThProps> = ({ abbr, hint, className = "" }) => {
         {abbr}
       </div>
 
-      {open && pos &&
+      {open &&
+        pos &&
         createPortal(
           <div
             style={{
@@ -48,7 +64,7 @@ const AbbrevTh: React.FC<AbbrevThProps> = ({ abbr, hint, className = "" }) => {
             }}
             className="
               -translate-x-1/2 -translate-y-full
-              bg-black/90 text-black text-xs rounded-md px-2 py-1
+              bg-black/90 text-white text-xs rounded-md px-2 py-1
               shadow-md whitespace-nowrap z-[9999]
               pointer-events-none
             "
@@ -56,21 +72,41 @@ const AbbrevTh: React.FC<AbbrevThProps> = ({ abbr, hint, className = "" }) => {
             {hint}
           </div>,
           document.body
-        )
-      }
+        )}
     </th>
   );
 };
 
+// 🔹 Landing principal
 export const LandingPage = () => {
-  const [series, setSeries] = useState<any[]>([]);
+  const [series, setSeries] = useState<string[]>([]);
+  const [fasDisponible, setFasDisponible] = useState<number>(0);
+  const [detalleFas, setDetalleFas] = useState<
+    { club: string; personas: number; monto: number }[]
+  >([]);
+  const [isFasDialogOpen, setIsFasDialogOpen] = useState(false);
+  const [montoDisponible, setMontoDisponible] = useState<number | null>(null);
+  const [anioFas, setAnioFas] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Cargar las series desde la BD al montar el componente
+  useEffect(() => {
+    const fetchFas = async () => {
+      try {
+        const data = await getFasPublico();
+        setMontoDisponible(data.monto_disponible);
+        setAnioFas(data.anio_fas);
+      } catch (err: any) {
+        console.error("Error al cargar FAS público:", err);
+        setError(err.message);
+      }
+    };
+    fetchFas();
+  }, []);
+
   useEffect(() => {
     const fetchSeries = async () => {
       try {
-        const data = await getSeries<any[]>(); // 👈 Llama al servicio
-        // Extraer solo los nombres únicos de las series
+        const data = await getSeries<any[]>();
         const nombresUnicos = Array.from(
           new Set(data.map((s) => s.nombre_serie))
         );
@@ -79,8 +115,20 @@ export const LandingPage = () => {
         console.error("Error cargando series:", error);
       }
     };
-
     fetchSeries();
+  }, []);
+
+  useEffect(() => {
+    const fetchUsosFas = async () => {
+      try {
+        const data = await getFasUsosPublico();
+        setDetalleFas(data);
+      } catch (err: any) {
+        console.error("Error al cargar los usos del FAS:", err);
+        setError(err.message);
+      }
+    };
+    fetchUsosFas();
   }, []);
 
   return (
@@ -107,25 +155,99 @@ export const LandingPage = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Temporada 2024</h2>
-          <p className="text-xl text-gray-600">
-            Sigue todos los partidos, resultados y noticias de tu liga favorita
-          </p>
+
+        <div className="flex flex-row items-start justify-between mb-12 w-full">
+
+          <div className="flex flex-col space-y-2 flex-grow">
+            <h2 className="text-4xl font-bold">Temporada 2024</h2>
+            <p className="text-xl text-gray-600">
+              Sigue todos los partidos, resultados y noticias de tu liga favorita
+            </p>
+          </div>
+
+          <div className="flex-shrink-0 ml-8">
+            <Card className="shadow-lg border border-blue-200 bg-blue-50 hover:shadow-xl transition-all">
+              <CardHeader className="py-0 px-2">
+                <CardTitle
+                  className="text-[#0000db] text-sm text-center leading-none"
+                  style={{ 
+                    marginTop: 10, marginBottom: 0, paddingBottom: 0, lineHeight: "1rem" }}
+                >
+                  Fondo de Ayuda Solidaria (FAS)
+                </CardTitle>
+              </CardHeader>
+              <CardContent
+                className="flex flex-col items-center justify-center text-center py-0"
+                style={{ marginTop: "-1rem" }} // 👈 fuerza el contenido hacia arriba
+              >
+                <p className="text-gray-700 text-xs">
+                  Disponible:{" "}
+                  <strong>
+                    {montoDisponible !== null
+                      ? `$${montoDisponible.toLocaleString("es-CL")}`
+                      : "Consultando..."}
+                  </strong>
+                </p>
+                <Button
+                  className="bg-green-600 hover:bg-green-700 text-black text-xs px-3 py-1 mt-1 rounded-lg shadow-md"
+                  onClick={() => setIsFasDialogOpen(true)}
+                  disabled={montoDisponible === null}
+                >
+                  Ver detalles
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
+        {/* Dialogo FAS */}
+        <Dialog open={isFasDialogOpen} onOpenChange={setIsFasDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-[#0000db] text-center">
+                Uso del Fondo FAS
+              </DialogTitle>
+            </DialogHeader>
+            {detalleFas.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto text-sm text-gray-600">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Club</th>
+                      <th className="px-3 py-2 text-center">Personas</th>
+                      <th className="px-3 py-2 text-right">Monto Utilizado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalleFas.map((f, i) => (
+                      <tr key={i} className="border-b">
+                        <td className="px-3 py-2">{f.club}</td>
+                        <td className="px-3 py-2 text-center">{f.personas}</td>
+                        <td className="px-3 py-2 text-right">
+                          ${f.monto.toLocaleString("es-CL")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 py-4">
+                No hay registros disponibles del FAS.
+              </p>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* 🔹 Tabla de Posiciones */}
         <div className="mb-12">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between w-full">
-                {/* Título a la izquierda */}
                 <CardTitle className="text-[#0000db] flex items-center">
                   <Trophy className="w-5 h-5 mr-2" />
                   Tabla de Posiciones
                 </CardTitle>
-
-                {/* Select dinámico de series */}
                 <Select>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Seleccionar serie" />
@@ -146,15 +268,13 @@ export const LandingPage = () => {
                 </Select>
               </div>
             </CardHeader>
-
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full table-auto text-sm text-gray-600">
                   <thead className="bg-gray-100">
                     <tr>
-                      <AbbrevTh abbr="Pos" hint="Posiciones" />
+                      <AbbrevTh abbr="Pos" hint="Posición" />
                       <th className="px-3 py-2 text-left">Equipo</th>
-
                       <AbbrevTh abbr="Pts" hint="Puntos" />
                       <AbbrevTh abbr="PJ" hint="Partidos Jugados" />
                       <AbbrevTh abbr="PG" hint="Partidos Ganados" />
@@ -166,7 +286,11 @@ export const LandingPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {/* Aquí se llenarán los equipos dinámicamente */}
+                    <tr>
+                      <td colSpan={10} className="text-center text-gray-500 py-6">
+                        No hay datos disponibles.
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -174,93 +298,44 @@ export const LandingPage = () => {
           </Card>
         </div>
 
-        {/* Próximos Partidos */}
+        {/* 🔹 Próximos Partidos */}
         <div className="mb-12">
           <Card>
             <CardHeader>
               <CardTitle className="text-[#0000db]">Próximos Partidos</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { date: "15 Sep", time: "15:00", local: "FC Barcelona", visitante: "Real Madrid", stadium: "Estadio Nacional" },
-                  { date: "16 Sep", time: "17:00", local: "Universidad Chile", visitante: "Colo-Colo", stadium: "Santa Laura" },
-                  { date: "17 Sep", time: "19:00", local: "Católica", visitante: "La Serena", stadium: "San Carlos" }
-                ].map((match, i) => (
-                  <div key={i} className="border rounded-lg p-4 text-center">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="outline" className="text-[#0000db]">{match.date}</Badge>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {match.time}
-                      </div>
-                    </div>
-                    <div className="mb-1">
-                      <div className="font-medium">{match.local}</div>
-                      <div className="text-xs text-gray-500">vs</div>
-                      <div className="font-medium">{match.visitante}</div>
-                    </div>
-                    <div className="flex items-center justify-center text-xs text-gray-600">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {match.stadium}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-center text-gray-500 py-6">
+                No hay partidos programados.
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Resultados Recientes */}
+        {/* 🔹 Resultados Recientes */}
         <div className="mb-12">
           <Card>
             <CardHeader>
               <CardTitle className="text-[#0000db]">Resultados Recientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { local: "FC Barcelona", golesLocal: 3, golesVisitante: 1, visitante: "Universidad Chile", fecha: "08 Sep" },
-                  { local: "Real Madrid", golesLocal: 2, golesVisitante: 0, visitante: "Colo-Colo", fecha: "07 Sep" },
-                  { local: "Católica", golesLocal: 1, golesVisitante: 1, visitante: "La Serena", fecha: "06 Sep" }
-                ].map((result, i) => (
-                  <div key={i} className="border rounded-lg p-4 text-center">
-                    <div className="text-xs text-gray-500 mb-2">{result.fecha}</div>
-                    <div className="font-medium text-sm">{result.local}</div>
-                    <div className="text-2xl font-bold text-[#0000db] my-2">
-                      {result.golesLocal} - {result.golesVisitante}
-                    </div>
-                    <div className="font-medium text-sm">{result.visitante}</div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-center text-gray-500 py-6">
+                No hay resultados recientes.
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Noticias */}
+        {/* 🔹 Noticias */}
         <div className="mb-12">
           <Card>
             <CardHeader>
               <CardTitle className="text-[#0000db]">Noticias de la Asociación</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  { title: "Nuevo reglamento para la próxima temporada", description: "Se han implementado nuevas reglas que entrarán en vigor a partir del próximo campeonato.", date: "10 Sep 2024", category: "Reglamento" },
-                  { title: "Inauguración de nuevas instalaciones deportivas", description: "Se inauguraron dos nuevas canchas que estarán disponibles para todos los clubes afiliados.", date: "08 Sep 2024", category: "Infraestructura" },
-                  { title: "Fechas importantes del calendario 2024", description: "Conoce todas las fechas importantes del resto de la temporada incluyendo playoffs y finales.", date: "05 Sep 2024", category: "Calendario" }
-                ].map((news, i) => (
-                  <div key={i} className="border-l-4 border-[#0000db] pl-4 py-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <Badge variant="outline" className="text-xs">{news.category}</Badge>
-                      <span className="text-xs text-gray-500">{news.date}</span>
-                    </div>
-                    <h3 className="font-medium mb-1">{news.title}</h3>
-                    <p className="text-sm text-gray-600">{news.description}</p>
-                  </div>
-                ))}
-              </div>
+              <p className="text-center text-gray-500 py-6">
+                No hay noticias disponibles.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -273,7 +348,9 @@ export const LandingPage = () => {
             <Trophy className="w-6 h-6" />
             <span className="font-bold">Asociación de Fútbol</span>
           </div>
-          <p className="text-gray-400">© 2024 Todos los derechos reservados</p>
+          <p className="text-gray-400">
+            © {new Date().getFullYear()} Todos los derechos reservados
+          </p>
         </div>
       </footer>
     </div>

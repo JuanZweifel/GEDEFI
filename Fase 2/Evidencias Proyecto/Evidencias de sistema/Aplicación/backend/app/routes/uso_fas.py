@@ -8,6 +8,35 @@ from app.security import get_current_user
 router = APIRouter(prefix="/uso_fas", tags=["Usos del Fondo FAS"])
 
 
+@router.get("/publico", response_model=list[dict])
+def get_fas_usos_publico(db: Session = Depends(get_db)):
+    """
+    Endpoint público: devuelve resumen de usos del FAS agrupados por club.
+    Cada entrada contiene el nombre del club, cantidad de personas y monto total utilizado.
+    """
+    from sqlalchemy import func
+    from app.models import UsoFas, DetalleClubJugador, Club
+
+    resultados = (
+        db.query(
+            Club.nombre_club.label("club"),
+            func.count(UsoFas.rut_jugador.distinct()).label("personas"),
+            func.sum(UsoFas.monto_usado).label("monto")
+        )
+        .join(DetalleClubJugador, DetalleClubJugador.rut_jugador == UsoFas.rut_jugador)
+        .join(Club, Club.id_club == DetalleClubJugador.id_club)
+        .group_by(Club.nombre_club)
+        .order_by(func.sum(UsoFas.monto_usado).desc())
+        .all()
+    )
+
+    # Convertir resultados a lista de diccionarios
+    return [
+        {"club": r.club, "personas": r.personas, "monto": r.monto or 0}
+        for r in resultados
+    ]
+
+
 @router.post("/", response_model=schemas.UsoFasRead)
 def create_uso_fas(
     uso_fas: schemas.UsoFasCreate,

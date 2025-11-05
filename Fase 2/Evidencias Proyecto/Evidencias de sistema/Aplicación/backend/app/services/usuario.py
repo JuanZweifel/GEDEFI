@@ -7,8 +7,9 @@ from app.schemas import UsuarioCreate, UsuarioUpdate
 from app.security import get_password_hash
 from app.utils.decorators import handle_db_exceptions
 from fastapi import HTTPException
-from app.services.emails import send_user_deactivated_email
+from app.services.correo import send_user_deactivated_email
 from datetime import datetime
+
 
 # TODO: Aplicar auth security para poder implementar auditoria
 @handle_db_exceptions

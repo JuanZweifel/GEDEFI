@@ -4,6 +4,17 @@ from app.models import Fas, UsoFas
 from app.schemas import FasCreate, FasUpdate
 from datetime import datetime
 # TODO: Aplicar auth security para poder implementar auditoria
+
+def get_fas_publico(db: Session):
+    """Obtiene el FAS correspondiente al año actual."""
+    anio_actual = datetime.now().year
+    return (
+        db.query(Fas)
+        .filter(Fas.anio_fas == anio_actual)
+        .first()
+    )
+
+
 def get_fas(db: Session, fas_id: int) -> Fas | None:
     """Obtiene un registro FAS por ID."""
     return db.query(Fas).filter(Fas.id_fas == fas_id).first()
@@ -85,3 +96,5 @@ def delete_fas(db: Session, fas_id: int) -> bool:
     db.delete(fas)
     db.commit()
     return True
+
+

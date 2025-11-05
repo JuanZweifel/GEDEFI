@@ -141,7 +141,7 @@ export const DialogViewRendimientoEntrenamiento: React.FC<DialogViewRendimientoE
                     {/* 📝 Observaciones */}
                     <div className="flex flex-col">
                         <label className="text-sm font-medium">Observaciones:</label>
-                        <Input value={rendimiento.observaciones ?? "-"} disabled />
+                        <textarea value={rendimiento.observaciones ?? "-"} className="w-full border p-2 rounded" disabled />
                     </div>
 
                     <div className="flex justify-end mt-4">
@@ -300,7 +300,8 @@ export const DialogEditRendimientoEntrenamiento: React.FC<DialogEditRendimientoE
                         {/* 📝 Observaciones */}
                         <div className="flex flex-col">
                             <label className="text-sm font-medium">Observaciones:</label>
-                            <Input
+                            <textarea
+                                className="w-full border p-2 rounded"
                                 value={observaciones}
                                 onChange={(e) => setObservaciones(e.target.value)}
                                 placeholder="Escribe tus observaciones..."
