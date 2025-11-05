@@ -1,752 +1,361 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.tsx';
+import type {
+    ClubType,
+    SerieType,
+    JugadorType,
+    UsuarioType,
+    ClubDetailsType,
+} from '../types.tsx';
+import { useAuth } from '../contexts/authContext.tsx';
+import { useLocation, useNavigate, NavLink, useParams } from 'react-router';
+
+// !import de estilos 
+
 import { Button } from '../components/ui/button.tsx';
 import { Badge } from '../components/ui/badge.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.tsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table.tsx';
 import { Label } from '../components/ui/label.tsx';
-import { DialogHandle } from '../components/dialog-component.tsx';
 import { Input } from '../components/ui/input.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.tsx';
 import {
     Plus, Edit, Eye, ArrowBigLeft, ArrowBigRight,
-    Trash2, RefreshCcw, FileText
+    Trash2, RefreshCcw, FileText,
+    Divide
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 
-import { getClubs, deleteClub, getClub } from '../services/clubServices.ts';
+// !Componentes
 import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
-import { ClubForm } from '../forms/club-forms.tsx';
+import { DialogHandle } from '../components/dialog-component.tsx';
+
+// !Servicios
+
 import {
-    type ClubType,
-    type SerieType,
-    type JugadorType,
-    type UsuarioType,
-    type ClubDetailsType,
-} from '../types.tsx';
-import { useAuth } from '../contexts/authContext.tsx';
-import { useLocation, useNavigate, NavLink, useParams } from 'react-router';
+    getClubs,
+    deleteClub,
+    getClub
+}
+    from '../services/clubServices.ts';
 
-export const ClubDetailsContent: React.FC<ClubDetailsType> = ({ club }) => {
-    const [series, setSeries] = useState<SerieType[]>([])
-    const [directiva, setDirectiva] = useState<UsuarioType[]>([])
-    const [jugadores, setJugadores] = useState<JugadorType[]>([])
-    const [activeTab, setActiveTab] = useState("directiva")
 
-    useEffect(() => {
-        setDirectiva(club.directiva)
-        setSeries(club.series)
-        setJugadores(club.jugadores)
-    }, [club])
+import { Progress } from '../components/ui/progress.tsx';
 
-    return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <Label className="block mb-2">RUT</Label>
-                    <Input value={club.rut_club} disabled />
-                </div>
-                <div>
-                    <Label className="block mb-2">Fecha fundacion</Label>
-                    <Input value={club.fecha_fundacion} disabled />
-                </div>
-                <div>
-                    <Label className="block mb-2">Nombre</Label>
-                    <Input value={club.nombre_club} disabled />
-                </div>
-                <div>
-                    <Label className="block mb-2">Dirección</Label>
-                    <Input value={club.nombre_club} disabled />
-                </div>
-                <div>
-                    <Label className="block mb-2">Telefono</Label>
-                    <Input value={club.fono_club} disabled />
-                </div>
-                <div>
-                    <Label className="block mb-2">Correo Electronico</Label>
-                    <Input value={club.email_club} disabled />
-                </div>
-                <div>
-                    <Label className="block mb-2">Color primario</Label>
-                    <Input
-                        type='color'
-                        value={club.color_primario}
-                        disabled
-                    />
-                </div>
-                <div>
-                    <Label className="block mb-2">Color secundario</Label>
-                    <Input
-                        type='color'
-                        value={club.color_secundario}
-                        disabled
-                    />
-                </div>
-                <div>
-                    <Label className="block mb-2">Color respaldo</Label>
-                    <Input
-                        type='color'
-                        value={club.color_respaldo}
-                        disabled
-                    />
-                </div>
-                <div>
-                    <Label className="block mb-0">Estado</Label>
-                    <Badge className={club.club_activo ? 'bg-green-500' : 'bg-gray-500'}>
-                        {club.club_activo ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                </div>
-            </div>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="directiva">Directiva</TabsTrigger>
-                    <TabsTrigger value="series">Series</TabsTrigger>
-                    <TabsTrigger value="jugadores">Jugadores</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="directiva" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className='font-medium'>Usuarios directivos</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {directiva.length > 0 &&
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>RUT</TableHead>
-                                            <TableHead>Nombre completo</TableHead>
-                                            <TableHead>Fecha nacimiento</TableHead>
-                                            <TableHead>Correo electronico</TableHead>
-                                            <TableHead>Huella registrada</TableHead>
-                                            <TableHead>ROL</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                            <TableHead>Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {directiva.map((d) => (
-                                            <TableRow key={d.rut_usuario}>
-                                                <TableCell className="font-medium">{d.rut_usuario}</TableCell>
-                                                <TableCell className="font-medium">{d.nombre_usuario} {d.apellido_usuario}</TableCell>
-                                                <TableCell className="font-medium">{d.fecha_nacimiento}</TableCell>
-                                                <TableCell className="font-medium">{d.email_usuario}</TableCell>
-                                                <TableCell className="font-medium">
-                                                    <Badge className={d.huella_indice || d.huella_pulgar ? 'bg-green-500' : 'bg-red-500'}>
-                                                        {d.huella_indice || d.huella_pulgar ? 'Registrada' : 'Sin registrar'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    <Badge className='bg-blue-500'>
-                                                        {d.nombre_rol?.toUpperCase()}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    <Badge className={d.usuario_activo ? 'bg-green-500' : 'bg-gray-500'}>
-                                                        {d.usuario_activo ? 'Activo' : 'Inactivo'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    <Button variant="outline" size="sm">
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            }
-                            {directiva.length === 0 &&
-                                <div className="text-center py-8 text-gray-500">
-                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p>Este club no tiene directiva asociada.</p>
-                                </div>
-                            }
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="series" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className='font-medium'>Series registradas</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {!!series && series.length > 0 &&
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Nombre Serie</TableHead>
-                                            <TableHead>Jugadores</TableHead>
-                                            <TableHead>Fecha Inicio</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                            <TableHead>Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {series.map((serie) => (
-                                            <TableRow key={serie.id_serie ?? serie.nombre_serie}>
-                                                <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
-                                                <TableCell className="font-medium">{serie.cantidad_jugadores}</TableCell>
-                                                <TableCell className="font-medium">{serie.fecha_creacion?.split("T")[0]}</TableCell>
-                                                <TableCell className="font-medium">
-                                                    <Badge className={serie.serie_activa ? 'bg-green-500' : 'bg-gray-500'}>
-                                                        {serie.serie_activa ? 'Activo' : 'Inactivo'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    <NavLink to={`/dashboard/series/${serie.id_serie}`}>
-                                                        <Button variant="outline" size="sm">
-                                                            <Eye className="w-4 h-4" />
-                                                        </Button>
-                                                    </NavLink>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            }
-                            {series.length === 0 &&
-                                <div className="text-center py-8 text-gray-500">
-                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p>Este club no tiene series registradas.</p>
-                                </div>
-                            }
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="jugadores" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className='font-medium'>Usuarios directivos</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {jugadores.length > 0 &&
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>RUT</TableHead>
-                                            <TableHead>Nombre completo</TableHead>
-                                            <TableHead>Genero</TableHead>
-                                            <TableHead>Fecha nacimiento</TableHead>
-                                            <TableHead>Enfermedades cronicas</TableHead>
-                                            <TableHead>Telefono</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                            <TableHead>Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {jugadores.map((j) => (
-                                            <TableRow key={j.rut_jugador}>
-                                                <TableCell className="font-medium">{j.rut_jugador}</TableCell>
-                                                <TableCell className="font-medium">{j.primer_nombre} {j.segundo_nombre} {j.primer_apellido} {j.segundo_apellido}</TableCell>
-                                                <TableCell className="font-medium">{j.genero ? "Masculino" : "Femenino"}</TableCell>
-                                                <TableCell className="font-medium">{j.fecha_nacimiento}</TableCell>
-                                                <TableCell className="font-medium">{j.enfermedades_cronicas}</TableCell>
-                                                <TableCell className="font-medium">{j.fono_jugador}</TableCell>
-                                                <TableCell className="font-medium">
-                                                    <Badge className={j.jugador_activo ? 'bg-green-500' : 'bg-gray-500'}>
-                                                        {j.jugador_activo ? 'Activo' : 'Inactivo'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    <Button variant="outline" size="sm">
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            }
-                            {jugadores.length === 0 &&
-                                <div className="text-center py-8 text-gray-500">
-                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p>Este club no tiene jugadores asociados.</p>
-                                </div>
-                            }
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </div>
-    );
-};
-
-export const ClubModule: React.FC = () => {
-    const [activeTab, setActiveTab] = useState('clubs');
-    const [page, setPage] = useState<number>(1);
-    const [totalPages, setTotalPages] = useState<number>(0);
-    const [clubList, setClubList] = useState<ClubType[]>([]);
-    const [isFetching, setIsFetching] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedEstado, setSelectedEstado] = useState<string | undefined>(undefined);
-    const [selectedClub, setSelectedClub] = useState<ClubType | undefined>()
-    const [selectedDelete, setSelectedDelete] = useState<number | null>(null)
+export const ClubCoreModule: React.FC = () => {
+    // ! Estados (UseState)
     const [action, setAction] = useState<string>("")
-    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
 
-    const location = useLocation();
+    // ! Router
     const navigate = useNavigate();
     const params = useParams();
-    const { token } = useAuth();
 
-    // Effect para manejar rutas y acciones
+    // ! Control de estados (UseEffect)
+    // ...
     useEffect(() => {
-        const path = location.pathname;
+        const acc = params.action;
 
-        switch (true) {
-            case path.endsWith("/new"):
-                setAction("new");
-                setIsDialogOpen(true);
+        const isInvalid =
+            acc === undefined ||
+            !["new", "details", "edit", "view"].includes(acc) ||
+            (acc === "view" && !!params.id_club); // view no debería tener ID
+
+        if (isInvalid) {
+            navigate("/dashboard/clubes/view", { replace: true });
+        } else {
+            setAction(acc);
+        }
+    }, [params.action, params.id_club]);
+
+    // ! Funciones logicas (() =>)
+    const getModule = (action: string) => {
+        switch (action) {
+            case "view":
+                return <ClubListModule />
+            case "details":
+                console.log("retornar details", params.id_club)
                 break;
-
-            case path.endsWith("/edit") && !!params.id_club:
-                setAction("edit");
-                setIsDialogOpen(true);
-                fetchClub(Number(params.id_club));
+            case "edit":
+                console.log("retornar editForm", params.id_club)
                 break;
-
-            case !!params.id_club:
-                setAction("view");
-                setIsDialogOpen(true);
-                fetchClub(Number(params.id_club));
-                break;
-
-            default:
-                setAction("");
-                setIsDialogOpen(false);
-                fetchClubs();
+            case "new":
+                console.log("retornar newClubForm", params.id_club)
                 break;
         }
-    }, [location.pathname, params.id_club]);
+    }
+    return (
+        <>
+            <div className='space-y-6'>
+                <div className="flex justify-between items-center mb-3">
+                    <h2>Gestión de Clubes</h2>
+                    <div className='flex space-x-2'>
+                        <Button
+                            style={{ backgroundColor: "#0000db" }}
+                            size="sm"
+                            className="text-white flex-1"
+                            onClick={() => navigate("/dashboard/clubes/new", { replace: true })}
+                        >
+                            <Plus className="w-2 h-2 mr-2" /> Nuevo Club
+                        </Button>
+                    </div>
+                </div>
+            </div>
+            <div className='space-y-4'>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Clubes registrados</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {getModule(action)}
+                    </CardContent>
+                </Card>
+                {action !== "view" && getModule(action)}
+            </div>
+        </>
+    )
+}
 
-    // Effect para búsqueda con debounce
+const ClubListModule: React.FC = () => {
+    // ! Estados (UseState)
+    const [isLoading, setIsLoading] = useState<number>(0)
+    const [page, setPage] = useState<number>(1)
+    const [totalPages, setTotalPages] = useState<number>(0)
+    const [clubList, setClubList] = useState<ClubType[]>([])
+    const [searchTerm, setSearchTerm] = useState<string | null>("");
+    const [selectedEstado, setSelectedEstado] = useState<string | null>("");
+    const [selectedDelete, setSelectedDelete] = useState<number | null>(null)
+
+    // ! Auth
+    const { token, id_club, admin } = useAuth();
+
+    // ! Router
+    const navigate = useNavigate();
+    const location = useLocation();
+    const params = useParams();
+
+    // ! Control de estados (UseEffect)
     useEffect(() => {
-        const timer = setTimeout(() => {
-            const rawTerm = searchTerm.trim();
-            const term = rawTerm.toLowerCase();
-
-            if (!term) {
-                fetchClubs(undefined, selectedEstado);
-                return;
-            }
-
-            const cacheToSearch =
-                selectedEstado === "1"
-                    ? clubList.filter(c => c.club_activo)
-                    : selectedEstado === "2"
-                        ? clubList.filter(c => !c.club_activo)
-                        : clubList;
-
-            const onlyDigits = /^\d+$/.test(rawTerm);
-            const foundInCache = cacheToSearch.some(c => {
-                const rut = (c.rut_club ?? "").toLowerCase();
-                const nombre = (c.nombre_club ?? "").toLowerCase();
-                const email = (c.email_club ?? "").toLowerCase();
-
-                if (onlyDigits) return rut.includes(term);
-                return (
-                    nombre.includes(term) ||
-                    email.includes(term)
-                );
-            });
-
-            if (foundInCache) {
-                const filtered = cacheToSearch.filter(c => {
-                    const rut = (c.rut_club ?? "").toLowerCase();
-                    const nombre = (c.nombre_club ?? "").toLowerCase();
-                    const email = (c.email_club ?? "").toLowerCase();
-
-                    if (onlyDigits) return rut.includes(term);
-                    return nombre.includes(term) || email.includes(term);
-                });
-                setClubList(filtered);
-                return;
-            }
-
-            fetchClubs(searchTerm, selectedEstado);
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [searchTerm, selectedEstado, page]);
-
-    // Fetch de clubes paginados
-    const fetchClubs = async (search?: string, estado?: string) => {
-        let data: { items: ClubType[]; total: number } = { items: [], total: 0 };
-        try {
-            setIsFetching(true);
-            data = await getClubs<{ items: ClubType[]; total: number }>(
-                token,
-                search,
-                estado,
-                page,
-                10,
-            );
-            setClubList(data.items);
-            setTotalPages(Math.ceil(data.total / 10));
-            if (data.items.length === 0 && !search && !estado) {
-                toast.info("No hay clubs registrados en la base de datos.");
-            }
-        } catch (error: any) {
-            toast.warning(String(error));
-        } finally {
-            if (data.items.length === 0) setClubList([]);
-            setIsFetching(false);
+        if (params.action === "view") {
+            if (!!admin) fetchClubs(token);
+            else fetchClub(token, id_club);
         }
-    };
+    }, [location.pathname])
 
-    // Fetch de un club específico
-    const fetchClub = async (id_club: number) => {
+    // ! Funciones Logicas (() => )
+    const fetchClubs = async (token: string | null) => {
         try {
-            setIsFetching(true);
-            const clubEncontrado = clubList.find((c) => c.id_club === id_club);
-            if (clubEncontrado) {
-                setSelectedClub(clubEncontrado);
-            } else {
-                const data = await getClub<ClubType>(id_club, token);
-                if (data) {
-                    setSelectedClub(data);
-                } else {
-                    toast.warning("El club solicitado no existe.");
-                    navigate("/dashboard/clubes", { replace: true });
-                }
-            }
+            const response = await getClubs<any>(setIsLoading, token, searchTerm, selectedEstado, page)
+            setIsLoading(80)
+            let clubes: ClubType[] = response.items
+            setClubList(clubes)
+            setTotalPages((Math.ceil(response.total / 10)) | 0)
+            setIsLoading(100)
+            if (clubes.length === 0 && !searchTerm && !selectedEstado) toast.info("No hay clubes registrados en la base de datos")
         } catch (error) {
-            toast.warning(String(error));
-            navigate("/dashboard/clubes", { replace: true });
-        } finally {
-            setIsFetching(false);
+            toast.info(String(error))
         }
-    };
+    }
 
-    const handleCloseDialog = (open: boolean) => {
-        if (!open) navigate("/dashboard/clubes");
-    };
+    const fetchClub = async (token: string | null, id_club: number | null) => {
+        try {
+            const response = await getClub<any>(id_club, token)
+            let clubes: ClubType[] = [response.items]
+            setClubList(clubes)
+        } catch (error) {
+            toast.info(String(error))
+        }
+    }
 
     const handleDelete = async (id_club: number) => {
         try {
             const response = await deleteClub<any>(id_club, token);
             toast.success(response.message);
-            setSelectedClub(undefined);
-            fetchClubs();
+            setSelectedDelete(null);
+            if (!!admin) fetchClubs(token);
+            else fetchClub(token, id_club)
         } catch (error) {
             toast.error(String(error));
         }
     };
 
-    const clubHistory = [
-        { fecha: "2024-09-15", accion: "Registro nueva serie", club: "FC Barcelona Santiago", detalle: "Serie Femenina agregada" },
-        { fecha: "2024-09-10", accion: "Actualización directiva", club: "Real Madrid Chile", detalle: "Cambio de tesorero" }
-    ];
+    return (
+        <>
+            {isLoading !== 100 && <Loading component='Clubes' isLoading={isLoading} />}
+            {isLoading === 100 && <>
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-3'>
+                    <div>
+                        <Input
+                            type="text"
+                            placeholder="Buscar club por Nombre, RUT o Email..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Select value={selectedEstado} onValueChange={(v: string) => setSelectedEstado(v)}>
+                            <SelectTrigger className="w-48">
+                                <SelectValue placeholder="Seleccionar estado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="0">Todos</SelectItem>
+                                <SelectItem value="1">Activo</SelectItem>
+                                <SelectItem value="2">Inactivo</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {clubList.length > 0 &&
+                        <div className='flex justify-end items-center space-x-2'>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                            >
+                                <ArrowBigLeft className="w-2 h-2 mr-2" />
+                            </Button>
+
+                            <span className="text-sm font-medium">
+                                {page} / {totalPages === 0 ? "-" : totalPages}
+                            </span>
+
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            >
+                                <ArrowBigRight className="w-2 h-2 mr-2" />
+                            </Button>
+                        </div>
+                    }
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    {clubList.map(c => (
+                        <Card key={c.id_club}>
+                            <CardHeader>
+                                <div className="flex items-start justify-between">
+                                    <CardTitle>
+                                        <div>{c.nombre_club}</div>
+                                        <div>
+                                            <span className="text-gray-400 text-sm">{c.rut_club}</span>
+                                        </div>
+                                    </CardTitle>
+                                    <Badge className={c.club_activo ? "bg-green-500" : "bg-gray-500"}>
+                                        {c.club_activo ? "Activo" : "Inactivo"}
+                                    </Badge>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {/* Club info */}
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span className="font-medium">Fecha fundacion:</span>
+                                        <p>{c.fecha_fundacion}</p>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium">Telefono:</span>
+                                        <p>{c.fono_club}</p>
+                                    </div>
+                                </div>
+                                <div className="text-sm">
+                                    <span className="font-medium">Correo Electronico:</span>
+                                    <p>{c.email_club}</p>
+                                </div>
+
+                                {/* Series & Players */}
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span className="font-medium">Series:</span>
+                                        <p>{c.series.length}</p>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium">Jugadores:</span>
+                                        <p>{c.jugadores.length}</p>
+                                    </div>
+                                </div>
+
+                                {/* Logo */}
+                                <div className="text-sm">
+                                    <img
+                                        src={
+                                            typeof c.logo_club === "string"
+                                                ? c.logo_club
+                                                : c.logo_club instanceof File
+                                                    ? URL.createObjectURL(c.logo_club)
+                                                    : undefined
+                                        }
+                                        alt="Preview logo"
+                                        className="mt-2 h-32 w-32 object-contain border rounded"
+                                        style={{ width: "1000px", height: "250px", objectFit: "contain" }}
+                                    />
+                                </div>
+
+                                {/* Buttons */}
+                                <div className="flex space-x-2 pt-2">
+                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${c.id_club}`, { replace: true })}>
+                                        <Eye className="w-4 h-4 mr-1" /> Ver Detalles
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${c.id_club}/edit`, { replace: true })}>
+                                        <Edit className="w-4 h-4 mr-1" /> Editar
+                                    </Button>
+                                </div>
+                                <div className="flex space-x-2 pt-2">
+                                    <Button
+                                        onClick={() => setSelectedDelete(c.id_club)}
+                                        variant="destructive"
+                                        size="sm"
+                                        className="flex-1"
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                                    </Button>
+                                    <AlertDialogHandle
+                                        title={`Eliminacion de club ${c.nombre_club}`}
+                                        description={`¿Estas seguro de querer eliminar al club ${c.nombre_club}?`}
+                                        confirmLabel="Eliminar"
+                                        cancelLabel="Cancelar"
+                                        onConfirm={() => handleDelete(c.id_club)}
+                                        open={selectedDelete === c.id_club}
+                                        onOpenChange={open => !open && setSelectedDelete(null)}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            </>}
+        </>
+    )
+}
+
+const Loading: React.FC<{ isLoading: number, component: string }> = ({ isLoading, component }) => {
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2>Gestión de Clubes</h2>
-                <div className="flex space-x-2">
-                    {isFetching ? (
-                        <Button variant="outline" size="sm" className="flex-1" disabled>
-                            <RefreshCcw className="w-4 h-4 mr-1" /> Recargando...
-                        </Button>
-                    ) : (
-                        <>
-                            <Button variant="outline" size="sm" className="flex-1" onClick={() => fetchClubs()}>
-                                <RefreshCcw className="w-4 h-4 mr-1" /> Recargar
-                            </Button>
-                            <Button
-                                style={{ backgroundColor: "#0000db" }}
-                                size="sm"
-                                className="text-white flex-1"
-                                onClick={() => navigate("/dashboard/clubes/new", { replace: true })}
-                            >
-                                <Plus className="w-2 h-2 mr-2" /> Nuevo Club
-                            </Button>
-                        </>
-                    )}
-                </div>
-            </div>
-            {/* === Tabs === */}
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="clubs">Clubes</TabsTrigger>
-                    <TabsTrigger value="history">Historial</TabsTrigger>
-                </TabsList>
+        <div>
+            <p>Cargando {component}...</p>
+            <Progress value={isLoading} />
+        </div>
 
-                <TabsContent value="clubs" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Clubes registrados</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <Input
-                                    type="text"
-                                    placeholder="Buscar club por Nombre, RUT o Email..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    className="w-64"
-                                />
-                                <Select value={selectedEstado} onValueChange={(v: string) => setSelectedEstado(v)}>
-                                    <SelectTrigger className="w-48">
-                                        <SelectValue placeholder="Seleccionar estado" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="0">Todos</SelectItem>
-                                        <SelectItem value="1">Activo</SelectItem>
-                                        <SelectItem value="2">Inactivo</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <div></div>
-                                {clubList.length > 0 &&
-                                    <div className="flex space-x-1 col-start-4 justify-end items-center">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                                            disabled={page === 1 || !!isFetching}
-                                        >
-                                            <ArrowBigLeft className="w-2 h-2 mr-2" />
-                                        </Button>
+    )
+}
 
-                                        <span className="text-sm font-medium">
-                                            {page} / {totalPages === 0 ? "-" : totalPages}
-                                        </span>
+const LoadingTest: React.FC = () => {
+    const [progress, setProgress] = useState<number>(0);
 
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                            disabled={page === totalPages || !!isFetching}
-                                        >
-                                            <ArrowBigRight className="w-2 h-2 mr-2" />
-                                        </Button>
-                                    </div>
-                                }
-                            </div>
+    useEffect(() => {
+        if (progress >= 100) return; // Detener cuando llega a 100%
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                                {clubList.map((club) => (
-                                    <Card key={club.id_club}>
-                                        <CardHeader>
-                                            <div className="flex items-start justify-between">
-                                                <CardTitle>
-                                                    <div>{club.nombre_club}</div>
-                                                    <div>
-                                                        <span className="text-gray-400 text-sm">{club.rut_club}</span>
-                                                    </div>
-                                                </CardTitle>
-                                                <Badge className={club.club_activo ? "bg-green-500" : "bg-gray-500"}>
-                                                    {club.club_activo ? "Activo" : "Inactivo"}
-                                                </Badge>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {/* Club info */}
-                                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                                <div>
-                                                    <span className="font-medium">Fecha fundacion:</span>
-                                                    <p>{club.fecha_fundacion}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="font-medium">Telefono:</span>
-                                                    <p>{club.fono_club}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-sm">
-                                                <span className="font-medium">Correo Electronico:</span>
-                                                <p>{club.email_club}</p>
-                                            </div>
+        const timer = setTimeout(() => {
+            setProgress(prev => Math.min(prev + 20, 100)); // Aumenta 20%
+        }, 5000); // Cada 5 segundos
 
-                                            {/* Series & Players */}
-                                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                                <div>
-                                                    <span className="font-medium">Series:</span>
-                                                    <p>{club.series.length}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="font-medium">Jugadores:</span>
-                                                    <p>{club.jugadores.length}</p>
-                                                </div>
-                                            </div>
+        return () => clearTimeout(timer);
+    }, [progress]);
 
-                                            {/* Logo */}
-                                            <div className="text-sm">
-                                                <img
-                                                    src={
-                                                        typeof club.logo_club === "string"
-                                                            ? club.logo_club
-                                                            : club.logo_club instanceof File
-                                                                ? URL.createObjectURL(club.logo_club)
-                                                                : undefined
-                                                    }
-                                                    alt="Preview logo"
-                                                    className="mt-2 h-32 w-32 object-contain border rounded"
-                                                    style={{ width: "1000px", height: "250px", objectFit: "contain" }}
-                                                />
-                                            </div>
-
-                                            {/* Buttons */}
-                                            <div className="flex space-x-2 pt-2">
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${club.id_club}`, { replace: true })}>
-                                                    <Eye className="w-4 h-4 mr-1" /> Ver Detalles
-                                                </Button>
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/${club.id_club}/edit`, { replace: true })}>
-                                                    <Edit className="w-4 h-4 mr-1" /> Editar
-                                                </Button>
-                                            </div>
-                                            <div className="flex space-x-2 pt-2">
-                                                <Button
-                                                    onClick={() => setSelectedDelete(club.id_club)}
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    className="flex-1"
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                                                </Button>
-                                                <AlertDialogHandle
-                                                    title={`Eliminacion de club ${club.nombre_club}`}
-                                                    description={`¿Estas seguro de querer eliminar al club ${club.nombre_club}?`}
-                                                    confirmLabel="Eliminar"
-                                                    cancelLabel="Cancelar"
-                                                    onConfirm={() => handleDelete(club.id_club)}
-                                                    open={selectedDelete === club.id_club}
-                                                    onOpenChange={open => !open && setSelectedDelete(null)}
-                                                />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                                {clubList.length > 0 &&
-                                    <div className="flex space-x-1 justify-end items-center col-span-2">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                                            disabled={page === 1 || !!isFetching}
-                                        >
-                                            <ArrowBigLeft className="w-2 h-2 mr-2" />
-                                        </Button>
-
-                                        <span className="text-sm font-medium">
-                                            {page} / {totalPages === 0 ? "-" : totalPages}
-                                        </span>
-
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                            disabled={page === totalPages || !!isFetching}
-                                        >
-                                            <ArrowBigRight className="w-2 h-2 mr-2" />
-                                        </Button>
-                                    </div>
-                                }
-                            </div>
-                            {clubList.length === 0 &&
-                                <div className="text-center py-8 text-gray-500">
-                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p>No hay clubes registrados.</p>
-                                </div>
-                            }
-                            {clubList.length === 0 && clubList.length > 0 &&
-                                <div className="text-center py-8 text-gray-500">
-                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p>No se encontraron clubs que coincidan con la busqueda.</p>
-                                </div>
-                            }
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="history" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Historial de Clubes y Series</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Fecha</TableHead>
-                                        <TableHead>Acción</TableHead>
-                                        <TableHead>Club</TableHead>
-                                        <TableHead>Detalle</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {clubHistory.map((item, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell>{item.fecha}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{item.accion}</Badge>
-                                            </TableCell>
-                                            <TableCell>{item.club}</TableCell>
-                                            <TableCell>{item.detalle}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-
-            {action === "view" && !!selectedClub && (
-                <DialogHandle<ClubType>
-                    title={selectedClub ? `Detalles del club: ${selectedClub.nombre_club}` : 'Detalles del club'}
-                    trigger={<div />}
-                    open={isDialogOpen}
-                    onOpenChange={handleCloseDialog}
-                    initialData={selectedClub}
-                    size='w-full'
-                >
-                    {() => {
-                        if (!selectedClub) {
-                            return (
-                                <div className="p-6 flex items-center justify-center">
-                                    <span>Cargando detalles del club...</span>
-                                </div>
-                            );
-                        }
-
-                        return <ClubDetailsContent club={selectedClub} />;
-                    }}
-                </DialogHandle>
-            )}
-
-            {action === "new" && (
-                <DialogHandle<ClubType>
-                    title="Crear nuevo club"
-                    trigger={<div />}
-                    open={isDialogOpen}
-                    onOpenChange={handleCloseDialog}
-                >
-                    {() => <ClubForm isEdit={false} onSuccess={handleCloseDialog} />}
-                </DialogHandle>
-            )}
-
-            {action === "edit" && !!selectedClub && (
-                <DialogHandle<ClubType>
-                    title={selectedClub ? `Modificar club ${selectedClub.nombre_club}` : "Cargando..."}
-                    trigger={<div />}
-                    open={isDialogOpen}
-                    onOpenChange={handleCloseDialog}
-                >
-                    {() => {
-                        if (!selectedClub) {
-                            return (
-                                <div className="p-6 flex items-center justify-center">
-                                    <span>Cargando detalles del club...</span>
-                                </div>
-                            );
-                        }
-
-                        return <ClubForm club={selectedClub} isEdit={true} onSuccess={handleCloseDialog} />
-                    }}
-                </DialogHandle>
-            )}
+    return (
+        <div>
+            <Loading isLoading={progress} component="Club Management" />
         </div>
     );
 };
+
+export default LoadingTest;

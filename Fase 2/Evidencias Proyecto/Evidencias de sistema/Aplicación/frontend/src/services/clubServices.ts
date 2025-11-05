@@ -11,6 +11,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export async function getClubs<T>(
+    setIsLoading:React.Dispatch<React.SetStateAction<number>>,
     token?: string | null,
     search: string| null = null,
     estado: string | null = null,
@@ -21,6 +22,7 @@ export async function getClubs<T>(
 
     // Solo enviar skip y limit si ambos fueron proporcionados
     if (page != null && limit != null) {
+        console.log("Entre")
         const skip = (page - 1) * limit;
         params.append("skip", String(skip));
         params.append("limit", String(limit));
@@ -31,17 +33,17 @@ export async function getClubs<T>(
 
     const queryString = params.toString();
     const url = queryString ? `${URL_BASE}?${queryString}` : URL_BASE;
-
+    setIsLoading(25)
     const response = await fetch(url, {
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-
+    setIsLoading(50)
     return handleResponse<T>(response);
 }
 
 export async function getClub<T>(
-    id_club:number,
+    id_club:number | null,
     token?: string | null
 ): Promise<T> {
 

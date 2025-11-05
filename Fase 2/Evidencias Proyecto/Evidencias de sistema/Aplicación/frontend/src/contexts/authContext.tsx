@@ -21,7 +21,7 @@ interface AuthContextType {
   email: string | null;
   nombre: string | null;
   club_nombre: string | null;
-  id_club: string | null;
+  id_club: number | null;
   admin: boolean | null;
   login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [email, setEmail] = useState<string | null>(null);
   const [nombre, setNombre] = useState<string | null>(null);
   const [clubNombre, setClubNombre] = useState<string | null>(null);
-  const [clubId, setClubId] = useState<string | null>(null);
+  const [clubId, setClubId] = useState<number | null>(null);
   const [admin, setAdmin] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setEmail(payload.email || null);
         setNombre(payload.nombre || null);
         setClubNombre(payload.club_nombre || null);
-        setClubId(payload.id_club || null);
+        setClubId(Number(payload.id_club) || null);
         setAdmin(payload.admin || null)
 
         if (payload.exp) {
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setEmail(payload.email || null);
     setNombre(payload.nombre || null);
     setClubNombre(payload.club_nombre || null);
-    setClubId(payload.id_club || null);
+    setClubId(Number(payload.id_club) || null);
     setAdmin(payload.admin || null)
 
     navigate('/dashboard', { replace: true });
