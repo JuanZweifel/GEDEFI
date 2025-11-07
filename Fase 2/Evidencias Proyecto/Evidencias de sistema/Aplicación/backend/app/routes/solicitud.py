@@ -21,7 +21,7 @@ def create_solicitud(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    return services.create_solicitud(db, solicitud)
+    return services.create_solicitud(db, solicitud, current_user=current_user)
 
 
 @router.get("/{id_solicitud}", response_model=SolicitudRead)
@@ -30,7 +30,7 @@ def get_solicitud(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_solicitud = services.get_solicitud(db, id_solicitud)
+    db_solicitud = services.get_solicitud(db, id_solicitud, current_user=current_user)
     if db_solicitud is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     return db_solicitud
@@ -41,7 +41,7 @@ def get_solicitudes(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    return services.get_solicitudes(db)
+    return services.get_solicitudes(db, current_user=current_user)
 
 
 @router.put("/{id_solicitud}", response_model=SolicitudRead)
@@ -51,7 +51,9 @@ def update_solicitud(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_solicitud = services.update_solicitud(db, id_solicitud, solicitud_update)
+    db_solicitud = services.update_solicitud(
+        db, id_solicitud, solicitud_update, current_user=current_user
+    )
     if db_solicitud is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     return db_solicitud
@@ -63,7 +65,7 @@ def delete_solicitud(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    success = services.delete_solicitud(db, id_solicitud)
+    success = services.delete_solicitud(db, id_solicitud, current_user=current_user)
     if not success:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     return {"detail": "Solicitud eliminada exitosamente"}
@@ -81,7 +83,7 @@ def respond_solicitud(
             status_code=403, detail="No autorizado para responder solicitudes"
         )
 
-    db_solicitud = services.get_solicitud(db, id_solicitud)
+    db_solicitud = services.get_solicitud(db, id_solicitud, current_user=current_user)
     if db_solicitud is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
@@ -91,7 +93,9 @@ def respond_solicitud(
         respuesta=response_data.respuesta,
     )
 
-    updated_solicitud = services.update_solicitud(db, id_solicitud, update_data)
+    updated_solicitud = services.update_solicitud(
+        db, id_solicitud, update_data, current_user=current_user
+    )
     return SolicitudResponseUpdate(
         respuesta=updated_solicitud.respuesta, estado=updated_solicitud.estado
     )

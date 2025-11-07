@@ -146,7 +146,6 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
             value={form.rut_usuario}
             onChange={(val) => {
               setForm({ ...form, rut_usuario: val });
-              console.log(form.rut_usuario)
               if (val) setRutError("");
             }}
             onBlur={() => {

@@ -1,26 +1,33 @@
 from sqlalchemy.orm import Session
 from app.models import Cancha
 from app.schemas import CanchaCreate, CanchaUpdate
+from fastapi import HTTPException
 from app.utils.decorators import handle_audit, handle_db_exceptions
 
+
 @handle_db_exceptions
-def get_cancha(db: Session, cancha_id: int) -> Cancha | None:
+def get_cancha(db: Session, cancha_id: int, current_user: dict) -> Cancha | None:
     return db.query(Cancha).filter(Cancha.id_cancha == cancha_id).first()
 
+
 @handle_db_exceptions
-def get_canchas(db: Session, skip: int = 0, limit: int = 100):
+def get_canchas(db: Session, current_user: dict, skip: int = 0, limit: int = 100):
     return db.query(Cancha).offset(skip).limit(limit).all()
 
-@handle_audit("CREATE", "Cancha")
-def create_cancha(db: Session, cancha: CanchaCreate) -> Cancha:
+
+@handle_audit("CREATE", "CANCHA")
+def create_cancha(db: Session, cancha: CanchaCreate, current_user: dict) -> Cancha:
     db_cancha = Cancha(**cancha.dict())
     db.add(db_cancha)
     db.commit()
     db.refresh(db_cancha)
     return db_cancha
 
-@handle_audit("UPDATE", "Cancha")
-def update_cancha(db: Session, cancha_id: int, cancha_update: CanchaUpdate) -> Cancha | None:
+
+@handle_audit("UPDATE", "CANCHA")
+def update_cancha(
+    db: Session, cancha_id: int, cancha_update: CanchaUpdate, current_user: dict
+) -> Cancha | None:
     db_cancha = get_cancha(db, cancha_id)
     if not db_cancha:
         return None
@@ -30,8 +37,9 @@ def update_cancha(db: Session, cancha_id: int, cancha_update: CanchaUpdate) -> C
     db.refresh(db_cancha)
     return db_cancha
 
-@handle_audit("DELETE", "Cancha")
-def delete_cancha(db: Session, cancha_id: int) -> str:
+
+@handle_audit("DELETE", "CANCHA")
+def delete_cancha(db: Session, cancha_id: int, current_user: dict) -> str:
     db_cancha = db.get(Cancha, cancha_id)
     if not db_cancha:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
@@ -42,13 +50,16 @@ def delete_cancha(db: Session, cancha_id: int) -> str:
         db_cancha.cancha_activa = False
         db.commit()
         db.refresh(db_cancha)
-        return "La cancha tenía registros asociados, se desactivó en lugar de eliminarse."
+        return (
+            "La cancha tenía registros asociados, se desactivó en lugar de eliminarse."
+        )
     else:
         db.delete(db_cancha)
         db.commit()
         return "Cancha eliminada correctamente."
 
-def reactivate_cancha(db: Session, cancha_id: int) -> Cancha | None:
+
+def reactivate_cancha(db: Session, cancha_id: int, current_user: dict) -> Cancha | None:
     db_cancha = get_cancha(db, cancha_id)
     if not db_cancha:
         return None

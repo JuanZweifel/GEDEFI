@@ -13,7 +13,7 @@ def create_usuario(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    return services.create_usuario(db, usuario)
+    return services.create_usuario(db, usuario, current_user)
 
 
 @router.get("/{rut_usuario}", response_model=schemas.UsuarioRead)
@@ -22,7 +22,7 @@ def get_usuario(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_usuario = services.get_usuario(db, rut_usuario)
+    db_usuario = services.get_usuario(db, rut_usuario, current_user=current_user)
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario not found")
     return db_usuario
@@ -35,7 +35,9 @@ def get_usuarios(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    usuarios = services.get_usuarios(db, skip=skip, limit=limit)
+    usuarios = services.get_usuarios(
+        db, skip=skip, limit=limit, current_user=current_user
+    )
     return usuarios
 
 
@@ -46,19 +48,19 @@ def update_usuario(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_usuario = services.update_usuario(db, rut_usuario, usuario)
+    db_usuario = services.update_usuario(db, rut_usuario, usuario, current_user)
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario not found")
     return db_usuario
 
 
-@router.delete("/{rut_usuario}", response_model=dict)
+@router.delete("/{rut_usuario}")
 def delete_usuario(
     rut_usuario: str,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    success = services.delete_usuario(db, rut_usuario)
+    success = services.delete_usuario(db, rut_usuario, current_user)
     if not success:
         raise HTTPException(status_code=404, detail="Usuario not found")
     return {"detail": "Usuario Eliminado correctamente"}
