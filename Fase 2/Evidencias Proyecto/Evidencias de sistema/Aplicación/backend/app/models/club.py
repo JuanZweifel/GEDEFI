@@ -9,7 +9,7 @@ class Club(Base):
     __tablename__ = "CLUB"
 
     id_club: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    rut_club: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    rut_club: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
     nombre_club: Mapped[str] = mapped_column(String(250), nullable=False, unique=True)
     fecha_fundacion: Mapped[date] = mapped_column(Date, nullable=False)
     fono_club: Mapped[str] = mapped_column(String(12), nullable=True)

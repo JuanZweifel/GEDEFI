@@ -18,7 +18,7 @@ class Usuario(Base):
     huella_pulgar: Mapped[str] = mapped_column(String(256), nullable=True)
     huella_indice: Mapped[str] = mapped_column(String(256), nullable=True)
     usuario_activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    asociacion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(), nullable=False
     )
