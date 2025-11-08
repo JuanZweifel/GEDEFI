@@ -2,10 +2,20 @@ from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import ForeignKeyViolation
-from app.models import Usuario, DetalleUsuarioClub, Club
+from app.models import (
+    Usuario,
+    DetalleUsuarioClub,
+    Club,
+    Archivo,
+    OrdenPago,
+    Solicitud,
+    DetalleReunion,
+    Entrenamiento,
+    Auditoria,
+)
 from app.schemas import UsuarioCreate, UsuarioUpdate
 from app.security import get_password_hash
-from app.utils.decorators import handle_db_exceptions
+from app.utils.decorators import handle_db_exceptions, handle_audit
 from fastapi import HTTPException
 from app.services.correo import send_user_deactivated_email
 from datetime import datetime
@@ -13,12 +23,12 @@ from datetime import datetime
 
 # TODO: Aplicar auth security para poder implementar auditoria
 @handle_db_exceptions
-def get_usuario(db: Session, rut_usu: str) -> Usuario | None:
+def get_usuario(db: Session, rut_usu: str, current_user: dict) -> Usuario | None:
     return db.query(Usuario).filter(Usuario.rut_usuario == rut_usu).first()
 
 
 @handle_db_exceptions
-def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
+def get_usuarios(db: Session, current_user: dict, skip: int = 0, limit: int = 100):
     try:
         usuarios_clubes = (
             db.query(Usuario, Club.id_club)
@@ -58,8 +68,8 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100):
         )
 
 
-@handle_db_exceptions
-def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
+@handle_audit("CREATE", "USUARIO")
+def create_usuario(db: Session, usuario: UsuarioCreate, current_user: dict) -> Usuario:
     hashed_password = get_password_hash(usuario.pass_usuario)
 
     db_usuario = Usuario(
@@ -100,11 +110,11 @@ def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
         raise HTTPException(status_code=409, detail=detail) from e
 
 
-@handle_db_exceptions
+@handle_audit("UPDATE", "USUARIO")
 def update_usuario(
-    db: Session, rut_usu: str, usuario_update: UsuarioUpdate
+    db: Session, rut_usu: str, usuario_update: UsuarioUpdate, current_user: dict
 ) -> Usuario | None:
-    db_usuario = get_usuario(db, rut_usu)
+    db_usuario = get_usuario(db, rut_usu, current_user=current_user)
     if not db_usuario:
         return None
 
@@ -171,38 +181,85 @@ def update_usuario(
         raise HTTPException(status_code=409, detail=detail) from e
 
 
-@handle_db_exceptions
-def delete_usuario(db: Session, rut_usu: str) -> bool:
-    db_usuario = get_usuario(db, rut_usu)
+@handle_audit("DELETE", "USUARIO")
+def delete_usuario(db: Session, rut_usu: str, current_user: dict) -> bool:
+    db_usuario = get_usuario(db, rut_usu, current_user=current_user)
     if not db_usuario:
-        return False
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     try:
-        # db.query(DetalleUsuarioClub).filter_by(rut_usuario=rut_usu).delete()
+        relaciones_club = (
+            db.query(DetalleUsuarioClub)
+            .filter(DetalleUsuarioClub.rut_usuario == rut_usu)
+            .all()
+        )
+        print("Entra a verificar relaciones")
 
-        db.delete(db_usuario)
-        db.commit()
-        return True
+        # Verificar relaciones con tablas que requieren trazabilidad
+        tiene_relaciones = any(
+            [
+                db.query(Archivo).filter(Archivo.id_usuario == rut_usu).first(),
+                db.query(Solicitud)
+                .filter(Solicitud.usuario_solicitud == rut_usu)
+                .first(),
+                db.query(Solicitud)
+                .filter(Solicitud.usuario_respuesta == rut_usu)
+                .first(),
+                db.query(OrdenPago).filter(OrdenPago.usuario_emisor == rut_usu).first(),
+                db.query(OrdenPago).filter(OrdenPago.usuario_pago == rut_usu).first(),
+                db.query(DetalleReunion)
+                .filter(DetalleReunion.rut_usuario == rut_usu)
+                .first(),
+                db.query(Entrenamiento)
+                .filter(Entrenamiento.rut_usuario == rut_usu)
+                .first(),
+                db.query(Auditoria).filter(Auditoria.rut_usuario == rut_usu).first(),
+            ]
+        )
 
-    except AssertionError as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "No se puede eliminar el usuario porque tiene relaciones activas "
-                "con clubes. Primero elimine o desvincule estas relaciones."
-            ),
-        ) from e
+        if tiene_relaciones:
+            db_usuario.usuario_activo = False
+            db.commit()
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "El usuario no puede ser eliminado porque tiene registros "
+                    "asociados a archivos, órdenes de pago, solicitudes, "
+                    "reuniones, entrenamientos o auditorías. "
+                    "El usuario fue deshabilitado para mantener la trazabilidad."
+                ),
+            )
+
+        if len(relaciones_club) > 1:
+            db_usuario.usuario_activo = False
+            db.commit()
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "El usuario tiene múltiples relaciones activas con clubes. "
+                    "Solo fue deshabilitado."
+                ),
+            )
+
+        if len(relaciones_club) == 1:
+            db.delete(relaciones_club[0])
+            db.delete(db_usuario)
+            db.commit()
+            return True
+
+        if not relaciones_club:
+            db.delete(db_usuario)
+            db.commit()
+            return True
 
     except IntegrityError as e:
         db.rollback()
         constraint = getattr(e.orig.diag, "constraint_name", "")
-        if constraint:
-            detail = (
-                f"No se puede eliminar el usuario debido a la restricción {constraint}."
-            )
-        else:
-            detail = "Error de integridad en la base de datos al intentar eliminar el usuario."
+        detail = (
+            f"No se puede eliminar el usuario debido a la restricción {constraint}."
+            if constraint
+            else "Error de integridad en la base de datos al intentar eliminar el usuario."
+        )
         raise HTTPException(status_code=409, detail=detail) from e
 
 

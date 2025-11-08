@@ -28,22 +28,38 @@ export default function SolicitudesList({
 }) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [categoriaFilter, setCategoriaFilter] = useState("all");
   const navigate = useNavigate();
   const { id, action } = useParams();
   const location = useLocation();
+
+  const truncate = (text: string, maxLength = 90) =>
+    text.length > maxLength ? text.slice(0, maxLength) + "…" : text;
+
+  const categorias = [
+    { id: 1, name: "Solicitud de Permiso" },
+    { id: 2, name: "Cambio de Horario" },
+    { id: 3, name: "Actualización de Datos" },
+    { id: 4, name: "Otros" },
+  ];
 
   const filtered = useMemo(() => {
     return solicitudes.filter((s: any) => {
       const matchesSearch =
         s.descripcion?.toLowerCase().includes(search.toLowerCase()) ||
         s.usuario_solicitud?.toLowerCase().includes(search.toLowerCase());
+
       const matchesFilter =
         filter === "all" ||
         (filter === "respondida" && s.estado === true) ||
         (filter === "pendiente" && s.estado === false);
-      return matchesSearch && matchesFilter;
+
+      const matchesCategoria =
+        categoriaFilter === "all" || Number(s.categoria) === Number(categoriaFilter);
+
+      return matchesSearch && matchesFilter && matchesCategoria;
     });
-  }, [solicitudes, search, filter]);
+  }, [solicitudes, search, filter, categoriaFilter]);
 
   const selectedSolicitud = solicitudes.find(
     (s) => String(s.id_solicitud) === id
@@ -63,6 +79,7 @@ export default function SolicitudesList({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filtrar por estado" />
@@ -73,7 +90,22 @@ export default function SolicitudesList({
             <SelectItem value="pendiente">Pendientes</SelectItem>
           </SelectContent>
         </Select>
+
+        <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filtrar por categoría" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las categorías</SelectItem>
+            {categorias.map((c) => (
+              <SelectItem key={c.id} value={String(c.id)}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
 
       {/* List */}
       {loading ? (
@@ -87,17 +119,29 @@ export default function SolicitudesList({
               key={sol.id_solicitud}
               className="p-3 flex justify-between items-center hover:bg-gray-50 transition"
             >
-              <div>
-                <p className="font-medium">{sol.descripcion}</p>
-                <p className="text-sm text-gray-500">
-                  Usuario: {sol.nombre_usuario} {sol.apellido_usuario} · Club:{" "}
-                  {sol.nombre_club} · Estado:{" "}
-                  <Badge
-                    variant={sol.estado ? "success" : "secondary"}
-                    className="ml-1"
-                  >
-                    {sol.estado ? "Respondida" : "Pendiente"}
-                  </Badge>
+              <div className="max-w-[70%]">
+                <p className="font-medium truncate" title={sol.descripcion}>
+                  {truncate(sol.descripcion)}
+                </p>
+
+                <p className="text-sm text-gray-500 flex flex-wrap gap-x-2">
+                  <span>
+                    Usuario: {sol.nombre_usuario} {sol.apellido_usuario}
+                  </span>
+                  <span>· Club: {sol.nombre_club}</span>
+                  <span>
+                    · Categoría:{" "}
+                    {categorias.find((c) => c.id === Number(sol.categoria))?.name || "N/A"}
+                  </span>
+                  <span>
+                    · Estado:{" "}
+                    <Badge
+                      variant={sol.estado ? "success" : "secondary"}
+                      className="ml-1"
+                    >
+                      {sol.estado ? "Respondida" : "Pendiente"}
+                    </Badge>
+                  </span>
                 </p>
               </div>
 
@@ -150,7 +194,10 @@ export default function SolicitudesList({
                 <div>
                   <Label className="block mb-2">Categoría</Label>
                   <Input
-                    value={selectedSolicitud.categoria || "Sin categoría"}
+                    value={
+                      categorias.find((c) => c.id === Number(selectedSolicitud.categoria))?.name ||
+                      "Sin categoría"
+                    }
                     readOnly
                   />
                 </div>

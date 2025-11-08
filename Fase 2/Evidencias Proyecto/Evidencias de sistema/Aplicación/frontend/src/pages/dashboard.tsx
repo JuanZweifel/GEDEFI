@@ -43,6 +43,7 @@ import {
     Building2,
     Ambulance,
     Mail,
+    Send,
 } from 'lucide-react';
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
@@ -255,7 +256,7 @@ export default function DashboardComponent() {
         { id: 'fas', label: 'FAS', icon: Ambulance, component: FasModule, permission: 'fas' },
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
         { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
-        { id: 'solicitudes', label: 'Solicitudes', icon: Settings, component: SolicitudesModule, permission: 'admin' },
+        { id: 'solicitudes', label: 'Solicitudes', icon: Send, component: SolicitudesModule, permission: 'admin' },
         { id: 'comunicados', label: 'Comunicados', icon: Mail, component: ComunicadosModule, permission: 'admin' },
         { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
     ];
