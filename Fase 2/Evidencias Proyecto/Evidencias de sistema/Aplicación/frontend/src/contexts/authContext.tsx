@@ -9,7 +9,7 @@ interface TokenPayload {
   nombre?: string;
   id_club?: string;
   club_nombre?: string;
-  admin: boolean;
+  asociacion: boolean;
   exp?: number;
 }
 
@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setNombre(payload.nombre || null);
         setClubNombre(payload.club_nombre || null);
         setClubId(Number(payload.id_club) || null);
-        setAdmin(payload.admin || null)
+        setAdmin(payload.asociacion || null)
 
         if (payload.exp) {
           const expiresInMs = payload.exp * 1000 - Date.now();
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setNombre(payload.nombre || null);
     setClubNombre(payload.club_nombre || null);
     setClubId(Number(payload.id_club) || null);
-    setAdmin(payload.admin || null)
+    setAdmin(payload.asociacion || null)
 
     navigate('/dashboard', { replace: true });
   };

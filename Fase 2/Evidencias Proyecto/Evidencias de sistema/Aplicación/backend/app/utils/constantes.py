@@ -1,12 +1,12 @@
 lista_series = [
-    "Segunda infantil",
-    "Primera infantil",
+    "Segunda Infantil",
+    "Primera Infantil",
     "Juveniles",
-    "Super seniors",
-    "Segunda adulta",
-    "Primera adulta",
+    "Super Seniors",
+    "Segunda Adulta",
+    "Primera Adulta",
     "Seniors",
-    "Serie honor",
+    "Serie Honor",
     "Femenina",
-    "Años dorados"
+    "Años Dorados"
 ]

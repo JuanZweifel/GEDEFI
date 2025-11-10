@@ -23,7 +23,7 @@ class UsuarioBase(BaseModel):
     huella_pulgar: Optional[str] = Field(None, description="Huella digital del pulgar")
     huella_indice: Optional[str] = Field(None, description="Huella digital del índice")
     usuario_activo: bool = Field(default=True, description="Estado activo del usuario")
-    admin: Optional[bool] = Field(None, description="Indica si el usuario es de asociación o no")
+    asociacion: Optional[bool] = Field(None, description="Indica si el usuario es de asociación o no")
     id_rol: int = Field(..., ge=1, description="ID del rol asociado")
 
     @field_validator("rut_usuario")

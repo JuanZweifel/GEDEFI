@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { getSeries } from "../services/jugadoresService";
+import { getUniqueSeries } from "../services/serieService";
 import { getFasPublico, getFasUsosPublico } from "../services/fasServices";
 
 // 🔹 Tooltip de encabezados abreviados
@@ -64,7 +64,7 @@ const AbbrevTh: React.FC<AbbrevThProps> = ({
             }}
             className="
               -translate-x-1/2 -translate-y-full
-              bg-black/90 text-white text-xs rounded-md px-2 py-1
+              bg-black/90 text-black text-xs rounded-md px-2 py-1
               shadow-md whitespace-nowrap z-[9999]
               pointer-events-none
             "
@@ -85,28 +85,33 @@ export const LandingPage = () => {
     { club: string; personas: number; monto: number }[]
   >([]);
   const [isFasDialogOpen, setIsFasDialogOpen] = useState(false);
+  const [montoInicial, setMontoInicial] = useState<number | null>(null);
   const [montoDisponible, setMontoDisponible] = useState<number | null>(null);
   const [anioFas, setAnioFas] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchFas = async () => {
-      try {
-        const data = await getFasPublico();
-        setMontoDisponible(data.monto_disponible);
-        setAnioFas(data.anio_fas);
-      } catch (err: any) {
-        console.error("Error al cargar FAS público:", err);
-        setError(err.message);
-      }
-    };
-    fetchFas();
-  }, []);
+  const fetchFas = async () => {
+    try {
+      const data = await getFasPublico();
+      console.log("DATA FAS PUBLICO:", data); // 👈 agrega esto
+
+      setMontoDisponible(data.monto_disponible);
+      setMontoInicial(data.monto_inicial);
+      setAnioFas(data.anio_fas);
+    } catch (err: any) {
+      console.error("Error al cargar FAS público:", err);
+      setError(err.message);
+    }
+  };
+
+  fetchFas();
+}, []);
 
   useEffect(() => {
     const fetchSeries = async () => {
       try {
-        const data = await getSeries<any[]>();
+        const data = await getUniqueSeries<any[]>();
         const nombresUnicos = Array.from(
           new Set(data.map((s) => s.nombre_serie))
         );
@@ -170,8 +175,9 @@ export const LandingPage = () => {
               <CardHeader className="py-0 px-2">
                 <CardTitle
                   className="text-[#0000db] text-sm text-center leading-none"
-                  style={{ 
-                    marginTop: 10, marginBottom: 0, paddingBottom: 0, lineHeight: "1rem" }}
+                  style={{
+                    marginTop: 10, marginBottom: 0, paddingBottom: 0, lineHeight: "1rem"
+                  }}
                 >
                   Fondo de Ayuda Solidaria (FAS)
                 </CardTitle>
@@ -180,6 +186,14 @@ export const LandingPage = () => {
                 className="flex flex-col items-center justify-center text-center py-0"
                 style={{ marginTop: "-1rem" }} // 👈 fuerza el contenido hacia arriba
               >
+                <p className="text-gray-700 text-xs">
+                  Monto Inicial:{" "}
+                  <strong>
+                    {montoInicial !== null
+                      ? `$${montoInicial.toLocaleString("es-CL")}`
+                      : "Consultando..."}
+                  </strong>
+                </p>
                 <p className="text-gray-700 text-xs">
                   Disponible:{" "}
                   <strong>

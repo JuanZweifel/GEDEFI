@@ -13,7 +13,7 @@ def get_fas_publico(db: Session = Depends(get_db)):
     fas = services.get_fas_publico(db)
     if not fas:
         raise HTTPException(status_code=404, detail="No existe un FAS para el año actual.")
-    return {"anio_fas": fas.anio_fas, "monto_disponible": fas.monto_disponible}
+    return {"anio_fas": fas.anio_fas, "monto_inicial": fas.monto_inicial , "monto_disponible": fas.monto_disponible}
 
 
 @router.post("/", response_model=schemas.FasRead)

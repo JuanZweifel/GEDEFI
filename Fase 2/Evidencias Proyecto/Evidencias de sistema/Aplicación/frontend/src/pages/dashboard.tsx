@@ -11,7 +11,6 @@ import { ClubManagement } from '../components/club-management';
 import { AnalyticsModule, FingerprintModule, UserPermissionsModule } from '../components/enhanced-modules';
 import { PenaltiesModule } from '../components/additional-modules';
 import { AuditModule } from './auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA Y SEPARAR EN UN POSIBLE MODULO DIFERENTE
-import { PlayerRecordsModule } from './player-records.tsx'
 import { UsuarioRolModule } from './usuarioRol.tsx'
 import { ClubCoreModule } from './club.tsx'
 import { EnhancedFieldsModule } from '../components/enhanced-fields-module';
@@ -244,7 +243,7 @@ export default function DashboardComponent() {
         { id: 'usuarios-roles', label: 'Usuarios y Roles', icon: Users, component: UsuarioRolModule, permission: 'users' },
         { id: 'clubes', label: 'Clubes', icon: Building, component: ClubCoreModule, permission: 'clubs' },
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
-        { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
+        { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: RegistroJugadoresModule, permission: 'players' },
         { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
         { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidosModule, permission: 'matches' },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },

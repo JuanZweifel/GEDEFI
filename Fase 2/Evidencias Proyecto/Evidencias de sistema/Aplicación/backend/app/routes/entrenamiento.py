@@ -23,7 +23,9 @@ def get_entrenamiento(id_entrenamiento: int, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[schemas.EntrenamientoRead])
 def get_entrenamientos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    print("🔥 Entró al endpoint /Entrenamiento/")
     entrenamientos = services.get_entrenamientos(db, skip=skip, limit=limit)
+    print("✅ Entrenamientos:", entrenamientos)
     return entrenamientos
 
 

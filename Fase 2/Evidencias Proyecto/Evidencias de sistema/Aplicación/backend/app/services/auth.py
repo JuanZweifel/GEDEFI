@@ -71,7 +71,7 @@ def login_for_access_token(db: Session, email: str, password: str) -> dict | Non
         "id_club": active_club.id_club if active_club else None,
         "club_nombre": active_club.nombre_club if active_club else None,
         "nombre": f"{user.nombre_usuario} {user.apellido_usuario}",
-        "admin": user.admin,
+        "asociacion": user.asociacion,
     }
 
     access_token = create_access_token(data=token_data)
@@ -118,7 +118,7 @@ def refresh_access_token(refresh_token: str, db: Session):
         "id_club": active_club.id_club if active_club else None,
         "club_nombre": active_club.nombre_club if active_club else None,
         "nombre": f"{user.nombre_usuario} {user.apellido_usuario}",
-        "admin": user.admin,
+        "asociacion": user.asociacion,
     }
 
     new_access_token = create_access_token(data=new_token_data)
