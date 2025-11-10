@@ -11,7 +11,6 @@ import { ClubManagement } from '../components/club-management';
 import { AnalyticsModule, FingerprintModule, UserPermissionsModule } from '../components/enhanced-modules';
 import { PenaltiesModule } from '../components/additional-modules';
 import { AuditModule } from './auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA Y SEPARAR EN UN POSIBLE MODULO DIFERENTE
-import { PlayerRecordsModule } from './player-records.tsx'
 import { UsuarioRolModule } from './usuarioRol.tsx'
 import { ClubCoreModule } from './club.tsx'
 import { EnhancedFieldsModule } from '../components/enhanced-fields-module';
@@ -43,6 +42,7 @@ import {
     Building2,
     Ambulance,
     Mail,
+    Send,
 } from 'lucide-react';
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
@@ -243,7 +243,7 @@ export default function DashboardComponent() {
         { id: 'usuarios-roles', label: 'Usuarios y Roles', icon: Users, component: UsuarioRolModule, permission: 'users' },
         { id: 'clubes', label: 'Clubes', icon: Building, component: ClubCoreModule, permission: 'clubs' },
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
-        { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
+        { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: RegistroJugadoresModule, permission: 'players' },
         { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
         { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidoCoreModule, permission: 'matches' },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
@@ -255,7 +255,7 @@ export default function DashboardComponent() {
         { id: 'fas', label: 'FAS', icon: Ambulance, component: FasModule, permission: 'fas' },
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
         { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
-        { id: 'solicitudes', label: 'Solicitudes', icon: Settings, component: SolicitudesModule, permission: 'admin' },
+        { id: 'solicitudes', label: 'Solicitudes', icon: Send, component: SolicitudesModule, permission: 'admin' },
         { id: 'comunicados', label: 'Comunicados', icon: Mail, component: ComunicadosModule, permission: 'admin' },
         { id: 'perfil', label: 'Mi Perfil', icon: UserPlus, component: PerfilUsuarioModule }
     ];

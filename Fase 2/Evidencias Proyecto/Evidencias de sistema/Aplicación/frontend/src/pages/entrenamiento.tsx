@@ -201,9 +201,9 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () =>
                     segundo_nombre: jugador?.segundo_nombre || "",
                     primer_apellido: jugador?.primer_apellido || "",
                     segundo_apellido: jugador?.segundo_apellido || "",
-                    fecha_entrenamiento: entrenamiento?.fecha_entrenamiento || null,
-                    hora_ini: entrenamiento?.hora_ini || null,
-                    hora_fin: entrenamiento?.hora_fin || null,
+                    fecha_entrenamiento: entrenamiento?.fecha_entrenamiento || undefined,
+                    hora_ini: entrenamiento?.hora_ini || undefined,
+                    hora_fin: entrenamiento?.hora_fin || undefined,
                 };
             });
 

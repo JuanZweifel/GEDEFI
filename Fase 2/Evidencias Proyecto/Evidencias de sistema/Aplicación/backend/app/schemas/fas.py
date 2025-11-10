@@ -36,6 +36,7 @@ class FasList(BaseModel):
 
 class FasPublicRead(BaseModel):
     anio_fas: int
+    monto_inicial: int
     monto_disponible: int
 
     model_config = ConfigDict(from_attributes=True)

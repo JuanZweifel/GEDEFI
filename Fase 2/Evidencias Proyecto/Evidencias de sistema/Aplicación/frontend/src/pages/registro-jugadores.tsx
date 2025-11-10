@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Trash2, Search, History, FileText, AlertCircle, CheckCircle, Upload, X, Plus } from 'lucide-react';
 import { getJugadores, uploadExcel, getLesiones, } from '../services/jugadoresService';
 import { getDetallesClubJugador } from '../services/detalleClubJugadorService';
-import { getClubs } from '../services/clubServices';
+import { getClub } from '../services/clubServices';
 import { getFichasPorFiltro } from '../services/fichaJugadorService'
 import { getSeries } from '../services/serieService';
 import { AlertDialogHandle } from '../components/alert-dialog-component';
@@ -209,6 +209,7 @@ export const RegistroJugadoresModule: React.FC = () => {
     const [busquedaRealizada, setBusquedaRealizada] = useState(false);
     const { token, id_club } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
+    const [isLoading, setIsLoading] = useState<number>(0)
 
     // enrutamiento react router
     const navigate = useNavigate();
@@ -263,18 +264,26 @@ export const RegistroJugadoresModule: React.FC = () => {
 
     // 🔹 Obtener clubes
     const fetchClubs = async () => {
-        try {
-            const data = await getClubs<any[]>();
-            const mapped = data.map(club => ({
-                id_club: club.id_club,
-                nombre: club.nombre_club
-            }));
-            setClubs(mapped);
-            console.log("✅ Clubs cargados:", mapped);
-        } catch (error) {
-            console.error("Error al obtener clubes:", error);
-        }
-    };
+    if (!id_club) {
+        console.warn("⚠️ id_club es null, no se llamó al servicio");
+        return;
+    }
+
+    try {
+        const data = await getClub<any>(id_club, token);
+
+
+        const mapped = [{
+            id_club: data.id_club,
+            nombre: data.nombre_club,
+        }];
+
+        setClubs(mapped);
+        console.log("✅ Club cargado:", mapped);
+    } catch (error) {
+        console.error("Error al obtener clubes:", error);
+    }
+};
 
     // 🔹 Obtener todas las series (sin filtrar)
     const fetchSeries = async () => {
@@ -286,12 +295,19 @@ export const RegistroJugadoresModule: React.FC = () => {
         }
     };
 
-    // 🔹 Llamadas iniciales
+
     useEffect(() => {
         fetchLesiones();
+    }, []);
+
+
+    useEffect(() => {
+    if (token && id_club) {          
         fetchClubs();
         fetchSeries();
-    }, []);
+        fetchJugadoresPorClub();
+    }
+}, [id_club, token]);
 
 
     useEffect(() => {
@@ -370,17 +386,6 @@ export const RegistroJugadoresModule: React.FC = () => {
             return [];
         }
     };
-
-    useEffect(() => {
-        console.log("🔑 Token:", token);
-        console.log("🏟️ Club ID:", id_club);
-        if (id_club && token) {
-            fetchJugadoresPorClub();
-        }
-    }, [id_club, token]);
-
-
-
 
 
 

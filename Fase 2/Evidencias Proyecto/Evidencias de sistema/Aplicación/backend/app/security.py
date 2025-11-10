@@ -75,7 +75,7 @@ def get_current_user(
             "email": payload.get("email"),
             "rol": payload.get("rol"),
             "id_club": payload.get("id_club"),
-            "admin": payload.get("admin"),
+            "asociacion": payload.get("asociacion"),
         }
 
     except ExpiredSignatureError:

@@ -3,16 +3,18 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.models import Solicitud, Usuario, Club, DetalleUsuarioClub
 from app.schemas import SolicitudCreate, SolicitudUpdate
-from app.utils.decorators import handle_db_exceptions
+from app.utils.decorators import handle_db_exceptions, handle_audit
 
 
 @handle_db_exceptions
-def get_solicitud(db: Session, id_solicitud: int) -> Solicitud | None:
+def get_solicitud(
+    db: Session, id_solicitud: int, current_user: dict
+) -> Solicitud | None:
     return db.query(Solicitud).filter(Solicitud.id_solicitud == id_solicitud).first()
 
 
 @handle_db_exceptions
-def get_solicitudes(db: Session, skip: int = 0, limit: int = 100):
+def get_solicitudes(db: Session, current_user: dict, skip: int = 0, limit: int = 100):
     return (
         db.query(
             Solicitud.id_solicitud,
@@ -28,15 +30,16 @@ def get_solicitudes(db: Session, skip: int = 0, limit: int = 100):
         .join(Usuario, Solicitud.usuario_solicitud == Usuario.rut_usuario)
         .join(DetalleUsuarioClub, DetalleUsuarioClub.rut_usuario == Usuario.rut_usuario)
         .join(Club, DetalleUsuarioClub.id_club == Club.id_club)
-        .filter(DetalleUsuarioClub.fecha_fin.is_(None))
         .offset(skip)
         .limit(limit)
         .all()
     )
 
 
-@handle_db_exceptions
-def create_solicitud(db: Session, solicitud_data: SolicitudCreate) -> Solicitud:
+@handle_audit("CREATE", "SOLICITUD")
+def create_solicitud(
+    db: Session, solicitud_data: SolicitudCreate, current_user: dict
+) -> Solicitud:
     db_solicitud = Solicitud(**solicitud_data.dict())
     db.add(db_solicitud)
     try:
@@ -48,11 +51,14 @@ def create_solicitud(db: Session, solicitud_data: SolicitudCreate) -> Solicitud:
     return db_solicitud
 
 
-@handle_db_exceptions
+@handle_audit("UPDATE", "SOLICITUD")
 def update_solicitud(
-    db: Session, id_solicitud: int, solicitud_update: SolicitudUpdate
+    db: Session,
+    id_solicitud: int,
+    solicitud_update: SolicitudUpdate,
+    current_user: dict,
 ) -> Solicitud | None:
-    db_solicitud: Solicitud = get_solicitud(db, id_solicitud)
+    db_solicitud: Solicitud = get_solicitud(db, id_solicitud, current_user=current_user)
     if not db_solicitud:
         return None
 
@@ -68,8 +74,8 @@ def update_solicitud(
     return db_solicitud
 
 
-@handle_db_exceptions
-def delete_solicitud(db: Session, id_solicitud: int) -> bool:
+@handle_audit("DELETE", "SOLICITUD")
+def delete_solicitud(db: Session, id_solicitud: int, current_user: dict) -> bool:
     db_solicitud: Solicitud = get_solicitud(db, id_solicitud)
     if not db_solicitud:
         return False
@@ -85,10 +91,7 @@ def delete_solicitud(db: Session, id_solicitud: int) -> bool:
 
 @handle_db_exceptions
 def respond_solicitud(
-    db: Session,
-    id_solicitud: int,
-    respuesta: str,
-    estado: bool,
+    db: Session, id_solicitud: int, respuesta: str, estado: bool, current_user: dict
 ) -> Solicitud | None:
     db_solicitud = (
         db.query(Solicitud).filter(Solicitud.id_solicitud == id_solicitud).first()

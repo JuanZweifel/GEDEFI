@@ -26,3 +26,11 @@ export async function updateStateSerie<T>(id_serie: number, token:string | null)
     })
     return handleResponse<T>(response)
 }
+
+
+export async function getUniqueSeries<T>(): Promise<T> {
+    const response = await fetch(`${URL_BASE}/unicas`, {
+        method: "GET",
+    });
+    return handleResponse<T>(response);
+}

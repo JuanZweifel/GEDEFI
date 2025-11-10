@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from app.models import Serie, Club, Jugador, FichaJugador, DetalleUsuarioClub
-from app.schemas import SerieWithDetails, JugadorRead, SerieCreate
-from sqlalchemy import and_, or_
-from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError, OperationalError, DisconnectionError
+from app.schemas import SerieWithDetails, JugadorRead, SerieCreate, SerieUniqueRead
+from sqlalchemy import and_, or_, func
+from sqlalchemy.exc import IntegrityError, NoResultFound
 import psycopg2
 from app.utils.decorators import handle_db_exceptions, handle_audit
 from fastapi import HTTPException, status
@@ -112,7 +112,7 @@ def get_series_with_details(db: Session, current_user: dict) -> list[SerieWithDe
     try:
 
         # Traemos todas las series con su club asociado
-        match current_user["admin"]:
+        match current_user["asociacion"]:
             case True: 
                 db_series = db.query(Serie).join(Club).all()
             case False:
@@ -200,7 +200,7 @@ def update_state_serie(db: Session, id_serie: int, current_user: dict):
     HTTPException
         Si no se encuentra la serie especificada o si ocurre un error en la base de datos.
     """
-    match current_user["admin"]:
+    match current_user["asociacion"]:
             case True: 
                 db_serie = db.query(Serie).filter(Serie.id_serie == id_serie).first()
             case False:
@@ -223,3 +223,19 @@ def update_state_serie(db: Session, id_serie: int, current_user: dict):
     db.commit()
     db.refresh(db_serie)
     return db_serie.serie_activa
+
+
+
+
+def get_unique_series(db: Session) -> list[SerieUniqueRead]:
+    rows = (
+        db.query(
+            func.min(Serie.id_serie).label("id_serie"),  # tomar el menor id de cada nombre
+            Serie.nombre_serie
+        )
+        .group_by(Serie.nombre_serie)
+        .order_by("id_serie")  # ordenar por el id más bajo
+        .all()
+    )
+
+    return [SerieUniqueRead(nombre_serie=row.nombre_serie) for row in rows]

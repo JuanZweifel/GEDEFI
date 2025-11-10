@@ -14,7 +14,7 @@ class Lesion(Base):
     tipo_lesion: Mapped[bool] = mapped_column(Boolean, nullable=False)
     descripcion: Mapped[str] = mapped_column(String(500), nullable=False)
     tiempo_recuperacion: Mapped[int] = mapped_column(Integer, nullable=True)
-    fecha_lesion: Mapped[date] = mapped_column(Date, nullable=True)
+    fecha_lesion: Mapped[date] = mapped_column(Date, nullable=False)
     fecha_fin_lesion: Mapped[date] = mapped_column(Date, nullable=True)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False, onupdate=datetime.now(timezone.utc))

@@ -34,6 +34,7 @@ export const UsuarioRolModule: React.FC = () => {
     const [isFetchingUsers, setIsFetchingUsers] = useState(false);
     const [isFetchingRols, setIsFetchingRols] = useState(false);
     const [isFetchingClubs, setIsFetchingClubs] = useState(false);
+    const [isLoading, setIsLoading] = useState<number>(0);
 
     // Filter states
     const [userFilter, setUserFilter] = useState("");
@@ -96,10 +97,12 @@ export const UsuarioRolModule: React.FC = () => {
         let data: ClubType[] = [];
         try {
             setIsFetchingClubs(true);
-            data = await getClubs(token);
+            data = await getClubs(setIsLoading, token);
+            console.log(data);
             setClubs(data);
             if (data.length === 0) toast.info("No hay clubes registrados en la base de datos.");
         } catch (err: any) {
+            console.error(err);
             toast.warning(String(err));
         } finally {
             if (data.length === 0) setClubs([]);

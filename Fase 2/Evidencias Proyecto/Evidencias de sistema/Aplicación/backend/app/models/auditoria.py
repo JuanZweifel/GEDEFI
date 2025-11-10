@@ -13,7 +13,7 @@ class Auditoria(Base):
     id_auditoria: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     recurso: Mapped[str] = mapped_column(String(100), nullable=False)
     # TODO: Hablar a que se refiere este id
-    id_recurso: Mapped[str] = mapped_column(Integer, nullable=True)
+    id_recurso: Mapped[str] = mapped_column(String(20), nullable=True)
     descripcion: Mapped[str] = mapped_column(String(500), nullable=True)
     fecha_cambio: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(timezone.utc), nullable=False

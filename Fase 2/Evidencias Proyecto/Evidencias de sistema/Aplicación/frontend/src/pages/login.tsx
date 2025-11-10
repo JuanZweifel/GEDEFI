@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { useAuth } from '../contexts/authContext';
+import { loginUser, recoverUser } from '../services/authService';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
@@ -21,57 +22,40 @@ export const Login: React.FC = () => {
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoveryMessage, setRecoveryMessage] = useState('');
   const [recoveryError, setRecoveryError] = useState('');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
-  // Handle login
   const handleLogin = async () => {
     setError('');
     setLoading(true);
+    const trimmedEmail = email.trim();
     try {
-      const response = await fetch('http://localhost:8000/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.detail || 'Email o contraseña incorrectos');
-        return;
-      }
+      const data = await loginUser<{ access_token: string; refresh_token: string }>(trimmedEmail, password);
 
       if (data.access_token && data.refresh_token) {
         login(data.access_token, data.refresh_token);
         navigate('/dashboard');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Error de conexión con el servidor');
+      setError(err.message.includes("401")
+        ? "Email o contraseña incorrectos"
+        : "Error de conexión con el servidor");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle recovery
   const handleRecovery = async () => {
     setRecoveryMessage('');
     setRecoveryError('');
     try {
-      const response = await fetch('http://localhost:8000/auth/recover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: recoveryEmail }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        setRecoveryError(data.detail || 'No se pudo enviar el correo');
-        return;
-      }
-
+      await recoverUser<{ detail?: string }>(recoveryEmail);
       setRecoveryMessage('Se ha enviado un correo para recuperar tu cuenta.');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setRecoveryError('Error de conexión con el servidor');
+      setRecoveryError(err.message || 'Error de conexión con el servidor');
+    } finally {
+      setRecoveryLoading(false);
     }
   };
 
@@ -145,8 +129,9 @@ export const Login: React.FC = () => {
                   className="flex-1 text-white"
                   style={{ backgroundColor: '#0000db' }}
                   onClick={handleRecovery}
+                  disabled={recoveryLoading}
                 >
-                  Enviar correo
+                  {recoveryLoading ? 'Enviando...' : 'Enviar correo'}
                 </Button>
                 <Button
                   variant="secondary"

@@ -43,3 +43,7 @@ class SerieList(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SerieUniqueRead(BaseModel):
+    nombre_serie: str
+
+

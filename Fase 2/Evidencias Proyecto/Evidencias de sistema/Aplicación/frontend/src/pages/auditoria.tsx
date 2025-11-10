@@ -8,11 +8,11 @@ import {
   Users, Building, Trophy, Activity, User,
   Calendar, MapPin, DollarSign, Shield, AlertCircle,
   ArrowBigLeft,
-  ArrowBigRight
+  ArrowBigRight, Send
 } from 'lucide-react';
 
 import { getAuditorias, getResumenAuditorias } from '../services/auditoriaServices';
-import type  { ResumenAuditoriaType, AuditoriaType } from '../types';
+import type { ResumenAuditoriaType, AuditoriaType } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/authContext';
 import { Button } from '../components/ui/button';
@@ -87,8 +87,8 @@ export const AuditModule: React.FC = () => {
   ];
   const actions = ["CREATE", "UPDATE", "DELETE", "READ"];
 
-  const getActionColor = (action: string, error:boolean) => {
-    if(error) return "bg-gray-500";
+  const getActionColor = (action: string, error: boolean) => {
+    if (error) return "bg-gray-500";
     switch (action) {
       case "CREATE": return "bg-green-500";
       case "UPDATE": return "bg-yellow-500";
@@ -112,7 +112,7 @@ export const AuditModule: React.FC = () => {
       case "FINANZAS": return <DollarSign className="w-4 h-4" />;
       case "REUNION": return <Users className="w-4 h-4" />;
       case "CANCHA": return <Building className="w-4 h-4" />;
-      case "SOLICITUDES": return <Shield className="w-4 h-4" />;
+      case "SOLICITUD": return <Send className="w-4 h-4" />;
       default: return <Activity className="w-4 h-4" />;
     }
   };
