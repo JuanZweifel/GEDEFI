@@ -27,7 +27,7 @@ from app.schemas import (
 from app.services.serie import create_massive_series
 from fastapi import HTTPException, status
 from app.utils.decorators import handle_audit, handle_db_exceptions
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 @handle_db_exceptions
@@ -74,7 +74,7 @@ def get_club(
         )
     ).first()
 
-    if (not db_detalle and not current_user.get("admin")) or (not current_user.get("admin") and id_club != current_user["id_club"]): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
+    if (not db_detalle and not current_user.get("asociacion")) or (not current_user.get("asociacion") and id_club != current_user["id_club"]): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso de acceder a este club")
     return db.query(Club).filter(Club.id_club == id_club).first()
 
 @handle_db_exceptions
@@ -103,14 +103,14 @@ def get_clubs(db: Session, current_user: dict) -> list[Club]:
         Si ocurre algún error relacionado con la base de datos, manejado por `handle_db_exceptions`.
     """
     
-    if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
+    if not current_user["asociacion"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
     return db.query(Club).order_by(desc(Club.club_activo), asc(Club.nombre_club)).all()
 
 
 @handle_audit("CREATE", "CLUB")
 def create_club(db: Session, club: ClubCreate, current_user: dict) -> Club:  # Cambia el retorno a Club
     try:
-        if not current_user["admin"]:
+        if not current_user["asociacion"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, 
                 detail="No tienes permiso para crear un club"
@@ -236,27 +236,129 @@ def update_club(
         raise HTTPException(status_code=400, detail=detail) from e
 
 
-@handle_audit("DELETE", "Club")
-def delete_club(db: Session, id_club: int, current_user:dict):
-    try:
-        if not current_user["admin"]: raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para borrar un club.")
-        db_club = get_club(db, id_club, current_user)
-        db.delete(db_club)
-        db.commit()
-        return True
-    except AssertionError as e:
+@handle_audit("UPDATE", "Club")
+def disable_club(db: Session, id_club: int, current_user: dict):
+    """
+    Desactiva un club y todas sus relaciones (usuarios, jugadores, series, fichas).
+    No realiza commit; el commit lo hace la auditoría.
+    """
+    if not current_user.get("admin", False):
         raise HTTPException(
-            status_code=500,
-            detail="No puedes borrar un club que tenga registros asociados.",
-        ) from e
-    except IntegrityError as e:
-        if isinstance(e.orig, psycopg2.errors.NotNullViolation):
-            raise HTTPException(
-                status_code=500,
-                detail="No puedes borrar un club que tenga registros asociados.",
-            ) from e
-        else:
-            raise HTTPException(status_code=500, detail={"error": e.orig.args}) from e
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para desactivar un club."
+        )
+
+    db_club: Club | None = get_club(db, id_club, current_user)
+    if not db_club:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Club no encontrado."
+        )
+
+    if not db_club.club_activo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El club ya está desactivado."
+        )
+
+    now = datetime.now()
+
+    # Desactivar club
+    db_club.club_activo = False
+
+    # Cerrar asociaciones de usuarios
+    db.query(DetalleUsuarioClub).filter(
+        DetalleUsuarioClub.id_club == id_club,
+        DetalleUsuarioClub.fecha_fin.is_(None)
+    ).update({DetalleUsuarioClub.fecha_fin: now})
+
+    # Cerrar asociaciones de jugadores
+    db.query(DetalleClubJugador).filter(
+        DetalleClubJugador.id_club == id_club,
+        DetalleClubJugador.fecha_fin.is_(None)
+    ).update({DetalleClubJugador.fecha_fin: now})
+
+    # Desactivar series del club
+    series_ids = [
+        s.id_serie for s in db.query(Serie.id_serie)
+        .filter(Serie.id_club == id_club, Serie.serie_activa == True)
+        .all()
+    ]
+    db.query(Serie).filter(Serie.id_club == id_club).update({Serie.serie_activa: False})
+
+    # Cerrar fichas de jugadores asociadas
+    if series_ids:
+        db.query(FichaJugador).filter(
+            FichaJugador.id_serie.in_(series_ids),
+            FichaJugador.fecha_fin.is_(None)
+        ).update({FichaJugador.fecha_fin: now})
+
+    # Desactivar usuarios relacionados
+    usuarios_ids = db.query(DetalleUsuarioClub.rut_usuario).filter(
+        DetalleUsuarioClub.id_club == id_club
+    )
+    db.query(Usuario).filter(
+        Usuario.rut_usuario.in_(usuarios_ids)
+    ).update({Usuario.usuario_activo: False})
+
+    # Desactivar jugadores relacionados
+    jugadores_ids = db.query(DetalleClubJugador.rut_jugador).filter(
+        DetalleClubJugador.id_club == id_club
+    )
+    db.query(Jugador).filter(
+        Jugador.rut_jugador.in_(jugadores_ids)
+    ).update({Jugador.jugador_activo: False})
+
+    db.commit()
+    db.refresh(db_club)
+    return db_club  
+
+
+@handle_audit("DELETE", "Club")
+def delete_club(db: Session, id_club: int, current_user: dict):
+    """
+    Elimina un club si ya está desactivado y no tiene asociaciones.
+    No realiza commit; el commit lo hace la auditoría.
+    """
+    if not current_user.get("asociacion", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para eliminar un club."
+        )
+
+    db_club: Club | None = get_club(db, id_club, current_user)
+    if not db_club:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Club no encontrado."
+        )
+
+    if db_club.club_activo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes desactivar el club antes de eliminarlo."
+        )
+
+    # Verificar asociaciones activas
+    usuarios_asociados = db.query(DetalleUsuarioClub).filter(
+        DetalleUsuarioClub.id_club == id_club
+    ).count()
+    jugadores_asociados = db.query(DetalleClubJugador).filter(
+        DetalleClubJugador.id_club == id_club
+    ).count()
+
+    if usuarios_asociados > 0 or jugadores_asociados > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No puedes eliminar un club que aún tiene usuarios o jugadores asociados."
+        )
+
+    # Eliminar series primero (por restricción de FK)
+    db.query(Serie).filter(Serie.id_club == id_club).delete()
+    db.delete(db_club)
+
+    db.commit()
+    return id_club
 
 
 @handle_db_exceptions
@@ -276,7 +378,7 @@ def get_clubs_with_details(
         hoy = date.today()
 
         # --- Construir query base segun permisos ---
-        if not current_user.get("admin") and current_user.get("id_club") is not None:
+        if not current_user.get("asociacion") and current_user.get("id_club") is not None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a todos los clubs")
 
         base_query = db.query(Club)
@@ -420,8 +522,6 @@ def get_club_with_details(
     db: Session,
     id_club: int,
     current_user: dict,
-    search: Optional[str] = None,
-    estado: Optional[int] = None,
 ) -> ClubWithDetails:
     """
     Retorna { items: list[ClubWithDetails], total: int }
@@ -431,7 +531,7 @@ def get_club_with_details(
         hoy = date.today()
 
         # --- Construir query base segun permisos ---
-        if (not current_user.get("id_club") or id_club != current_user.get("id_club")) and not current_user.get("admin"):
+        if (not current_user.get("id_club") or id_club != current_user.get("id_club")) and not current_user.get("asociacion"):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para acceder a este club")
 
         db_club = db.query(Club).filter(Club.id_club == id_club).first()
