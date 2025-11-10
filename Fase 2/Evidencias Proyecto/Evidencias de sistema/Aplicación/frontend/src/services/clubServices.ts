@@ -7,11 +7,11 @@ async function handleResponse<T>(response: Response): Promise<T> {
         throw new Error(errorData.detail)
     }
     const data: T = await response.json()
+    console.log(data)
     return data
 }
 
 export async function getClubs<T>(
-    setIsLoading:React.Dispatch<React.SetStateAction<number>>,
     token?: string | null,
     search: string| null = null,
     estado: string | null = null,
@@ -33,12 +33,10 @@ export async function getClubs<T>(
 
     const queryString = params.toString();
     const url = queryString ? `${URL_BASE}?${queryString}` : URL_BASE;
-    setIsLoading(25)
     const response = await fetch(url, {
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    setIsLoading(50)
     return handleResponse<T>(response);
 }
 
@@ -48,12 +46,10 @@ export async function getClub<T>(
 ): Promise<T> {
 
     const url = `${URL_BASE}${id_club}`;
-
     const response = await fetch(url, {
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-
     return handleResponse<T>(response);
 }
 
@@ -100,7 +96,6 @@ export async function updateClub<T>(club: Record<string, any>, id_club: number, 
     if (logo_club instanceof File) {
         formData.append("logo_club", logo_club); // logoFile es tipo File de input
     }
-    formData.append("club_activo", club.club_activo)
     const response = await fetch(`${URL_BASE}${id_club}`, {
         method: "PUT",
         body: formData,
@@ -112,6 +107,15 @@ export async function updateClub<T>(club: Record<string, any>, id_club: number, 
 export async function deleteClub<T>(id_club: number, token: string | null): Promise<T> {
     const response = await fetch(`${URL_BASE}${id_club}`, {
         method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+
+    return handleResponse(response)
+}
+
+export async function disableClub<T>(id_club: number, token: string | null): Promise<T> {
+    const response = await fetch(`${URL_BASE}${id_club}/disable`, {
+        method: "PUT",
         headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
 

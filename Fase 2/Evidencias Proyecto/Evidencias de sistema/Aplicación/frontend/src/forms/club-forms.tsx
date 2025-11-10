@@ -4,9 +4,6 @@ import { Label } from '../components/ui/label.tsx';
 import { Input } from '../components/ui/input.tsx';
 import { Separator } from '../components/ui/separator.tsx';
 import { Checkbox } from '../components/ui/checkbox.tsx';
-import {
-    Plus
-} from 'lucide-react';
 
 import { toast } from 'sonner';
 
@@ -16,8 +13,17 @@ import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 
 import {
     type ClubType,
+    type JugadorType,
+    type SerieType,
+    type UsuarioType,
 } from '../types.tsx';
 import { useAuth } from '../contexts/authContext.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.tsx';
+import { Eye, FileText, Plus } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table.tsx';
+import { Badge } from '../components/ui/badge.tsx';
+import { NavLink } from 'react-router';
 
 // Enhanced User & Roles Module (USUARIO, ROL, HISTORIAL_USUARIO)
 
@@ -42,7 +48,6 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
     const [colorSecundario, setColorSecundario] = useState("")
     const [colorRespaldo, setcolorRespaldo] = useState("")
     const [checkedRespaldo, setCheckedRespaldo] = useState(false)
-    const [clubActivo, setClubActivo] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
     const [open, setOpen] = useState(false)
     const { token, id_club } = useAuth()
@@ -61,7 +66,6 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
             setColorSecundario(club?.color_secundario ?? "#000000")
             setcolorRespaldo(club?.color_respaldo ?? "")
             if (club.color_respaldo) { setCheckedRespaldo(true) }
-            setClubActivo(club.club_activo ?? true)
         }
     }, [club, isEdit])
 
@@ -115,7 +119,6 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
                 color_primario: colorPrimario === "" ? "#000000" : colorPrimario,
                 color_secundario: colorSecundario === "" ? "#000000" : colorSecundario,
                 ...(checkedRespaldo ? { color_respaldo: colorRespaldo === "" ? "#000000" : colorRespaldo } : {}),
-                ...(isEdit ? { club_activo: clubActivo } : {}),
             }
 
             if (isEdit && club?.id_club) {
@@ -252,14 +255,6 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
                         />
                     </div>
                 }
-                {isEdit && (
-                    <div className="col-span-2 flex items-center space-x-2">
-                        <Checkbox className="CheckBoxRoot" checked={clubActivo} disabled={id_club? true : false} onCheckedChange={() => setClubActivo(!clubActivo)} />
-                        <Label htmlFor="club-activo" className="text-sm">
-                            Club activo
-                        </Label>
-                    </div>
-                )}
                 <div className="col-span-2 flex items-center space-x-2">
                     <span className='text-gray-400 text-sm'>Todos los campos marcados con (*) deben ser rellenados.</span>
                 </div>
@@ -328,5 +323,259 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
                 </div>
             </div>
         </form>
+    )
+}
+
+export const ClubDetailsForm: React.FC<{club: ClubType, setIsLoading:React.Dispatch<React.SetStateAction<number>> }> = ({
+    club, 
+    setIsLoading
+}) => {
+
+    // !Estados (UseState)
+    const [series, setSeries] = useState<SerieType[]>([])
+    const [directiva, setDirectiva] = useState<UsuarioType[]>([])
+    const [jugadores, setJugadores] = useState<JugadorType[]>([])
+    const [activeTab, setActiveTab] = useState("directiva")
+
+    // !Control de estados (useEffect)
+    useEffect(() => {
+        setDirectiva(club.directiva)
+        setSeries(club.series)
+        setJugadores(club.jugadores)
+        setIsLoading(100)
+    }, [club])
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <Label className="block mb-2">RUT</Label>
+                    <Input value={club.rut_club} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Fecha fundacion</Label>
+                    <Input value={club.fecha_fundacion} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Nombre</Label>
+                    <Input value={club.nombre_club} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Dirección</Label>
+                    <Input value={club.direccion_club} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Telefono</Label>
+                    <Input value={club.fono_club} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Correo Electronico</Label>
+                    <Input value={club.email_club} disabled />
+                </div>
+                <div>
+                    <Label className="block mb-2">Color primario</Label>
+                    <Input
+                        type='color'
+                        value={club.color_primario}
+                        disabled
+                    />
+                </div>
+                <div>
+                    <Label className="block mb-2">Color secundario</Label>
+                    <Input
+                        type='color'
+                        value={club.color_secundario}
+                        disabled
+                    />
+                </div>
+                <div>
+                    <Label className="block mb-2">Color respaldo</Label>
+                    <Input
+                        type='color'
+                        value={club.color_respaldo}
+                        disabled
+                    />
+                </div>
+                <div>
+                    <Label className="block mb-0">Estado</Label>
+                    <Badge className={club.club_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                        {club.club_activo ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                </div>
+            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="directiva">Directiva</TabsTrigger>
+                    <TabsTrigger value="series">Series</TabsTrigger>
+                    <TabsTrigger value="jugadores">Jugadores</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="directiva" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='font-medium'>Usuarios directivos</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {directiva.length > 0 &&
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>RUT</TableHead>
+                                            <TableHead>Nombre completo</TableHead>
+                                            <TableHead>Fecha nacimiento</TableHead>
+                                            <TableHead>Correo electronico</TableHead>
+                                            <TableHead>Huella registrada</TableHead>
+                                            <TableHead>ROL</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Acciones</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {directiva.map((d) => (
+                                            <TableRow key={d.rut_usuario}>
+                                                <TableCell className="font-medium">{d.rut_usuario}</TableCell>
+                                                <TableCell className="font-medium">{d.nombre_usuario} {d.apellido_usuario}</TableCell>
+                                                <TableCell className="font-medium">{d.fecha_nacimiento}</TableCell>
+                                                <TableCell className="font-medium">{d.email_usuario}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Badge className={d.huella_indice || d.huella_pulgar ? 'bg-green-500' : 'bg-red-500'}>
+                                                        {d.huella_indice || d.huella_pulgar ? 'Registrada' : 'Sin registrar'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Badge className='bg-blue-500'>
+                                                        {d.nombre_rol?.toUpperCase()}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Badge className={d.usuario_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                                                        {d.usuario_activo ? 'Activo' : 'Inactivo'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Button variant="outline" size="sm">
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            }
+                            {directiva.length === 0 &&
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Este club no tiene directiva asociada.</p>
+                                </div>
+                            }
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="series" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='font-medium'>Series registradas</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {!!series && series.length > 0 &&
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Nombre Serie</TableHead>
+                                            <TableHead>Jugadores</TableHead>
+                                            <TableHead>Fecha Inicio</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Acciones</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {series.map((serie) => (
+                                            <TableRow key={serie.id_serie ?? serie.nombre_serie}>
+                                                <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
+                                                <TableCell className="font-medium">{serie.cantidad_jugadores}</TableCell>
+                                                <TableCell className="font-medium">{serie.fecha_creacion?.split("T")[0]}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Badge className={serie.serie_activa ? 'bg-green-500' : 'bg-gray-500'}>
+                                                        {serie.serie_activa ? 'Activo' : 'Inactivo'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    <NavLink to={`/dashboard/series/${serie.id_serie}`}>
+                                                        <Button variant="outline" size="sm">
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                    </NavLink>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            }
+                            {series.length === 0 &&
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Este club no tiene series registradas.</p>
+                                </div>
+                            }
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="jugadores" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='font-medium'>Usuarios directivos</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {jugadores.length > 0 &&
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>RUT</TableHead>
+                                            <TableHead>Nombre completo</TableHead>
+                                            <TableHead>Genero</TableHead>
+                                            <TableHead>Fecha nacimiento</TableHead>
+                                            <TableHead>Enfermedades cronicas</TableHead>
+                                            <TableHead>Telefono</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Acciones</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {jugadores.map((j) => (
+                                            <TableRow key={j.rut_jugador}>
+                                                <TableCell className="font-medium">{j.rut_jugador}</TableCell>
+                                                <TableCell className="font-medium">{j.primer_nombre} {j.segundo_nombre} {j.primer_apellido} {j.segundo_apellido}</TableCell>
+                                                <TableCell className="font-medium">{j.genero ? "Masculino" : "Femenino"}</TableCell>
+                                                <TableCell className="font-medium">{j.fecha_nacimiento}</TableCell>
+                                                <TableCell className="font-medium">{j.enfermedades_cronicas}</TableCell>
+                                                <TableCell className="font-medium">{j.fono_jugador}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Badge className={j.jugador_activo ? 'bg-green-500' : 'bg-gray-500'}>
+                                                        {j.jugador_activo ? 'Activo' : 'Inactivo'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Button variant="outline" size="sm">
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            }
+                            {jugadores.length === 0 &&
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Este club no tiene jugadores asociados.</p>
+                                </div>
+                            }
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
     )
 }

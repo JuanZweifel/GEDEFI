@@ -2,30 +2,49 @@
 
 import * as React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress@1.1.2";
-
 import { cn } from "./utils";
 
-function Progress({
+export function Progress({
+  value = 0,
+  showLabel = true,
+  label,
   className,
-  value,
   ...props
-}: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+}: React.ComponentProps<typeof ProgressPrimitive.Root> & {
+  showLabel?: boolean;
+  label?: string;
+}) {
+  const isIndeterminate = value === undefined || value === null;
+
   return (
-    <ProgressPrimitive.Root
-      data-slot="progress"
-      className={cn(
-        "bg-primary/20 relative h-2 w-full overflow-hidden rounded-full",
-        className,
+    <div className="w-full flex flex-col gap-2">
+      {/* Etiqueta y porcentaje */}
+      {showLabel && (
+        <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-300">
+          <span>{label || "Progreso"}</span>
+          {!isIndeterminate && <span>{Math.round(value)}%</span>}
+        </div>
       )}
-      {...props}
-    >
-      <ProgressPrimitive.Indicator
-        data-slot="progress-indicator"
-        className="bg-primary h-full w-full flex-1 transition-all"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
-      />
-    </ProgressPrimitive.Root>
+
+      {/* Barra */}
+      <ProgressPrimitive.Root
+        className={cn(
+          "relative h-3 w-full overflow-hidden rounded-full",
+          "bg-gray-200 dark:bg-gray-800 shadow-inner border border-gray-300 dark:border-gray-700",
+          className
+        )}
+        {...props}
+      >
+        <ProgressPrimitive.Indicator
+          className={cn(
+            "h-full rounded-full transition-all duration-500 ease-in-out",
+            "bg-blue-500"
+          )}
+          style={{
+            width: isIndeterminate ? "100%" : `${value}%`,
+          }}
+        />
+      </ProgressPrimitive.Root>
+    </div>
   );
 }
-
-export { Progress };

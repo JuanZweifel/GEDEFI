@@ -48,11 +48,11 @@ import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
 import { FinanzasModule } from './finanzas.tsx';
 import { RegistroJugadoresModule } from './registro-jugadores.tsx';
-import { PartidosModule } from './partidos.tsx';
 import { PerfilUsuarioModule } from './perfilUsuario.tsx';
 import { MatchesTrainingModule } from './entrenamiento.tsx';
 import { FasModule } from './fas.tsx';
 import { ComunicadosModule } from './comunicados.tsx';
+import { PartidoCoreModule } from './partidos.tsx';
 
 
 
@@ -245,7 +245,7 @@ export default function DashboardComponent() {
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: PlayerRecordsModule, permission: 'players' },
         { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
-        { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidosModule, permission: 'matches' },
+        { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidoCoreModule, permission: 'matches' },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
         { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
@@ -384,21 +384,21 @@ export default function DashboardComponent() {
                                 <Route path=':id_entrenamiento' element={<MatchesTrainingModule />} />
                                 <Route path=':id_entrenamiento/edit' element={<MatchesTrainingModule />} />
                             </Route>
-                            <Route path="partidos" element={<PartidosModule />}>
-                                <Route index element={<PartidosModule />} />
-                                <Route path='new' element={<PartidosModule />} />
-                                <Route path=':id_partido' element={<PartidosModule />} />
-                                <Route path=':id_partido/edit' element={<PartidosModule />} />
+                            <Route path="partidos" element={<PartidoCoreModule />}>
+                                <Route index element={<PartidoCoreModule />} />
+                                <Route path='new' element={<PartidoCoreModule />} />
+                                <Route path=':id_partido' element={<PartidoCoreModule />} />
+                                <Route path=':id_partido/edit' element={<PartidoCoreModule />} />
                             </Route>
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="canchas" element={<CanchasModule />}>
-                                <Route index element={<PartidosModule />} />
-                                <Route path='new' element={<PartidosModule />} />
-                                <Route path=':id_cancha/edit' element={<PartidosModule />} />
-                                <Route path='new' element={<PartidosModule />} />
-                                <Route path='programacion' element={<PartidosModule />} />
-                                <Route path='mantenimiento' element={<PartidosModule />} />
-                                <Route path='historial' element={<PartidosModule />} />
+                                <Route index element={<CanchasModule />} />
+                                <Route path='new' element={<CanchasModule />} />
+                                <Route path=':id_cancha/edit' element={<CanchasModule />} />
+                                <Route path='new' element={<CanchasModule />} />
+                                <Route path='programacion' element={<CanchasModule />} />
+                                <Route path='mantenimiento' element={<CanchasModule />} />
+                                <Route path='historial' element={<CanchasModule />} />
                             </Route>
                             <Route path="finanzas" element={<FinanzasModule />}>
                                 <Route index element={<FinanzasModule />} />
