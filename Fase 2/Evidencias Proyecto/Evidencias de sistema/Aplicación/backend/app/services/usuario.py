@@ -77,7 +77,7 @@ def create_usuario(db: Session, usuario: UsuarioCreate, current_user: dict) -> U
         pass_usuario=hashed_password,
     )
 
-    if not usuario.admin:
+    if not usuario.asociacion:
         if usuario.id_club == 0:
             raise HTTPException(
                 status_code=400,

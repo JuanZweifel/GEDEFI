@@ -41,7 +41,7 @@ export const ClubCoreModule: React.FC = () => {
     const [action, setAction] = useState<string>("")
 
     // ! Auth
-    const { token, id_club, admin } = useAuth();
+    const { token, id_club, asociacion } = useAuth();
 
     // ! Router
     const navigate = useNavigate();
@@ -67,13 +67,13 @@ export const ClubCoreModule: React.FC = () => {
     const getModule = (action: string) => {
         switch (action) {
             case "view":
-                return <ClubListModule token={token} id_club={id_club} admin={admin} />
+                return <ClubListModule token={token} id_club={id_club} asociacion={asociacion} />
             case "details":
-                return <ClubDetailsModule isOpen={true} token={token} id_club={id_club} admin={admin} handleClose={handleCloseDialog} />
+                return <ClubDetailsModule isOpen={true} token={token} id_club={id_club} asociacion={asociacion} handleClose={handleCloseDialog} />
             case "edit":
-                return <ClubEditModule isOpen={true} token={token} id_club={id_club} admin={admin} handleClose={handleCloseDialog} />
+                return <ClubEditModule isOpen={true} token={token} id_club={id_club} asociacion={asociacion} handleClose={handleCloseDialog} />
             case "new":
-                return <ClubNewModule isOpen={true} token={token} admin={admin} handleClose={handleCloseDialog} />
+                return <ClubNewModule isOpen={true} token={token} asociacion={asociacion} handleClose={handleCloseDialog} />
         }
     }
 
@@ -112,10 +112,10 @@ export const ClubCoreModule: React.FC = () => {
     )
 }
 
-const ClubListModule: React.FC<{ token: string | null, id_club: number | null, admin: boolean | null }> = ({
+const ClubListModule: React.FC<{ token: string | null, id_club: number | null, asociacion: boolean | null }> = ({
     token,
     id_club,
-    admin
+    asociacion
 }) => {
     // ! Estados (UseState)
     const [isLoading, setIsLoading] = useState<number>(0)
@@ -133,7 +133,7 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
 
     // ! Control de estados (UseEffect)
     useEffect(() => {
-        if (!!admin) fetchClubs(false, token, searchTerm, selectedEstado);
+        if (!!asociacion) fetchClubs(false, token, searchTerm, selectedEstado);
         else fetchClub(token, id_club);
     }, [location.pathname])
 
@@ -144,7 +144,9 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
             const term = rawTerm.toLowerCase();
 
             if (!term) {
-                fetchClubs(true, token, searchTerm, selectedEstado);
+                if (asociacion === true) {
+                    fetchClubs(true, token, searchTerm, selectedEstado);
+                }
                 return;
             }
 
@@ -162,10 +164,7 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                 const email = (c.email_club ?? "").toLowerCase();
 
                 if (onlyDigits) return rut.includes(term);
-                return (
-                    nombre.includes(term) ||
-                    email.includes(term)
-                );
+                return nombre.includes(term) || email.includes(term);
             });
 
             if (foundInCache) {
@@ -180,11 +179,15 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                 setClubList(filtered);
                 return;
             }
-            fetchClubs(true, token, searchTerm, selectedEstado);
+
+            if (asociacion === true) {
+                fetchClubs(true, token, searchTerm, selectedEstado);
+            }
+
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchTerm, selectedEstado, page]);
+    }, [searchTerm, selectedEstado, page, asociacion]);
 
     // ! Funciones Logicas (() => )
     const fetchClubs = async (filter: boolean, token: string | null, searchTerm: string, selectedEstado: string | null) => {
@@ -196,7 +199,7 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
             setClubList(clubes)
             setTotalPages((Math.ceil(response.total / 10)) | 0)
             setIsLoading(100)
-            if(!filter && clubes.length == 0)  toast.info("No hay clubes registrados en la base de datos")
+            if (!filter && clubes.length == 0) toast.info("No hay clubes registrados en la base de datos")
         } catch (error) {
             toast.info(String(error))
         }
@@ -214,14 +217,14 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
         }
     }
 
-    const handleDelete = async (id_club: number, activo:boolean) => {
+    const handleDelete = async (id_club: number, activo: boolean) => {
         try {
             const response = activo ? await disableClub<any>(id_club, token) : await deleteClub<any>(id_club, token)
             toast.success(response.message);
             setSelectedDelete(null);
             setSearchTerm("")
             setSelectedEstado(null)
-            if (!!admin) fetchClubs(false, token, searchTerm, selectedEstado);
+            if (!!asociacion) fetchClubs(false, token, searchTerm, selectedEstado);
             else fetchClub(token, id_club)
         } catch (error) {
             toast.error(String(error));
@@ -236,14 +239,14 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                     <div>
                         <Input
                             type="text"
-                            disabled={!admin}
+                            disabled={!asociacion}
                             placeholder="Buscar club por Nombre, RUT o Email..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <div>
-                        <Select value={selectedEstado} disabled={!admin} onValueChange={(v: string) => setSelectedEstado(v)}>
+                        <Select value={selectedEstado} disabled={!asociacion} onValueChange={(v: string) => setSelectedEstado(v)}>
                             <SelectTrigger className="w-48">
                                 <SelectValue placeholder="Seleccionar estado" />
                             </SelectTrigger>
@@ -362,12 +365,12 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                                         timer={5}
                                         title={`${c.club_activo ? "Desactivación" : "Eliminación"} de club ${c.nombre_club}`}
                                         description={
-                                            c.club_activo ? 
-                                            `¿Estas seguro de querer desactivar al club ${c.nombre_club}?
+                                            c.club_activo ?
+                                                `¿Estas seguro de querer desactivar al club ${c.nombre_club}?
                                             Esta acción desactivara las series, jugadores y usuarios asociados al club.` :
-                                            `¿Estas seguro de querer Eliminar al club ${c.nombre_club}?
+                                                `¿Estas seguro de querer Eliminar al club ${c.nombre_club}?
                                             Esta acción eliminara tambien sus series`
-                                            
+
                                         }
                                         confirmLabel={c.club_activo ? "Desactivar" : "Eliminar"}
                                         cancelLabel="Cancelar"
@@ -404,10 +407,10 @@ const Loading: React.FC<{ isLoading: number, component: string }> = ({ isLoading
     )
 }
 
-const ClubNewModule: React.FC<{ isOpen: boolean, token: string | null, admin: boolean | null, handleClose: (open: boolean) => void }> = ({
+const ClubNewModule: React.FC<{ isOpen: boolean, token: string | null, asociacion: boolean | null, handleClose: (open: boolean) => void }> = ({
     isOpen,
     token,
-    admin,
+    asociacion,
     handleClose
 }) => {
     // !Estados (UseState)
@@ -418,7 +421,7 @@ const ClubNewModule: React.FC<{ isOpen: boolean, token: string | null, admin: bo
 
     // !Control de estados (UseEffect)
     useEffect(() => {
-        if (!admin) navigate("/dashboard/clubes/view", { replace: true })
+        if (!asociacion) navigate("/dashboard/clubes/view", { replace: true })
         setIsDialogOpen(isOpen)
     }, [])
 
@@ -434,11 +437,11 @@ const ClubNewModule: React.FC<{ isOpen: boolean, token: string | null, admin: bo
     )
 }
 
-const ClubEditModule: React.FC<{ isOpen: boolean, token: string | null, id_club: number | null, admin: boolean | null, handleClose: (open: boolean) => void }> = ({
+const ClubEditModule: React.FC<{ isOpen: boolean, token: string | null, id_club: number | null, asociacion: boolean | null, handleClose: (open: boolean) => void }> = ({
     isOpen,
     token,
     id_club,
-    admin,
+    asociacion,
     handleClose
 }) => {
     // !Estados (UseState)
@@ -453,7 +456,7 @@ const ClubEditModule: React.FC<{ isOpen: boolean, token: string | null, id_club:
     useEffect(() => {
         try {
             let id = params.id_club
-            if (!!id && (!!admin || id_club === Number(id))) fetchClub(token, Number(id));
+            if (!!id && (!!asociacion || id_club === Number(id))) fetchClub(token, Number(id));
         } catch (error) {
             navigate("/dashboard/clubes/view", { replace: true })
         }
@@ -493,11 +496,11 @@ const ClubEditModule: React.FC<{ isOpen: boolean, token: string | null, id_club:
     )
 }
 
-const ClubDetailsModule: React.FC<{ isOpen: boolean, token: string | null, id_club: number | null, admin: boolean | null, handleClose: (open: boolean) => void }> = ({
+const ClubDetailsModule: React.FC<{ isOpen: boolean, token: string | null, id_club: number | null, asociacion: boolean | null, handleClose: (open: boolean) => void }> = ({
     isOpen,
     token,
     id_club,
-    admin,
+    asociacion,
     handleClose
 }) => {
     // !Estados (UseState)
@@ -512,8 +515,8 @@ const ClubDetailsModule: React.FC<{ isOpen: boolean, token: string | null, id_cl
     useEffect(() => {
         try {
             let id = Number(params.id_club)
-            if(Number.isNaN(id)) throw new Error("ID no numerico")
-            if (!!id || (!!admin || id_club === id)) fetchClub(token, id);
+            if (Number.isNaN(id)) throw new Error("ID no numerico")
+            if (!!id || (!!asociacion || id_club === id)) fetchClub(token, id);
         } catch (error) {
             navigate("/dashboard/clubes/view", { replace: true })
         }

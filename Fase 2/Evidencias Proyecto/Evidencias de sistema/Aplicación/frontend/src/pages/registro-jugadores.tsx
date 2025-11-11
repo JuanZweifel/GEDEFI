@@ -198,7 +198,6 @@ export const RegistroJugadoresModule: React.FC = () => {
     const [uploadHistory, setUploadHistory] = useState<any[]>([]);
     const [historyFilter, setHistoryFilter] = useState('ALL');
     const [injuries, setInjuries] = useState<any[]>([]);
-    const [playerHistory, setPlayerHistory] = useState<any[]>([]);
     const [players, setPlayers] = useState<JugadorType[]>([]);
     const [selectedClub, setSelectedClub] = useState<string | undefined>(undefined);
     const [selectedSerie, setSelectedSerie] = useState<string | null>(null);
@@ -209,7 +208,7 @@ export const RegistroJugadoresModule: React.FC = () => {
     const [busquedaRealizada, setBusquedaRealizada] = useState(false);
     const { token, id_club } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
-    const [isLoading, setIsLoading] = useState<number>(0)
+
 
     // enrutamiento react router
     const navigate = useNavigate();
@@ -579,11 +578,10 @@ export const RegistroJugadoresModule: React.FC = () => {
 
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="jugadores" onClick={() => navigate("/dashboard/registro-jugadores/jugadores")}>Jugadores (JUGADOR)</TabsTrigger>
                     <TabsTrigger value="lesiones" onClick={() => navigate("/dashboard/registro-jugadores/lesiones")}>Lesiones (LESION)</TabsTrigger>
                     <TabsTrigger value="fichas" onClick={() => navigate("/dashboard/registro-jugadores/fichas")}>Fichas (FICHA_JUGADOR)</TabsTrigger>
-                    <TabsTrigger value="historial" onClick={() => navigate("/dashboard/registro-jugadores/historial")}>Historial</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="jugadores" className="space-y-4">

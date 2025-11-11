@@ -27,10 +27,12 @@ class RendimientoPartido(Base):
     )
     id_serie: Mapped[int] = mapped_column(Integer, nullable=False)
 
+    fecha_ini: Mapped[date] = mapped_column(Date, nullable= False)
+
     __table_args__ = (
         ForeignKeyConstraint(
-            ["rut_jugador", "id_serie"],
-            ["FICHA_JUGADOR.rut_jugador", "FICHA_JUGADOR.id_serie"],
+            ["rut_jugador", "id_serie", "fecha_ini"],
+            ["FICHA_JUGADOR.rut_jugador", "FICHA_JUGADOR.id_serie", "FICHA_JUGADOR.fecha_ini"],
         ),
     )
 

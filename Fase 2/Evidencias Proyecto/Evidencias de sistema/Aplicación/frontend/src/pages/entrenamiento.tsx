@@ -240,11 +240,9 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () =>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="entrenamientos" onClick={() => navigate("/dashboard/entrenamientos")}>Entrenamientos</TabsTrigger>
-
                     <TabsTrigger value="rendimiento_entrenamiento" onClick={() => navigate("/dashboard/entrenamientos/rendimiento_entrenamiento")}>Rendimiento Entrenamientos</TabsTrigger>
-                    <TabsTrigger value="history">Historial</TabsTrigger>
                 </TabsList>
 
 

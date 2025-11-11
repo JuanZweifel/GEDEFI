@@ -22,7 +22,7 @@ interface AuthContextType {
   nombre: string | null;
   club_nombre: string | null;
   id_club: number | null;
-  admin: boolean | null;
+  asociacion: boolean | null;
   login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   refreshAccessToken: () => Promise<string | null>;

@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
-from app.models import Jugador
+from app.models import Jugador, DetalleClubJugador, FichaJugador, UsoFas
 from app.schemas import JugadorCreate, JugadorUpdate
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
+from app.utils.decorators import handle_audit, handle_db_exceptions
 # TODO: Aplicar auth security para poder implementar auditoria
 def get_jugador(db: Session, rut_jugador: str) -> Jugador | None:
     return db.query(Jugador).filter(Jugador.rut_jugador == rut_jugador).first()
@@ -53,28 +54,59 @@ def update_jugador(
     return db_jugador
 
 
-def delete_jugador(db: Session, rut_jugador: str) -> bool:
-    """Elimina un jugador. Si tiene registros asociados, lanza un error controlado."""
+
+@handle_audit("DELETE", "JUGADOR")
+def delete_jugador(db: Session, rut_jugador: str, current_user: dict) -> bool:
+    """Elimina un jugador si no tiene registros asociados."""
+
+    # ✅ Validación de token
+    if not current_user:
+        raise HTTPException(
+            status_code=401,
+            detail="No autorizado. Se requiere token válido."
+        )
+
+    # ✅ Buscar jugador
     db_jugador = get_jugador(db, rut_jugador)
     if not db_jugador:
-        return False
+        raise HTTPException(
+            status_code=404,
+            detail="El jugador no existe."
+        )
 
+    tiene_club = db.query(DetalleClubJugador).filter(
+        DetalleClubJugador.rut_jugador == rut_jugador
+    ).count()
+
+    tiene_ficha = db.query(FichaJugador).filter(
+        FichaJugador.rut_jugador == rut_jugador
+    ).count()
+
+    tiene_uso_fas = db.query(UsoFas).filter(
+        UsoFas.rut_jugador == rut_jugador
+    ).count()
+
+    if tiene_club > 0 or tiene_ficha > 0 or tiene_uso_fas > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar el jugador porque tiene registros asociados (por ejemplo: club, ficha, asistencias o usos de FAS)."
+        )
+
+    # ✅ Eliminación
     try:
         db.delete(db_jugador)
         db.commit()
         return True
 
     except IntegrityError:
-        db.rollback()  # 👈 Revertimos la transacción
-        # Lanzamos un error manejado con mensaje claro para el frontend
+        db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="No se puede eliminar el jugador porque tiene registros asociados (por ejemplo: fichas, asistencias o usos de FAS)."
+            detail="No se puede eliminar el jugador porque tiene registros asociados (por ejemplo: club, ficha, asistencias o usos de FAS)."
         )
 
     except Exception as e:
         db.rollback()
-        # Cualquier otro error no previsto
         raise HTTPException(
             status_code=500,
             detail=f"Error interno del servidor: {str(e)}"
