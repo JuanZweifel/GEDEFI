@@ -76,6 +76,7 @@ def create_rendimiento_partido(db: Session, id_partido: int) -> bool:
             id_partido=id_partido,
             rut_jugador=ficha.jugador.rut_jugador,
             id_serie=ficha.id_serie,
+            fecha_ini=ficha.fecha_ini,
             tiempo_jugado=None,
             goles=0,
             asistencias=0,
@@ -84,9 +85,7 @@ def create_rendimiento_partido(db: Session, id_partido: int) -> bool:
             amonestaciones_rojas=False,
         )
         rendimientos.append(rendimiento)
-
     db.add_all(rendimientos)
-    print("LLEGAMOS LUCHO")
     db.flush()
     return True
 

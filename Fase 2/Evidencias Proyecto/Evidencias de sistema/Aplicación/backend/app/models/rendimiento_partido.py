@@ -23,9 +23,11 @@ class RendimientoPartido(Base):
         index=True,
     )
     rut_jugador: Mapped[str] = mapped_column(
-        String(10), ForeignKey("JUGADOR.rut_jugador"), nullable=False, primary_key=True, index=True
+        String(10), nullable=False, primary_key=True, index=True
     )
-    id_serie: Mapped[int] = mapped_column(Integer, nullable=False)
+    id_serie: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+
+    fecha_ini: Mapped[date] = mapped_column(Date, nullable=False, primary_key=True)
 
     fecha_ini: Mapped[date] = mapped_column(Date, nullable= False)
 

@@ -28,12 +28,22 @@ class TipoMovimientoEnum(str, enum.Enum):
     ingreso = "Ingreso"
     egreso = "Egreso"
 
+class TipoOrdenEnum(str, enum.Enum):
+    mensualidad = "Mensualidad"
+    multa = "Multa"
+    pase = "Pase"
+    servicio_basico = "Servicio basico"
+    donacion = "Donación"
+    subvencion = "Subvenciones"
+    otro = "Otro"
+
+
 class OrdenPago(Base):
     __tablename__ = "ORDEN_PAGO"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     id_orden_pago: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
-    tipo_orden: Mapped[str] = mapped_column(String(100), nullable=False)
+    tipo_orden: Mapped[str] = mapped_column(String(30), nullable=False)
     tipo_movimiento: Mapped[TipoMovimientoEnum] = mapped_column(
         SQLEnum(TipoMovimientoEnum, name="tipo_movimiento_enum"),
         nullable=False

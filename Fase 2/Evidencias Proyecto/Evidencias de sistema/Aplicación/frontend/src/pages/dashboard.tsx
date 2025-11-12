@@ -52,7 +52,7 @@ import { PerfilUsuarioModule } from './perfilUsuario.tsx';
 import { MatchesTrainingModule } from './entrenamiento.tsx';
 import { FasModule } from './fas.tsx';
 import { ComunicadosModule } from './comunicados.tsx';
-//import { PartidoCoreModule } from './partidos.tsx';
+import { PartidoCoreModule } from './partidos.tsx';
 
 
 
@@ -384,12 +384,11 @@ export default function DashboardComponent() {
                                 <Route path=':id_entrenamiento' element={<MatchesTrainingModule />} />
                                 <Route path=':id_entrenamiento/edit' element={<MatchesTrainingModule />} />
                             </Route>
-                            {/*<Route path="partidos" element={<PartidoCoreModule />}>
+                            <Route path="partidos" element={<PartidoCoreModule />}>
                                 <Route index element={<PartidoCoreModule />} />
-                                <Route path='new' element={<PartidoCoreModule />} />
-                                <Route path=':id_partido' element={<PartidoCoreModule />} />
-                                <Route path=':id_partido/edit' element={<PartidoCoreModule />} />
-                            </Route>*/}
+                                <Route path=":accion" element={<PartidoCoreModule />} />
+                                <Route path=":accion/:id_partido" element={<PartidoCoreModule />} />
+                            </Route>
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="canchas" element={<CanchasModule />}>
                                 <Route index element={<CanchasModule />} />

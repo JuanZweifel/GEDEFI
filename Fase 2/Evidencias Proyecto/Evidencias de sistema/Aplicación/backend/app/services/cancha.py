@@ -3,6 +3,7 @@ from app.models import Cancha
 from app.schemas import CanchaCreate, CanchaUpdate
 from fastapi import HTTPException
 from app.utils.decorators import handle_audit, handle_db_exceptions
+from fastapi import HTTPException
 
 
 @handle_db_exceptions
