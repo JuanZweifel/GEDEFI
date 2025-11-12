@@ -28,8 +28,8 @@ class Partido(Base):
     fecha_partido: Mapped[date] = mapped_column(Date, nullable=False)
     hora_ini_partido: Mapped[time] = mapped_column(Time, nullable=False)
     hora_fin_partido: Mapped[time] = mapped_column(Time, nullable=True)
-    goles_local: Mapped[int] = mapped_column(Integer, nullable=True)
-    goles_visita: Mapped[int] = mapped_column(Integer, nullable=True)
+    goles_local: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    goles_visita: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     estado_partido: Mapped[EstadoPartidoEnum] = mapped_column(
         SQLEnum(EstadoPartidoEnum, name="estado_partido_enum"),
         default=EstadoPartidoEnum.PROGRAMADO,

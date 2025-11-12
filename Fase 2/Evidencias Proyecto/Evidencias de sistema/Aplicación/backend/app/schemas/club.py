@@ -71,7 +71,6 @@ class ClubUpdate(BaseModel):
     color_primario: str = Field(..., min_length=7, max_length=8, description="Color principal del club en formato hexadecimal (ej: #ABC123).")
     color_secundario: str = Field(..., min_length=7, max_length=8, description="Color secundario del club en formato hexadecimal (ej: #ABC123).")
     color_respaldo: Optional[str] = Field(None, description="Color respaldo del club en formato hexadecimal (ej: #ABC123).")
-    club_activo: Optional[bool] = Field(None, description="Club activo")
 
     @field_validator("rut_club")
     @classmethod

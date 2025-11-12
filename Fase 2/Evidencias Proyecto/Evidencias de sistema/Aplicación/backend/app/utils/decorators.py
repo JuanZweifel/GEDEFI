@@ -37,7 +37,7 @@ def handle_db_exceptions(func):
 
 MAX_DESCRIPCION = 500
 MAX_RECURSO = 100
-ALLOWED_ACTIONS = {"CREATE", "UPDATE", "DELETE", "READ"}
+ALLOWED_ACTIONS = {"CREATE", "UPDATE", "DELETE"}
 
 
 def _truncate(text: str | None, n: int) -> str:

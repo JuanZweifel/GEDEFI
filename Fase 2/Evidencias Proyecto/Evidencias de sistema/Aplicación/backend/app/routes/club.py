@@ -155,8 +155,15 @@ def update_club(
 @router.delete("/{id_club}")
 def delete_club(id_club: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     try:
-        flag = services.delete_club(db, id_club, current_user)
-        if flag:
-            return {"message": "¡Club eliminado correctamente!"}
+        services.delete_club(db, id_club, current_user)
+        return {"message": "¡Club eliminado correctamente!"}
     except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+        raise e
+
+@router.put("/{id_club}/disable")
+def disable_club(id_club: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    try:
+        services.disable_club(db, id_club, current_user)
+        return {"message": "¡Club desactivado correctamente!"}
+    except HTTPException as e:
+        raise e

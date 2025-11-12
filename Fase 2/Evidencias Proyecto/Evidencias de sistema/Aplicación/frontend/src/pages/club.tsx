@@ -128,16 +128,8 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
 
     // ! Router
     const navigate = useNavigate();
-    const location = useLocation();
-    const params = useParams();
 
     // ! Control de estados (UseEffect)
-    useEffect(() => {
-        if (!!admin) fetchClubs(false, token, searchTerm, selectedEstado);
-        else fetchClub(token, id_club);
-    }, [location.pathname])
-
-    // Effect para búsqueda con debounce
     useEffect(() => {
         const timer = setTimeout(() => {
             const rawTerm = searchTerm.trim();

@@ -169,6 +169,9 @@ export type PartidoType = {
     id_cancha: number;
     id_serie_local: number;
     id_serie_visitante: number;
+    nombre_serie: string;
+    club_local: string;
+    club_visitante: string;
 }
 
 export type RendimientoPartidoType = {

@@ -8,6 +8,7 @@ from ..models.partido import EstadoPartidoEnum, TipoPartidoEnum
 class PartidoBase(BaseModel):
     fecha_partido: date
     hora_ini_partido: time
+    hora_fin_partido: Optional[time]
     goles_local: Optional[int] = None
     goles_visita: Optional[int] = None
     estado_partido: EstadoPartidoEnum = EstadoPartidoEnum.PROGRAMADO
@@ -17,15 +18,12 @@ class PartidoBase(BaseModel):
     id_serie_local: int
     id_serie_visitante: int
 
+class PartidoCreate(PartidoBase):
     # Validaciones
     @field_validator("fecha_partido")
     @classmethod
     def validar_fecha_partido(cls, v) -> date:
         return validar_fecha(v, False)
-
-
-class PartidoCreate(PartidoBase):
-    pass
 
 
 class PartidoRead(PartidoBase):

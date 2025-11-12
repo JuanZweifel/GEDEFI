@@ -386,9 +386,8 @@ export default function DashboardComponent() {
                             </Route>
                             <Route path="partidos" element={<PartidoCoreModule />}>
                                 <Route index element={<PartidoCoreModule />} />
-                                <Route path='new' element={<PartidoCoreModule />} />
-                                <Route path=':id_partido' element={<PartidoCoreModule />} />
-                                <Route path=':id_partido/edit' element={<PartidoCoreModule />} />
+                                <Route path=":accion" element={<PartidoCoreModule />} />
+                                <Route path=":accion/:id_partido" element={<PartidoCoreModule />} />
                             </Route>
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="canchas" element={<CanchasModule />}>
