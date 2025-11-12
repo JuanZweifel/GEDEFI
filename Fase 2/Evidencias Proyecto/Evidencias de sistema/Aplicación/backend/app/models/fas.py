@@ -8,7 +8,7 @@ class Fas(Base):
     __tablename__ = "FAS"
 
     id_fas: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    anio_fas: Mapped[int] = mapped_column(Integer, nullable=False)  
+    anio_fas: Mapped[int] = mapped_column(Integer, nullable=False, default=datetime.now(timezone.utc).year, unique=True)  
     monto_inicial: Mapped[int] = mapped_column(Integer, nullable=False)  
     monto_disponible: Mapped[int] = mapped_column(Integer, nullable=False)  
     descripcion: Mapped[str] = mapped_column(String(255), nullable=True)

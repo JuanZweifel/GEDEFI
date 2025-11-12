@@ -206,7 +206,7 @@ export const RegistroJugadoresModule: React.FC = () => {
     const [allSeries, setAllSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
     const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string }[]>([]);
     const [busquedaRealizada, setBusquedaRealizada] = useState(false);
-    const { token, id_club } = useAuth();
+    const { token, id_club, admin } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
 
 
@@ -263,26 +263,26 @@ export const RegistroJugadoresModule: React.FC = () => {
 
     // 🔹 Obtener clubes
     const fetchClubs = async () => {
-    if (!id_club) {
-        console.warn("⚠️ id_club es null, no se llamó al servicio");
-        return;
-    }
+        if (!id_club) {
+            console.warn("⚠️ id_club es null, no se llamó al servicio");
+            return;
+        }
 
-    try {
-        const data = await getClub<any>(id_club, token);
+        try {
+            const data = await getClub<any>(id_club, token);
 
 
-        const mapped = [{
-            id_club: data.id_club,
-            nombre: data.nombre_club,
-        }];
+            const mapped = [{
+                id_club: data.id_club,
+                nombre: data.nombre_club,
+            }];
 
-        setClubs(mapped);
-        console.log("✅ Club cargado:", mapped);
-    } catch (error) {
-        console.error("Error al obtener clubes:", error);
-    }
-};
+            setClubs(mapped);
+            console.log("✅ Club cargado:", mapped);
+        } catch (error) {
+            console.error("Error al obtener clubes:", error);
+        }
+    };
 
     // 🔹 Obtener todas las series (sin filtrar)
     const fetchSeries = async () => {
@@ -301,12 +301,16 @@ export const RegistroJugadoresModule: React.FC = () => {
 
 
     useEffect(() => {
-    if (token && id_club) {          
-        fetchClubs();
-        fetchSeries();
-        fetchJugadoresPorClub();
-    }
-}, [id_club, token]);
+        if (token) {
+            fetchSeries();
+            fetchJugadoresPorClub();
+
+            // Solo obtiene club si no es administrador
+            if (!admin && id_club) {
+                fetchClubs();
+            }
+        }
+    }, [id_club, token, admin]);
 
 
     useEffect(() => {
@@ -367,25 +371,40 @@ export const RegistroJugadoresModule: React.FC = () => {
         }
     };
 
-    // 🔹 Filtrar jugadores por club del usuario logeado
+    // Filtrar jugadores por club del usuario logeado
     const fetchJugadoresPorClub = async (): Promise<JugadorType[]> => {
-        if (!token || !id_club) return [];
+        if (!token) return [];
+
         try {
-            const clubId = Number(id_club);
             const todosLosJugadores = await fetchJugadores();
-            const detalles: any[] = await getDetallesClubJugador<any[]>(token);
-            const detallesDelClub = detalles.filter(d => Number(d.id_club) === clubId);
-            const jugadoresIds = [...new Set(detallesDelClub.map(d => d.rut_jugador))];
-            const jugadoresDelClub = todosLosJugadores.filter(j => jugadoresIds.includes(j.rut_jugador));
-            setPlayers(jugadoresDelClub);
-            return jugadoresDelClub;
-        } catch (error) {
-            console.error("Error al cargar jugadores del club:", error);
+
+            // Si el usuario es administrador de asociación → ve todos
+            if (admin) {
+                setPlayers(todosLosJugadores);
+                return todosLosJugadores;
+            }
+
+            // Si es usuario de club → filtra por su club
+            if (id_club) {
+                const clubId = Number(id_club);
+                const detalles: any[] = await getDetallesClubJugador<any[]>(token);
+                const detallesDelClub = detalles.filter(d => Number(d.id_club) === clubId);
+                const jugadoresIds = [...new Set(detallesDelClub.map(d => d.rut_jugador))];
+                const jugadoresDelClub = todosLosJugadores.filter(j => jugadoresIds.includes(j.rut_jugador));
+                setPlayers(jugadoresDelClub);
+                return jugadoresDelClub;
+            }
+
+            // En caso de no tener club asociado
             setPlayers([]);
             return [];
-        }
-    };
 
+        } catch (error) {
+            console.error("Error al cargar jugadores:", error);
+            setPlayers([]);
+            return [];
+        };
+    };
 
 
 
@@ -402,10 +421,10 @@ export const RegistroJugadoresModule: React.FC = () => {
                         <>
                             <UploadExcel
                                 refreshJugadores={async () => {
-                                    const updatedPlayers = await fetchJugadoresPorClub(); // devuelve los jugadores filtrados por club
-                                    setPlayers(updatedPlayers); // 🔹 actualiza el estado
+                                    const updatedPlayers = await fetchJugadoresPorClub();
+                                    setPlayers(updatedPlayers);
                                 }}
-                                onUploadComplete={(result) => setUploadHistory(result)} // ⚡ reemplaza el historial anterior por el nuevo
+                                onUploadComplete={(result) => setUploadHistory(result)}
                                 openHistory={() => setIsUploadHistoryOpen(true)}
                             />
 

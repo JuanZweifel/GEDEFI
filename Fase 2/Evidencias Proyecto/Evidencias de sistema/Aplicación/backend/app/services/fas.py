@@ -29,23 +29,6 @@ def get_fondos_fas(db: Session, skip: int = 0, limit: int = 100):
 def create_fas(db: Session, fas_data: FasCreate) -> Fas:
     """Crea un nuevo FAS, permite solo años >= año actual y evita duplicados."""
 
-    anio_actual = datetime.now().year
-
-    # NO permitir crear FAS para años anteriores
-    if fas_data.anio_fas < anio_actual:
-        raise HTTPException(
-            status_code=400,
-            detail=f"No se pueden crear FAS para años anteriores ({fas_data.anio_fas})."
-        )
-
-    # Revisar si ya existe un FAS para ese año
-    existing_fas = db.query(Fas).filter(Fas.anio_fas == fas_data.anio_fas).first()
-    if existing_fas:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Ya existe un FAS registrado para el año {fas_data.anio_fas}."
-        )
-
     # monto_disponible = monto_inicial (por defecto)
     fas_dict = fas_data.dict()
     fas_dict["monto_disponible"] = fas_dict["monto_inicial"]

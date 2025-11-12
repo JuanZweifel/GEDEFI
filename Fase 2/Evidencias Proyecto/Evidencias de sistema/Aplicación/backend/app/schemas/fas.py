@@ -10,6 +10,7 @@ class FasBase(BaseModel):
     descripcion: Optional[str] = Field(None, max_length=255, description="Descripción o notas del fondo.")
 
 
+
 class FasCreate(FasBase):
     pass
 

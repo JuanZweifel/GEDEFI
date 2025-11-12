@@ -17,6 +17,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 //  Crear un FAS
 export async function postFas<T>(fas: Record<string, any>, token?: string): Promise<T> {
+    console.log(fas)
     const response = await fetch(URL_BASE_FAS, {
         method: "POST",
         headers: {
