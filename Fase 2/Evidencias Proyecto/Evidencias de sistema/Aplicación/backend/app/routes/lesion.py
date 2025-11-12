@@ -54,15 +54,23 @@ def read_lesiones(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)  # token decodificado
+    current_user: dict = Depends(get_current_user)
 ):
-    # Obtener los RUTs de los jugadores que pertenecen al club del usuario logeado
+
+    if current_user["rol"] == "Administrador":
+        return (
+            db.query(Lesion)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
     ruts_club = (
         db.query(DetalleClubJugador.rut_jugador)
         .filter(DetalleClubJugador.id_club == current_user["id_club"])
         .all()
     )
-    # ruts_club es lista de tuplas, convertir a lista simple
+
     ruts_club = [r[0] for r in ruts_club]
 
     lesiones = (

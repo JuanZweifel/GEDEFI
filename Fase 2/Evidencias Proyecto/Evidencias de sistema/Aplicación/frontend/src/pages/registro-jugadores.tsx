@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Trash2, Search, History, FileText, AlertCircle, CheckCircle, Upload, X, Plus } from 'lucide-react';
 import { getJugadores, uploadExcel, getLesiones, } from '../services/jugadoresService';
 import { getDetallesClubJugador } from '../services/detalleClubJugadorService';
-import { getClub } from '../services/clubServices';
+import { getClub, getClubs } from '../services/clubServices';
 import { getFichasPorFiltro } from '../services/fichaJugadorService'
 import { getSeries } from '../services/serieService';
 import { AlertDialogHandle } from '../components/alert-dialog-component';
@@ -252,10 +252,27 @@ export const RegistroJugadoresModule: React.FC = () => {
 
     // 🔹 Obtener lesiones
     const fetchLesiones = async (): Promise<void> => {
-        if (!token) return;
+        if (!token) {
+            console.log("❌ NO HAY TOKEN TODAVÍA");
+            return;
+        }
+
         try {
-            const data = await getLesiones<any[]>(token);
-            setInjuries(data);
+            const todasLasLesiones = await getLesiones<any[]>(token)
+            if (admin) {
+                setInjuries(todasLasLesiones);
+                return;
+            }
+            if (id_club) {
+                const detalles: any[] = await getDetallesClubJugador<any[]>(token);
+                const detallesDelClub = detalles.filter(d => Number(d.id_club) === Number(id_club));
+                const jugadoresIds = [...new Set(detallesDelClub.map(d => d.rut_jugador))]
+                const lesionesDelClub = todasLasLesiones.filter(l =>
+                    jugadoresIds.includes(l.rut_jugador)
+                );
+                setInjuries(lesionesDelClub);
+                return;
+            }
         } catch (error) {
             console.error("Error cargando lesiones:", error);
         }
@@ -263,24 +280,44 @@ export const RegistroJugadoresModule: React.FC = () => {
 
     // 🔹 Obtener clubes
     const fetchClubs = async () => {
-        if (!id_club) {
-            console.warn("⚠️ id_club es null, no se llamó al servicio");
-            return;
-        }
+        if (!token) return;
 
         try {
-            const data = await getClub<any>(id_club, token);
+            // CASO 1 — ADMIN: trae todos los clubes
+            if (admin === true) {
+                const data = await getClubs<any>(token);
 
+                console.log("🟦 Respuesta completa BACKEND:", data);
 
-            const mapped = [{
-                id_club: data.id_club,
-                nombre: data.nombre_club,
-            }];
+                // data.items → es la lista real
+                const mapped = data.items.map((c: any) => ({
+                    id_club: c.id_club,
+                    nombre: c.nombre_club,
+                }));
 
-            setClubs(mapped);
-            console.log("✅ Club cargado:", mapped);
+                setClubs(mapped);
+                console.log("✅ Clubes ADMIN cargados:", mapped);
+                return;
+            }
+
+            // CASO 2 — USUARIO DE CLUB: trae solo su club
+            if (id_club) {
+                const data = await getClub<any>(id_club, token);
+
+                const mapped = [{
+                    id_club: data.id_club,
+                    nombre: data.nombre_club,
+                }];
+
+                setClubs(mapped);
+                console.log("✅ Club del usuario cargado:", mapped);
+                return;
+            }
+
+            console.warn("⚠️ id_club es null para usuario de club");
+
         } catch (error) {
-            console.error("Error al obtener clubes:", error);
+            console.error("❌ Error al obtener clubes:", error);
         }
     };
 
@@ -296,34 +333,55 @@ export const RegistroJugadoresModule: React.FC = () => {
 
 
     useEffect(() => {
+        if (!token) return;
         fetchLesiones();
-    }, []);
+    }, [token, admin, id_club]);
 
 
     useEffect(() => {
         if (token) {
             fetchSeries();
             fetchJugadoresPorClub();
-
-            // Solo obtiene club si no es administrador
-            if (!admin && id_club) {
-                fetchClubs();
-            }
+            fetchClubs();
         }
     }, [id_club, token, admin]);
 
 
     useEffect(() => {
-        if (id_club && allSeries.length > 0) {
-            setSelectedClub(String(id_club));
-
+        // Caso 1 — ADMIN selecciona un club manualmente
+        if (admin && selectedClub) {
             const filtered = allSeries
-                .filter((s) => s.id_club === Number(id_club))
-                .map((s) => ({ id_serie: s.id_serie, nombre_serie: s.nombre_serie }));
+                .filter(s => s.id_club === Number(selectedClub))
+                .map(s => ({
+                    id_serie: s.id_serie,
+                    nombre_serie: s.nombre_serie
+                }));
 
             setSeries(filtered);
+            return;
         }
-    }, [id_club, allSeries]);
+
+        // Caso 2 — USUARIO DE CLUB (selectedClub viene del token)
+        if (!admin && id_club && allSeries.length > 0) {
+            // Forzar selectedClub para usuario de club
+            if (!selectedClub) {
+                setSelectedClub(String(id_club));
+            }
+
+            const filtered = allSeries
+                .filter(s => s.id_club === Number(id_club))
+                .map(s => ({
+                    id_serie: s.id_serie,
+                    nombre_serie: s.nombre_serie
+                }));
+
+            setSeries(filtered);
+            return;
+        }
+
+        // Caso sin club seleccionado
+        setSeries([]);
+    }, [admin, selectedClub, id_club, allSeries]);
 
     // 🔹 Filtrado historial
     const filteredHistory = uploadHistory.filter(item => {
@@ -344,30 +402,48 @@ export const RegistroJugadoresModule: React.FC = () => {
             return;
         }
 
+        if (!token) return;
+
         setBusquedaRealizada(true);
 
         try {
-            const data = await getFichasPorFiltro<any[]>();
+            // Backend = Admin → TODAS ; Club → solo su club
+            const data = await getFichasPorFiltro<any[]>(token);
+
+            // Añadimos id_club a cada ficha usando allSeries
             const fichasConClub = data.map(ficha => {
                 const serie = allSeries.find(s => s.id_serie === ficha.id_serie);
                 return { ...ficha, id_club: serie?.id_club };
             });
 
-            const filtered = fichasConClub.filter(ficha =>
-                ficha.id_club === Number(selectedClub) &&
-                ficha.id_serie === Number(selectedSerie)
-            );
+            // ⭐ FILTRO PRINCIPAL
+            const filtered = fichasConClub.filter(ficha => {
+                const coincideSerie = ficha.id_serie === Number(selectedSerie);
+
+                // ⭐ ADMIN → puede filtrar por selectedClub
+                if (admin) {
+                    const coincideClubAdmin = selectedClub
+                        ? ficha.id_club === Number(selectedClub)
+                        : true; // si no elige club, no filtra por club
+
+                    return coincideSerie && coincideClubAdmin;
+                }
+
+                // ⭐ USUARIO DE CLUB → solo su club
+                if (id_club) {
+                    const coincideClubUsuario = ficha.id_club === Number(id_club);
+                    return coincideSerie && coincideClubUsuario;
+                }
+
+                return coincideSerie;
+            });
 
             setFichas(filtered);
 
-            // 🔹 Si no hay fichas, selecciona automáticamente la primera serie disponible
-            if (filtered.length === 0 && series.length > 0) {
-                setSelectedSerie(series[0].id_serie.toString());
-            }
         } catch (error) {
             console.error("Error al obtener fichas:", error);
             setFichas([]);
-            alert("No se encontraron fichas con esos filtros");
+            alert("Error al filtrar las fichas");
         }
     };
 
@@ -832,32 +908,36 @@ export const RegistroJugadoresModule: React.FC = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                     {/* Selección de Club (preseleccionado y deshabilitado) */}
-                                    <Select value={selectedClub} disabled>
+                                    <Select
+                                        value={selectedClub}
+                                        onValueChange={setSelectedClub}
+                                        disabled={!admin}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Seleccionar Club" />
                                         </SelectTrigger>
+
                                         <SelectContent>
-                                            {clubs
-                                                .filter(club => club.id_club === Number(selectedClub))
-                                                .map(club => (
-                                                    <SelectItem key={club.id_club} value={club.id_club.toString()}>
-                                                        {club.nombre}
-                                                    </SelectItem>
-                                                ))}
+                                            {clubs.map((club) => (
+                                                <SelectItem key={club.id_club} value={club.id_club.toString()}>
+                                                    {club.nombre}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
 
                                     {/* Selección de Serie */}
                                     <Select
-                                        value={selectedSerie || ''}
+                                        value={selectedSerie || ""}
                                         onValueChange={setSelectedSerie}
-                                        disabled={!selectedClub}
+                                        disabled={!selectedClub}   // se habilita solo si ya hay club
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Seleccionar Serie" />
                                         </SelectTrigger>
+
                                         <SelectContent>
-                                            {series.map(serie => (
+                                            {series.map((serie) => (
                                                 <SelectItem key={serie.id_serie} value={serie.id_serie.toString()}>
                                                     {serie.nombre_serie}
                                                 </SelectItem>

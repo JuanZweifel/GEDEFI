@@ -73,10 +73,38 @@ def get_clubs_with_details(
     limit: int | None = Query(None, ge=1, le=30)
 ):
     try:
-        print("lucho")
-        print(skip, limit)
-        info = services.get_clubs_with_details(db, current_user, search=search, estado=estado, skip=skip, limit=limit)
-        return info
+        if current_user["rol"] == "Administrador":
+            return services.get_clubs_with_details(
+                db,
+                current_user,
+                search=search,
+                estado=estado,
+                skip=skip,
+                limit=limit
+            )
+
+        id_club_usuario = current_user["id_club"]
+
+        resultado = services.get_clubs_with_details(
+            db,
+            current_user,
+            search=None,
+            estado=None,
+            skip=0,
+            limit=9999
+        )
+
+        # Filtrar solo el club del usuario
+        club_filtrado = [c for c in resultado["items"] if c.id_club == id_club_usuario]
+
+        # Respuesta paginada consistente
+        return {
+            "total": len(club_filtrado),
+            "items": club_filtrado,
+            "page": 1,
+            "pages": 1
+        }
+
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
-from app import services, schemas
+from app import services, schemas, models
+from app.security import get_current_user
+
 
 router = APIRouter(prefix="/fichas_jugador", tags=["Fichas Jugador"])
 
@@ -18,10 +20,45 @@ def read_ficha_jugador(rut_jugador: str, id_serie: int, db: Session = Depends(ge
         raise HTTPException(status_code=404, detail="Ficha jugador not found")
     return db_ficha
 
-# Obtener todas las fichas (con paginación opcional)
 @router.get("/", response_model=list[schemas.FichaJugadorRead])
-def read_fichas_jugador(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return services.get_fichas_jugador(db, skip=skip, limit=limit)
+def read_fichas_jugador(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    # 🔹 CASO 1: ADMINISTRADOR → devuelve todas las fichas
+    if current_user["rol"] == "Administrador":
+        return (
+            db.query(models.FichaJugador)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    # 🔹 CASO 2: USUARIO DE CLUB → devuelve solo sus fichas
+    id_club = current_user["id_club"]
+
+    # Obtener ruts asociados al club
+    ruts_club = (
+        db.query(models.DetalleClubJugador.rut_jugador)
+        .filter(models.DetalleClubJugador.id_club == id_club)
+        .all()
+    )
+
+    # Convertir tuplas → lista simple
+    ruts_club = [r[0] for r in ruts_club]
+
+    # Obtener solo fichas de esos jugadores
+    fichas = (
+        db.query(models.FichaJugador)
+        .filter(models.FichaJugador.rut_jugador.in_(ruts_club))
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return fichas
 
 # Actualizar ficha jugador
 @router.put("/{rut_jugador}/{id_serie}", response_model=schemas.FichaJugadorRead)
