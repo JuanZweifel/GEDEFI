@@ -221,7 +221,8 @@ async def upload_excel(
             )
             jugadores_validos.append(jugador)
             inserted += 1
-            results.append({"status": "success", "fila": fila, "rut": rut})
+            results.append({"status": "success", "fila": fila, "rut": rut, "primer_nombre": primer_nombre, "segundo_nombre": segundo_nombre,
+                            "primer_apellido": primer_apellido, "segundo_apellido": segundo_apellido})
 
         # ✅ 7️⃣ Guardar registros
         db.add_all(jugadores_validos)

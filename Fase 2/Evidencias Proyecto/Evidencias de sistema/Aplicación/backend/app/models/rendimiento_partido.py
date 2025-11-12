@@ -29,6 +29,8 @@ class RendimientoPartido(Base):
 
     fecha_ini: Mapped[date] = mapped_column(Date, nullable=False, primary_key=True)
 
+    fecha_ini: Mapped[date] = mapped_column(Date, nullable= False)
+
     __table_args__ = (
         ForeignKeyConstraint(
             ["rut_jugador", "id_serie", "fecha_ini"],

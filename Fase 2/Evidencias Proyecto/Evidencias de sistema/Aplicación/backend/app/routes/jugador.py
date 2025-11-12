@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
 from sqlalchemy.exc import IntegrityError
+from app.security import get_current_user
 
 router = APIRouter(prefix="/jugadores", tags=["Jugadores"])
 
@@ -43,7 +44,7 @@ def update_jugador(
 
 
 @router.delete("/{rut_jugador}", status_code=204)
-def delete_jugador(rut_jugador: str, db: Session = Depends(get_db)):
-    deleted = services.delete_jugador(db, rut_jugador)
+def delete_jugador(rut_jugador: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    deleted = services.delete_jugador(db, rut_jugador, current_user)
     if not deleted:
         raise HTTPException(status_code=404, detail="Jugador no encontrado")

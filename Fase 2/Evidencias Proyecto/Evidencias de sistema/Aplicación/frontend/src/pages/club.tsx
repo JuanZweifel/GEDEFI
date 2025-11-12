@@ -136,7 +136,9 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
             const term = rawTerm.toLowerCase();
 
             if (!term) {
-                fetchClubs(true, token, searchTerm, selectedEstado);
+                if (admin === true) {
+                    fetchClubs(true, token, searchTerm, selectedEstado);
+                }
                 return;
             }
 
@@ -154,10 +156,7 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                 const email = (c.email_club ?? "").toLowerCase();
 
                 if (onlyDigits) return rut.includes(term);
-                return (
-                    nombre.includes(term) ||
-                    email.includes(term)
-                );
+                return nombre.includes(term) || email.includes(term);
             });
 
             if (foundInCache) {
@@ -172,11 +171,15 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                 setClubList(filtered);
                 return;
             }
-            fetchClubs(true, token, searchTerm, selectedEstado);
+
+            if (admin === true) {
+                fetchClubs(true, token, searchTerm, selectedEstado);
+            }
+
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchTerm, selectedEstado, page]);
+    }, [searchTerm, selectedEstado, page, admin]);
 
     // ! Funciones Logicas (() => )
     const fetchClubs = async (filter: boolean, token: string | null, searchTerm: string, selectedEstado: string | null) => {
@@ -188,7 +191,7 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
             setClubList(clubes)
             setTotalPages((Math.ceil(response.total / 10)) | 0)
             setIsLoading(100)
-            if(!filter && clubes.length == 0)  toast.info("No hay clubes registrados en la base de datos")
+            if (!filter && clubes.length == 0) toast.info("No hay clubes registrados en la base de datos")
         } catch (error) {
             toast.info(String(error))
         }
@@ -206,7 +209,7 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
         }
     }
 
-    const handleDelete = async (id_club: number, activo:boolean) => {
+    const handleDelete = async (id_club: number, activo: boolean) => {
         try {
             const response = activo ? await disableClub<any>(id_club, token) : await deleteClub<any>(id_club, token)
             toast.success(response.message);
@@ -354,12 +357,12 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                                         timer={5}
                                         title={`${c.club_activo ? "Desactivación" : "Eliminación"} de club ${c.nombre_club}`}
                                         description={
-                                            c.club_activo ? 
-                                            `¿Estas seguro de querer desactivar al club ${c.nombre_club}?
+                                            c.club_activo ?
+                                                `¿Estas seguro de querer desactivar al club ${c.nombre_club}?
                                             Esta acción desactivara las series, jugadores y usuarios asociados al club.` :
-                                            `¿Estas seguro de querer Eliminar al club ${c.nombre_club}?
+                                                `¿Estas seguro de querer Eliminar al club ${c.nombre_club}?
                                             Esta acción eliminara tambien sus series`
-                                            
+
                                         }
                                         confirmLabel={c.club_activo ? "Desactivar" : "Eliminar"}
                                         cancelLabel="Cancelar"
@@ -462,7 +465,7 @@ const ClubEditModule: React.FC<{ isOpen: boolean, token: string | null, id_club:
         } catch (error) {
             console.log(error)
             toast.info(String(error))
-            navigate("/dashboard/clubes/view", {replace:true})
+            navigate("/dashboard/clubes/view", { replace: true })
         }
     }
     return (
@@ -504,7 +507,7 @@ const ClubDetailsModule: React.FC<{ isOpen: boolean, token: string | null, id_cl
     useEffect(() => {
         try {
             let id = Number(params.id_club)
-            if(Number.isNaN(id)) throw new Error("ID no numerico")
+            if (Number.isNaN(id)) throw new Error("ID no numerico")
             if (!!id || (!!admin || id_club === id)) fetchClub(token, id);
         } catch (error) {
             navigate("/dashboard/clubes/view", { replace: true })

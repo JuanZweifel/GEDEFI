@@ -24,7 +24,7 @@ def get_auditorias(
     fecha_fin: datetime | None = None,
 ) -> list[AuditoriaRead]:
 
-    if not current_user.get("admin"): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para ver los registros de auditoría")
+    #if not current_user.get("asociacion"): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para ver los registros de auditoría")
     query = db.query(Auditoria).options(joinedload(Auditoria.usuario))
 
     # 🔍 Filtros dinámicos

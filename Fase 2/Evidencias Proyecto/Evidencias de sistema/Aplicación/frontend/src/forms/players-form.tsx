@@ -921,11 +921,13 @@ export const ButtonDeleteJugador: React.FC<ButtonDeleteJugadorProps> = ({
 }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { token } = useAuth();
+
 
     const handleDelete = async () => {
         try {
             setIsLoading(true);
-            await deleteJugador(rutJugador);
+            await deleteJugador(rutJugador, token!);
             await refreshJugadores();
             toast.success(`Jugador ${primerNombre} ${primerApellido} eliminado correctamente`);
             setIsDialogOpen(false);

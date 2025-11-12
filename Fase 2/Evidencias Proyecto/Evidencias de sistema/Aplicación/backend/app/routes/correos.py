@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import Usuario, Rol
-from app.services.correo import send_email
+from app.services.correo import send_email_bcc
 from app.schemas import ComunicadoRequest
 
 router = APIRouter(prefix="/correos", tags=["Correos"])
@@ -27,16 +27,14 @@ def send_comunicado(payload: ComunicadoRequest, db: Session = Depends(get_db)):
         emails = [user.email_usuario for user in users]
 
         html = f"""
-        <html>
         <body>
             <p>{payload.cuerpo}</p>
             <p>Saludos,</p>
             <p>Equipo GEDEFI</p>
         </body>
-        </html>
         """
 
-        send_email(emails, payload.asunto, html)
+        send_email_bcc(emails, payload.asunto, html)
 
         return {"status": "ok", "sent": len(emails)}
 
