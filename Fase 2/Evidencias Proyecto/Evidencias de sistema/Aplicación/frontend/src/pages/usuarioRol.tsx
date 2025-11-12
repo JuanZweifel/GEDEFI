@@ -43,6 +43,11 @@ export const UsuarioRolModule: React.FC = () => {
     const [userClubFilter, setUserClubFilter] = useState<number | undefined>(undefined);
     const [userStatusFilter, setUserStatusFilter] = useState<string | undefined>(undefined);
 
+    // Pagination
+    const [page, setPage] = useState<number>(1);
+    const limit = 10;
+    const [total, setTotal] = useState(0);
+
     const { token } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -59,21 +64,38 @@ export const UsuarioRolModule: React.FC = () => {
     // Deteccion de rutas de ver detalle
     const isUserViewRoute = /\/dashboard\/usuarios-roles\/usuarios\/[^/]+\/view$/.test(location.pathname);
 
-
     // Fetch functions
-    const fetchUsers = async () => {
-        let data: UsuarioType[] = [];
+    const fetchFilteredUsers = async (override?: boolean) => {
         try {
             setIsFetchingUsers(true);
-            data = await getUsers(token);
-            setUsers(data);
-            if (data.length === 0) {
-                toast.info("No hay usuarios registrados en la base de datos.");
-            }
-        } catch (err: any) {
-            toast.error(String(err));
+
+            const estado =
+                userStatusFilter === "activo"
+                    ? 1
+                    : userStatusFilter === "inactivo"
+                        ? 2
+                        : undefined;
+
+            const search = userFilter.trim() || undefined;
+            const club = userClubFilter || undefined;
+
+            const safePage = Number(page) > 0 ? Number(page) : 1;
+            const skip = (safePage - 1) * limit;
+
+            const res = await getUsers(token, {
+                skip,
+                limit,
+                search,
+                estado,
+                club,
+            });
+
+            setUsers(res.items);
+            setTotal(res.total);
+        } catch (err) {
+            console.error(err);
+            toast.error("Error al cargar los usuarios");
         } finally {
-            if (data.length === 0) setUsers([]);
             setIsFetchingUsers(false);
         }
     };
@@ -116,7 +138,7 @@ export const UsuarioRolModule: React.FC = () => {
             const response = await deleteUser(rut_usuario, token);
             toast.success(response.detail);
             setOpenSelected(null);
-            fetchUsers();
+            fetchFilteredUsers();
         } catch (error) {
             toast.error(String(error));
         }
@@ -136,7 +158,7 @@ export const UsuarioRolModule: React.FC = () => {
     // Fetch inicial
     useEffect(() => {
         const fetchAll = async () => {
-            await Promise.all([fetchUsers(), fetchRoles(), fetchClubs()]);
+            await Promise.all([fetchRoles(), fetchClubs()]);
         };
         fetchAll();
     }, []);
@@ -159,7 +181,7 @@ export const UsuarioRolModule: React.FC = () => {
     // Refetch data cuando se cambia de tab
     useEffect(() => {
         if (activeTab === "roles") fetchRoles();
-        if (activeTab === "usuarios") fetchUsers();
+        if (activeTab === "usuarios") fetchFilteredUsers();
     }, [activeTab]);
 
     // Resuelve usuario seleccionado desde la ruta
@@ -175,7 +197,7 @@ export const UsuarioRolModule: React.FC = () => {
         }
 
         if (users.length === 0) {
-            if (!isFetchingUsers) fetchUsers();
+            if (!isFetchingUsers) fetchFilteredUsers();
             return;
         }
 
@@ -220,29 +242,45 @@ export const UsuarioRolModule: React.FC = () => {
         }
     }, [params.id, roles, isFetchingRols, navigate, isRoleEditRoute]);
 
-    // Data filtrada
-    const filteredUsers = users.filter((u) => {
-        const query = userFilter.toLowerCase().trim();
+    useEffect(() => {
+        const fetchFilteredUsers = async () => {
+            try {
+                setIsFetchingUsers(true);
 
-        const fullName = `${u.nombre_usuario} ${u.apellido_usuario}`.toLowerCase();
+                const estado =
+                    userStatusFilter === "activo"
+                        ? 1
+                        : userStatusFilter === "inactivo"
+                            ? 2
+                            : undefined;
 
-        const matchesQuery =
-            fullName.includes(query) ||
-            u.nombre_usuario.toLowerCase().includes(query) ||
-            u.apellido_usuario.toLowerCase().includes(query) ||
-            u.email_usuario.toLowerCase().includes(query) ||
-            u.rut_usuario.toLowerCase().includes(query);
+                const search = userFilter.trim() || undefined;
+                const club = userClubFilter || undefined;
 
-        const matchesStatus =
-            !userStatusFilter || userStatusFilter === "todos" ||
-            (userStatusFilter === "activo" && u.usuario_activo) ||
-            (userStatusFilter === "inactivo" && !u.usuario_activo);
+                const safePage = Number(page) > 0 ? Number(page) : 1;
+                const skip = (safePage - 1) * limit;
 
-        const matchesClub =
-            !userClubFilter || userClubFilter === undefined || u.id_club === userClubFilter;
+                const res = await getUsers(token, {
+                    skip,
+                    limit,
+                    search,
+                    estado,
+                    club,
+                });
 
-        return matchesQuery && matchesStatus && matchesClub;
-    });
+                setUsers(res.items);
+                setTotal(res.total);
+            } catch (err) {
+                console.error(err);
+                toast.error("Error al cargar los usuarios");
+            } finally {
+                setIsFetchingUsers(false);
+            }
+        };
+
+        fetchFilteredUsers();
+    }, [userFilter, userStatusFilter, userClubFilter, page]);
+
 
     const filteredRols = roles.filter((r) => {
         const query = rolFilter.toLowerCase();
@@ -265,7 +303,7 @@ export const UsuarioRolModule: React.FC = () => {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={fetchUsers}
+                            onClick={fetchFilteredUsers}
                             disabled={isFetchingUsers}
                         >
                             <RefreshCcw className="w-4 h-4 mr-1" />
@@ -385,63 +423,97 @@ export const UsuarioRolModule: React.FC = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredUsers.map((user) => (
-                                        <TableRow key={user.rut_usuario}>
-                                            <TableCell>{user.rut_usuario}</TableCell>
-                                            <TableCell>{user.nombre_usuario} {user.apellido_usuario}</TableCell>
-                                            <TableCell>{user.email_usuario}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">
-                                                    {roles.find(r => r.id_rol === user.id_rol)?.nombre_rol || "N/A"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {clubs?.items?.find(c => c.id_club === user.id_club)?.nombre_club || "N/A"}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge className={user.usuario_activo ? "bg-green-500" : "bg-red-500"}>
-                                                    {user.usuario_activo ? "Activo" : "Inactivo"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex space-x-2">
-                                                    <NavLink to={`/dashboard/usuarios-roles/usuarios/${user.rut_usuario}/edit`}>
-                                                        <Button variant="outline" size="sm">
-                                                            <Pen className="w-4 h-4" />
+                                    {users.length > 0 ? (
+                                        users.map((user) => (
+                                            <TableRow key={user.rut_usuario}>
+                                                <TableCell>{user.rut_usuario}</TableCell>
+                                                <TableCell>
+                                                    {user.nombre_usuario} {user.apellido_usuario}
+                                                </TableCell>
+                                                <TableCell>{user.email_usuario}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline">
+                                                        {roles.find(r => r.id_rol === user.id_rol)?.nombre_rol || "N/A"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {clubs?.items?.find(c => c.id_club === user.id_club)?.nombre_club || "N/A"}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge className={user.usuario_activo ? "bg-green-500" : "bg-red-500"}>
+                                                        {user.usuario_activo ? "Activo" : "Inactivo"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex space-x-2">
+                                                        <NavLink to={`/dashboard/usuarios-roles/usuarios/${user.rut_usuario}/edit`}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Pen className="w-4 h-4" />
+                                                            </Button>
+                                                        </NavLink>
+                                                        <NavLink to={`/dashboard/usuarios-roles/usuarios/${user.rut_usuario}/view`}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                        </NavLink>
+                                                        <Button
+                                                            onClick={() => setOpenSelected(user.rut_usuario)}
+                                                            variant="destructive"
+                                                            size="sm"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
                                                         </Button>
-                                                    </NavLink>
-                                                    <NavLink to={`/dashboard/usuarios-roles/usuarios/${user.rut_usuario}/view`}>
-                                                        <Button variant="outline" size="sm">
-                                                            <Eye className="w-4 h-4" />
-                                                        </Button>
-                                                    </NavLink>
-                                                    <Button
-                                                        onClick={() => setOpenSelected(user.rut_usuario)}
-                                                        variant="destructive"
-                                                        size="sm"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                    <AlertDialogHandle
-                                                        title={`Eliminación de usuario ${user.nombre_usuario}`}
-                                                        description={`¿Estás seguro de querer eliminar al usuario ${user.nombre_usuario}?`}
-                                                        confirmLabel='Eliminar'
-                                                        cancelLabel='Cancelar'
-                                                        onConfirm={() => handleUserDelete(user.rut_usuario)}
-                                                        open={openSelected === user.rut_usuario}
-                                                        onOpenChange={(open) => {
-                                                            if (!open) setOpenSelected(null);
-                                                        }}
-                                                    />
-                                                </div>
+                                                        <AlertDialogHandle
+                                                            title={`Eliminación de usuario ${user.nombre_usuario}`}
+                                                            description={`¿Estás seguro de querer eliminar al usuario ${user.nombre_usuario}?`}
+                                                            confirmLabel="Eliminar"
+                                                            cancelLabel="Cancelar"
+                                                            onConfirm={() => handleUserDelete(user.rut_usuario)}
+                                                            open={openSelected === user.rut_usuario}
+                                                            onOpenChange={(open) => {
+                                                                if (!open) setOpenSelected(null);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={7} className="text-center text-gray-500">
+                                                No se encontraron usuarios.
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
                     </Card>
+                    <div className="flex justify-between items-center mt-4">
+                        <span className="text-sm text-gray-500">
+                            Página {page} de {Math.ceil(total / limit) || 1}
+                        </span>
+                        <div className="space-x-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={page === 1}
+                            >
+                                Anterior
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage((prev) => prev + 1)}
+                                disabled={page >= Math.ceil(total / limit)}
+                            >
+                                Siguiente
+                            </Button>
+                        </div>
+                    </div>
                 </TabsContent>
+
 
                 {/* Tab Roles */}
                 <TabsContent value="roles">
@@ -571,7 +643,7 @@ export const UsuarioRolModule: React.FC = () => {
                         return (
                             <UserForm
                                 isEdit={false}
-                                refreshUsers={fetchUsers}
+                                refreshUsers={fetchFilteredUsers}
                                 onSuccess={() => navigate("/dashboard/usuarios-roles/usuarios")}
                                 roles={roles}
                                 refreshRoles={fetchRoles}
@@ -630,7 +702,7 @@ export const UsuarioRolModule: React.FC = () => {
                             <UserForm
                                 isEdit={true}
                                 user={selectedUsuario}
-                                refreshUsers={fetchUsers}
+                                refreshUsers={fetchFilteredUsers}
                                 onSuccess={() => navigate("/dashboard/usuarios-roles/usuarios")}
                                 roles={roles}
                                 refreshRoles={fetchRoles}

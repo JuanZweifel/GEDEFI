@@ -64,7 +64,7 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
       fecha_nacimiento: "",
       usuario_activo: true,
       id_rol: 0,
-      admin: false,
+      asociacion: false,
       id_club: undefined,
       pass_usuario: "",
     };
@@ -262,10 +262,10 @@ export function UserForm({ user, isEdit, roles, clubs, refreshRoles, refreshUser
           <label>
             <input
               type="checkbox"
-              checked={form.admin}
-              onChange={(e) => setForm({ ...form, admin: e.target.checked })}
+              checked={form.asociacion}
+              onChange={(e) => setForm({ ...form, asociacion: e.target.checked })}
             />{" "}
-            Admin
+            Asociación
           </label>
         )}
         {isEdit && (

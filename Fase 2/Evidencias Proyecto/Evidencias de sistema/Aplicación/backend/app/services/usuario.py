@@ -1,4 +1,5 @@
 from sqlalchemy import exists, select
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import ForeignKeyViolation
@@ -19,6 +20,7 @@ from app.utils.decorators import handle_db_exceptions, handle_audit
 from fastapi import HTTPException
 from app.services.correo import send_user_deactivated_email
 from datetime import datetime
+from typing import Optional
 
 
 # TODO: Aplicar auth security para poder implementar auditoria
@@ -28,9 +30,24 @@ def get_usuario(db: Session, rut_usu: str, current_user: dict) -> Usuario | None
 
 
 @handle_db_exceptions
-def get_usuarios(db: Session, current_user: dict, skip: int = 0, limit: int = 100):
+def get_usuarios(
+    db: Session,
+    current_user: dict,
+    skip: int = 0,
+    limit: int = 100,
+    search: Optional[str] = None,
+    estado: Optional[int] = None,
+    club: Optional[int] = None,
+) -> dict:
+    """
+    Retorna los usuarios con su club asignado.
+    Soporta paginación (skip, limit), búsqueda y filtrado por estado.
+    Excluye al usuario actual.
+    Respuesta: { items: list[Usuario], total: int }
+    """
     try:
-        usuarios_clubes = (
+        # --- Query base ---
+        base_query = (
             db.query(Usuario, Club.id_club)
             .outerjoin(
                 DetalleUsuarioClub,
@@ -38,11 +55,45 @@ def get_usuarios(db: Session, current_user: dict, skip: int = 0, limit: int = 10
                 & (DetalleUsuarioClub.fecha_fin == None),
             )
             .outerjoin(Club, DetalleUsuarioClub.id_club == Club.id_club)
+            .filter(Usuario.rut_usuario != current_user.get("rut_usuario"))
+        )
+
+        # --- Filtro por estado ---
+        if estado == 1:
+            base_query = base_query.filter(Usuario.usuario_activo == True)
+        elif estado == 2:
+            base_query = base_query.filter(Usuario.usuario_activo == False)
+
+        # --- Filtro por club ---
+        if club is not None:
+            print("Filtro por club aplicado:")
+            print(club)
+            base_query = base_query.filter(Club.id_club == club)
+
+        # --- Filtro por búsqueda ---
+        if search:
+            like_pattern = f"%{search}%"
+            base_query = base_query.filter(
+                or_(
+                    Usuario.nombre_usuario.ilike(like_pattern),
+                    Usuario.apellido_usuario.ilike(like_pattern),
+                    Usuario.email_usuario.ilike(like_pattern),
+                    Usuario.rut_usuario.ilike(like_pattern),
+                )
+            )
+
+        # --- Total antes de paginar ---
+        total = base_query.count()
+
+        # --- Aplicar paginación ---
+        usuarios_clubes = (
+            base_query.order_by(Usuario.fecha_creacion.desc())
             .offset(skip)
             .limit(limit)
             .all()
         )
 
+        # --- Construcción de respuesta ---
         usuarios = []
         for usuario, id_club in usuarios_clubes:
             usuarios.append(
@@ -60,11 +111,12 @@ def get_usuarios(db: Session, current_user: dict, skip: int = 0, limit: int = 10
                 }
             )
 
-        return usuarios
+        return {"items": usuarios, "total": total}
 
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail="Error al obtener los usuarios con su club."
+            status_code=500,
+            detail=f"Error al obtener los usuarios con su club: {str(e)}",
         )
 
 
@@ -268,6 +320,3 @@ def is_user_active(db: Session, rut_usu: str) -> bool:
     return db.query(
         exists().where(Usuario.rut_usuario == rut_usu, Usuario.usuario_activo.is_(True))
     ).scalar()
-
-
-# def check_usuario(db: Session, rut_usu: str) -> bool:

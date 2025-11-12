@@ -51,7 +51,7 @@ export type UsuarioType = {
 };
 
 export type UsuarioFormType = UsuarioType & {
-    admin?: boolean;
+    asociacion?: boolean;
     id_club?: number;
 };
 

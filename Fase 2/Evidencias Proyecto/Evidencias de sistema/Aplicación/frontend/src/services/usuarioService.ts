@@ -1,6 +1,27 @@
 import { fetchAPI } from "../utils/fetchApi";
 
-export const getUsers = <T>(token: string): Promise<T> => fetchAPI<T>("/usuarios/", {}, token);
+export interface GetUsersParams {
+    skip?: number;
+    limit?: number;
+    search?: string;
+    estado?: number;
+    club?: number;
+}
+
+export const getUsers = <T>(
+    token?: string,
+    params?: GetUsersParams
+): Promise<T> => {
+    const query = new URLSearchParams(
+        Object.entries(params || {}).reduce((acc, [key, value]) => {
+            if (value !== undefined && value !== null) acc[key] = String(value);
+            return acc;
+        }, {} as Record<string, string>)
+    ).toString();
+
+    const endpoint = query ? `/usuarios?${query}` : `/usuarios`;
+    return fetchAPI<T>(endpoint, {}, token);
+};
 
 export const getUserById = <T>(rut: number | string, token: string): Promise<T> =>
     fetchAPI<T>(`/usuarios/${rut}/`, {}, token);

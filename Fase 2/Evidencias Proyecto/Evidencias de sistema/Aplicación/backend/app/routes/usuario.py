@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.db import get_db
 from app import services, schemas
 from app.security import get_current_user
@@ -28,15 +29,17 @@ def get_usuario(
     return db_usuario
 
 
-@router.get("/", response_model=list[schemas.UsuarioRead])
+@router.get("/", response_model=schemas.PaginatedUsuarios)
 def get_usuarios(
     skip: int = 0,
     limit: int = 100,
+    estado: Optional[int] = None,
+    club: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
     usuarios = services.get_usuarios(
-        db, skip=skip, limit=limit, current_user=current_user
+        db, skip=skip, limit=limit, current_user=current_user, estado=estado, club=club
     )
     return usuarios
 
