@@ -24,7 +24,7 @@ def read_cancha(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_cancha = services.get_cancha(db, cancha_id, current_user=current_user)
+    db_cancha = services.get_cancha(db, cancha_id)
     if not db_cancha:
         raise HTTPException(status_code=404, detail="Cancha not found")
     return db_cancha
@@ -38,7 +38,7 @@ def read_canchas(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    return services.get_canchas(db, current_user=current_user, skip=skip, limit=limit)
+    return services.get_canchas(db, skip=skip, limit=limit)
 
 
 # Actualizar cancha

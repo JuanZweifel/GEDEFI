@@ -533,6 +533,19 @@
     bottom: calc(var(--spacing) * 0);
   }
 
+  .break-normal {
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .break-words {
+    overflow-wrap: break-word;
+  }
+
+  .break-all {
+    word-break: break-all;
+  }
+
   .left-0 {
     left: calc(var(--spacing) * 0);
   }

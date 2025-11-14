@@ -7,12 +7,12 @@ from fastapi import HTTPException
 
 
 @handle_db_exceptions
-def get_cancha(db: Session, cancha_id: int, current_user: dict) -> Cancha | None:
+def get_cancha(db: Session, cancha_id: int) -> Cancha | None:
     return db.query(Cancha).filter(Cancha.id_cancha == cancha_id).first()
 
 
 @handle_db_exceptions
-def get_canchas(db: Session, current_user: dict, skip: int = 0, limit: int = 100):
+def get_canchas(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Cancha).offset(skip).limit(limit).all()
 
 
