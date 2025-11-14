@@ -35,11 +35,18 @@ def get_usuarios(
     limit: int = 100,
     estado: Optional[int] = None,
     club: Optional[int] = None,
+    search: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
     usuarios = services.get_usuarios(
-        db, skip=skip, limit=limit, current_user=current_user, estado=estado, club=club
+        db,
+        skip=skip,
+        limit=limit,
+        current_user=current_user,
+        estado=estado,
+        club=club,
+        search=search,
     )
     return usuarios
 

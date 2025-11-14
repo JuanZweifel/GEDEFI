@@ -25,7 +25,7 @@ from typing import Optional
 
 # TODO: Aplicar auth security para poder implementar auditoria
 @handle_db_exceptions
-def get_usuario(db: Session, rut_usu: str, current_user: dict) -> Usuario | None:
+def get_usuario(db: Session, rut_usu: str) -> Usuario | None:
     return db.query(Usuario).filter(Usuario.rut_usuario == rut_usu).first()
 
 

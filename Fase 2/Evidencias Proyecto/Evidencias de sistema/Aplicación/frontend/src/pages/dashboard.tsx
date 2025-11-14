@@ -278,8 +278,8 @@ export default function DashboardComponent() {
                                 <Shield className="w-5 h-5" />
                             </div>
                             <div>
-                                <h2 className="font-medium">Asociación Futbol</h2>
-                                <p className="text-xs text-muted-foreground">{mockUser.club}</p>
+                                <h2 className="font-medium">Asociación de Fútbol Caupolicán</h2>
+                                <p className="text-xs text-muted-foreground">{club_nombre ? club_nombre : "Admin"}</p>
                             </div>
                         </div>
                     </SidebarHeader>
@@ -336,7 +336,13 @@ export default function DashboardComponent() {
                                         <p className="text-xs text-muted-foreground">{club_nombre}</p>
                                     </div>
                                     <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
-                                        {mockUser.name.split(' ').map(n => n[0]).join('')}
+                                        {nombre
+                                            ?.split(' ')
+                                            .filter(n => n.length > 0)
+                                            .slice(0, 2)
+                                            .map(n => n[0])
+                                            .join('')
+                                        }
                                     </div>
                                 </NavLink>
                                 <Button variant="outline" size="sm" onClick={logout}>

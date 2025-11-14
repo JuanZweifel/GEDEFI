@@ -4,9 +4,39 @@ from app.db import SessionLocal
 from app.models.jugador import Jugador
 from app.models.ficha_jugador import FichaJugador
 from app.models.detalle_club_jugador import DetalleClubJugador
-from app.models.orden_pago import OrdenPago, EstadoOrdenEnum, TipoPagoEnum, TipoMovimientoEnum
+from app.models.rol import Rol
+from app.models.orden_pago import (
+    OrdenPago,
+    EstadoOrdenEnum,
+    TipoPagoEnum,
+    TipoMovimientoEnum,
+)
 from app.models.club import Club
 from app.services.serie import create_massive_series
+
+
+DEFAULT_ROLES = [
+    {
+        "nombre": "Administrador",
+        "descripcion": "Tiene acceso total al sistema. Gestiona usuarios, configuraciones, roles y toda la información del club.",
+    },
+    {
+        "nombre": "Secretario",
+        "descripcion": "Encargado de la gestión administrativa: manejo de documentación, registros, asistencia y comunicaciones internas.",
+    },
+    {
+        "nombre": "Tesorero",
+        "descripcion": "Responsable de la administración financiera: pagos, ingresos, cuotas, control de presupuesto y reportes económicos.",
+    },
+    {
+        "nombre": "Entrenador",
+        "descripcion": "Supervisa y gestiona las actividades deportivas: entrenamientos, evaluaciones, listas de jugadores y rendimiento.",
+    },
+    {
+        "nombre": "Delegado",
+        "descripcion": "Actúa como enlace entre jugadores, entrenadores y directiva. Coordina tareas operativas y apoya en eventos o partidos.",
+    },
+]
 
 
 def insertar_ordenes_ingresos_demo():
@@ -230,7 +260,7 @@ def generar_rut_ficticio(index: int) -> str:
 
 
 def insertar_clubs_demo():
-    db=SessionLocal()
+    db = SessionLocal()
     try:
         logo = "../images/logos/Angamos_Fc_1761257118.jpg"
         color_primario = "#000000"
@@ -239,12 +269,46 @@ def insertar_clubs_demo():
         fecha_fundacion = date(2025, 10, 1)
 
         NUMEROS_EN_TEXTO = [
-            "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez",
-            "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho",
-            "diecinueve", "veinte", "veintiuno", "veintidós", "veintitrés", "veinticuatro",
-            "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve", "treinta",
-            "treinta y uno", "treinta y dos", "treinta y tres", "treinta y cuatro", "treinta y cinco",
-            "treinta y seis", "treinta y siete", "treinta y ocho", "treinta y nueve", "cuarenta"
+            "uno",
+            "dos",
+            "tres",
+            "cuatro",
+            "cinco",
+            "seis",
+            "siete",
+            "ocho",
+            "nueve",
+            "diez",
+            "once",
+            "doce",
+            "trece",
+            "catorce",
+            "quince",
+            "dieciséis",
+            "diecisiete",
+            "dieciocho",
+            "diecinueve",
+            "veinte",
+            "veintiuno",
+            "veintidós",
+            "veintitrés",
+            "veinticuatro",
+            "veinticinco",
+            "veintiséis",
+            "veintisiete",
+            "veintiocho",
+            "veintinueve",
+            "treinta",
+            "treinta y uno",
+            "treinta y dos",
+            "treinta y tres",
+            "treinta y cuatro",
+            "treinta y cinco",
+            "treinta y seis",
+            "treinta y siete",
+            "treinta y ocho",
+            "treinta y nueve",
+            "cuarenta",
         ]
 
         for i in range(1, 41):
@@ -283,10 +347,43 @@ def insertar_clubs_demo():
     finally:
         db.close()
 
+
 # Listas de nombres y apellidos para síntesis
-PRIMEROS_NOMBRES = ["Juan", "Pedro", "Luis", "Carlos", "Diego", "Matías", "Andrés", "Jorge", "Fernando", "Ricardo"]
-SEGUNDOS_NOMBRES = ["Ignacio", "Alberto", "Sebastián", "Emiliano", "Martín", "Alejandro", None, None]
-APELLIDOS = ["González", "Pérez", "Ramírez", "Soto", "Rojas", "Fernández", "Morales", "Vega", "Torres", "Molina"]
+PRIMEROS_NOMBRES = [
+    "Juan",
+    "Pedro",
+    "Luis",
+    "Carlos",
+    "Diego",
+    "Matías",
+    "Andrés",
+    "Jorge",
+    "Fernando",
+    "Ricardo",
+]
+SEGUNDOS_NOMBRES = [
+    "Ignacio",
+    "Alberto",
+    "Sebastián",
+    "Emiliano",
+    "Martín",
+    "Alejandro",
+    None,
+    None,
+]
+APELLIDOS = [
+    "González",
+    "Pérez",
+    "Ramírez",
+    "Soto",
+    "Rojas",
+    "Fernández",
+    "Morales",
+    "Vega",
+    "Torres",
+    "Molina",
+]
+
 
 def insertar_jugadores_demo():
     db = SessionLocal()
@@ -294,7 +391,7 @@ def insertar_jugadores_demo():
         jugadores_info = [
             # id_serie, id_club, cantidad de jugadores
             (14, 2, 10),
-            (4, 1, 10)
+            (4, 1, 10),
         ]
 
         for id_serie, id_club, cantidad in jugadores_info:
@@ -305,7 +402,9 @@ def insertar_jugadores_demo():
                 primer_apellido = choice(APELLIDOS)
                 segundo_apellido = choice(APELLIDOS)
                 genero = choice([True, False])
-                fecha_nacimiento = date(2000 + randint(0, 5), randint(1, 12), randint(1, 28))
+                fecha_nacimiento = date(
+                    2000 + randint(0, 5), randint(1, 12), randint(1, 28)
+                )
                 fono_jugador = f"9{randint(10000000, 99999999)}"
 
                 # Crear Jugador
@@ -362,3 +461,17 @@ def insertar_jugadores_demo():
         db.rollback()
     finally:
         db.close()
+
+
+def seed_roles():
+    db = SessionLocal()
+    try:
+        for rol in DEFAULT_ROLES:
+            exists = db.query(Rol).filter(Rol.nombre_rol == rol["nombre"]).first()
+            if not exists:
+                db_rol = Rol(nombre_rol=rol["nombre"], desc_rol=rol["descripcion"])
+                db.add(db_rol)
+        db.commit()
+    finally:
+        db.close()
+
