@@ -58,7 +58,7 @@ def get_usuarios(
             .outerjoin(Club, DetalleUsuarioClub.id_club == Club.id_club)
         )
 
-        # ❗ Solo excluir al usuario actual si NO se está filtrando por club
+        # Solo excluir al usuario actual si NO se está filtrando por club
         if club is None:
             base_query = base_query.filter(
                 Usuario.rut_usuario != current_user.get("rut_usuario")
@@ -110,6 +110,8 @@ def get_usuarios(
                     "email_usuario": usuario.email_usuario,
                     "fecha_nacimiento": usuario.fecha_nacimiento,
                     "usuario_activo": usuario.usuario_activo,
+                    "huella_indice": usuario.huella_indice,
+                    "huella_pulgar": usuario.huella_pulgar,
                     "fecha_creacion": usuario.fecha_creacion,
                     "fecha_modificacion": usuario.fecha_modificacion,
                     "id_rol": usuario.id_rol,
@@ -173,7 +175,7 @@ def create_usuario(db: Session, usuario: UsuarioCreate, current_user: dict) -> U
 def update_usuario(
     db: Session, rut_usu: str, usuario_update: UsuarioUpdate, current_user: dict
 ) -> Usuario | None:
-    db_usuario = get_usuario(db, rut_usu, current_user=current_user)
+    db_usuario = get_usuario(db, rut_usu)
     if not db_usuario:
         return None
 

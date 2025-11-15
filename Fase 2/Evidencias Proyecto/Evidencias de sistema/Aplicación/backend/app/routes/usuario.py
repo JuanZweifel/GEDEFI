@@ -23,7 +23,7 @@ def get_usuario(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_usuario = services.get_usuario(db, rut_usuario, current_user=current_user)
+    db_usuario = services.get_usuario(db, rut_usuario)
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario not found")
     return db_usuario
@@ -58,7 +58,7 @@ def update_usuario(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_usuario = services.update_usuario(db, rut_usuario, usuario, current_user)
+    db_usuario = services.update_usuario(db, rut_usuario, usuario)
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario not found")
     return db_usuario

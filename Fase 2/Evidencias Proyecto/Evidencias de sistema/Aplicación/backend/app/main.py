@@ -32,6 +32,8 @@ from app.routes import (
     fas,
     uso_fas,
     correos,
+    huella,
+    reportes,
 )
 from app.utils.objetos_sql import create_trigger, create_audit_function, create_trigger_serie
 
@@ -105,6 +107,8 @@ app.include_router(fas.router)
 app.include_router(uso_fas.router)
 app.include_router(solicitud.router)
 app.include_router(correos.router)
+app.include_router(huella.router)
+app.include_router(reportes.router)
 
 app.mount(
     "/images", StaticFiles(directory="../images"), name="images"

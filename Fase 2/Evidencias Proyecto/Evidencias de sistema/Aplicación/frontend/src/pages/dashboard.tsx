@@ -45,6 +45,7 @@ import { MatchesTrainingModule } from './entrenamiento.tsx';
 import { FasModule } from './fas.tsx';
 import { ComunicadosModule } from './comunicados.tsx';
 import { PartidoCoreModule } from './partidos.tsx';
+import { HuellaModule } from './huella.tsx';
 
 
 // Mock user data with roles
@@ -188,16 +189,16 @@ export default function DashboardComponent() {
     const { token, rol, nombre, club_nombre, logout } = useAuth();
 
     const getInitials = (fullName: string | undefined): string => {
-    if (!fullName) return "?";
+        if (!fullName) return "?";
 
-    return fullName
-        .trim()
-        .split(" ")
-        .filter(Boolean)
-        .map(n => n[0].toUpperCase())
-        .join("")
-        .slice(0, 2);
-};
+        return fullName
+            .trim()
+            .split(" ")
+            .filter(Boolean)
+            .map(n => n[0].toUpperCase())
+            .join("")
+            .slice(0, 2);
+    };
 
     // Si no tiene token de login, lo redirecciona a la landing page
     if (!token) {
@@ -254,7 +255,7 @@ export default function DashboardComponent() {
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
         { id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
         { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
-        { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: FingerprintModule, permission: 'fingerprint' },
+        { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: HuellaModule, permission: 'fingerprint' },
         { id: 'fas', label: 'FAS', icon: Ambulance, component: FasModule, permission: 'fas' },
         { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
         { id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
@@ -422,7 +423,7 @@ export default function DashboardComponent() {
                             </Route>
                             <Route path="analytics" element={<AnalyticsModule />} />
                             <Route path="audit" element={<AuditModule />} />
-                            <Route path="fingerprint" element={<FingerprintModule />} />
+                            <Route path="fingerprint" element={<HuellaModule />} />
                             <Route path="fas" element={<FasModule />} />
                             <Route path="calendar" element={<CalendarioModule />} />
                             <Route path="admin" element={<div>Panel Administrativo</div>} />

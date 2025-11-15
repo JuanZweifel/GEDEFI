@@ -15,8 +15,8 @@ class Usuario(Base):
     nombre_usuario: Mapped[str] = mapped_column(String(50), nullable=False)
     apellido_usuario: Mapped[str] = mapped_column(String(50), nullable=False)
     fecha_nacimiento: Mapped[date] = mapped_column(Date, nullable=False)
-    huella_pulgar: Mapped[str] = mapped_column(String(256), nullable=True)
-    huella_indice: Mapped[str] = mapped_column(String(256), nullable=True)
+    huella_pulgar: Mapped[str] = mapped_column(String(4000), nullable=True)
+    huella_indice: Mapped[str] = mapped_column(String(4000), nullable=True)
     usuario_activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     asociacion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(
