@@ -14,6 +14,7 @@ import { getCanchas } from "../services/canchaService"
 import { DialogHandle } from "../components/dialog-component"
 import { CalendarioPartidoForm, PartidoDetailsForm, PartidoForm } from "../forms/partidoForms.tsx"
 import { Loading } from "../components/loading-bar-component.tsx"
+import { ReportePartidosDialog } from "../components/reporte-partido-dialog.tsx"
 
 
 export const PartidoCoreModule: React.FC = () => {
@@ -81,6 +82,8 @@ export const PartidoCoreModule: React.FC = () => {
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Partido
                     </Button>
+
+                    <ReportePartidosDialog token={token} />
 
                     <Button style={{ backgroundColor: '#0000db' }} className="text-white" onClick={() => navigate('/dashboard/partidos/calendario')}>
                         <Plus className="w-4 h-4 mr-2" />
