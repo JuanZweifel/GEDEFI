@@ -76,7 +76,7 @@ export const AlertDialogHandle: React.FC<AlertDialogHandleProps> = ({
                             if (!isDisabled) await onConfirm();
                         }}
                         disabled={isDisabled}
-                        className={isDisabled ? "opacity-60 cursor-not-allowed" : ""}
+                        className={isDisabled ? "bg-blue-500 opacity-60 cursor-not-allowed" : "bg-blue-500"}
                     >
                         {countdown > 0
                             ? `${confirmLabel} (${countdown})`

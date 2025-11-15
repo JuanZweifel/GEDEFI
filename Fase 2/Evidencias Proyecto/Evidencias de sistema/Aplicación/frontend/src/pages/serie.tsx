@@ -144,20 +144,6 @@ export const SerieDetailsContent: React.FC<SerieDetailsProps> = ({ serie }) => {
                         </CardContent>
                     </Card>
                 </TabsContent>
-
-                <TabsContent value="entrenamientos" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className='font-medium'>Historial de entrenamientos</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-center py-8 text-gray-500">
-                                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <p>EN DESARROLLO</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
             </Tabs>
         </div>
     )
@@ -424,14 +410,6 @@ export const SerieModule: React.FC = () => {
                                                         <>
                                                             <Button variant="outline" size="sm" className="flex items-center" disabled>
                                                                 <Eye className="w-4 h-4 mr-1" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                className="flex items-center"
-                                                                disabled
-                                                            >
-                                                                <Trash2 className='w-3 h-3' />
                                                             </Button>
 
                                                             <Button

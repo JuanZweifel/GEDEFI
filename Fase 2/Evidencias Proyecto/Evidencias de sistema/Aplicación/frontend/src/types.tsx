@@ -131,6 +131,15 @@ export type InstalacionesEnum =
     | "Baños"
     | "Enfermería"
 
+export type TipoOrdenEnum =
+    | "Mensualidad"
+    | "Multa"
+    | "Pase"
+    | "Servicio Basico"
+    | "Donacion"
+    | "Subvencion"
+    | "Otro"
+
 export type CanchaType = {
     id_cancha: number;
     nombre_cancha: string;

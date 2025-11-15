@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Plus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
-import type { ClubType } from '../types';
+import type { ClubType, TipoOrdenEnum } from '../types';
 import { getClubs } from '../services/clubServices';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/authContext';
@@ -17,9 +17,19 @@ import { createOrden, payOrden } from '../services/ordenPagoServices';
 type OrdenFormProps = {
     onSuccess: (...args: any[]) => void;
 }
+
+const TipoOrden: TipoOrdenEnum[] = [
+    "Mensualidad",
+    "Multa",
+    "Pase",
+    "Servicio Basico",
+    "Donacion",
+    "Subvencion",
+    "Otro",
+]
 export const OrdenPagoForm: React.FC<OrdenFormProps> = ({ onSuccess }) => {
     const [clubList, setClubList] = useState<ClubType[]>([])
-    const [tipoOrden, setTipoOrden] = useState("")
+    const [tipoOrden, setTipoOrden] = useState(TipoOrden[0])
     const [tipoMovimiento, setTipoMovimiento] = useState("")
     const [monto, setMonto] = useState<number | null>(null)
     const [descripcion, setDescripcion] = useState("")
@@ -66,12 +76,12 @@ export const OrdenPagoForm: React.FC<OrdenFormProps> = ({ onSuccess }) => {
     }
 
     const fetchClubs = async () => {
-        let data: ClubType[] = [];
+        let data: any = [];
         try {
             setIsFetching(20);
-            data = await getClubs<ClubType[]>(token);
+            data = await getClubs<any>(token);
             setIsFetching(50)
-            setClubList(data);
+            setClubList(data.items);
             setIsFetching(80)
             if (data.length === 0) toast.info("No hay clubs registrados en la base de datos.");
         } catch (error: any) {
@@ -115,8 +125,7 @@ export const OrdenPagoForm: React.FC<OrdenFormProps> = ({ onSuccess }) => {
                         <div>
                             <Label className="block mb-2">Monto $ (*):</Label>
                             <Input
-                                type="number"
-                                value={monto}
+                                value={monto || "0"}
                                 onChange={(e) => setMonto(Number(e.target.value))}
                                 required
                                 min={1}
@@ -126,13 +135,23 @@ export const OrdenPagoForm: React.FC<OrdenFormProps> = ({ onSuccess }) => {
 
                         <div>
                             <Label className="block mb-2">Tipo de orden (*):</Label>
-                            <Input
+                            <Select
                                 value={tipoOrden}
-                                onChange={(e) => setTipoOrden(e.target.value)}
-                                required
-                                minLength={5}
-                                maxLength={100}
-                            />
+                                onValueChange={(val: string) =>
+                                    setTipoOrden(val as TipoOrdenEnum)
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccione una superficie" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {TipoOrden.map((tp) => (
+                                        <SelectItem key={tp} value={tp}>
+                                            {tp}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div>

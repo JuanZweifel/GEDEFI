@@ -9,7 +9,7 @@ from datetime import datetime
 router = APIRouter(prefix="/auditorias", tags=["Auditorias"])
 
 
-@router.get("/", response_model=list[schemas.AuditoriaRead])
+@router.get("/")
 def get_auditorias(
     current_user: dict = Depends(get_current_user),
     skip: int = Query(0, ge=0),

@@ -171,7 +171,7 @@ def get_series_with_details(db: Session, current_user: dict) -> list[SerieWithDe
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Serie no encontrada.")
 
-@handle_audit("UPDATE", "Serie")
+@handle_db_exceptions
 def update_state_serie(db: Session, id_serie: int, current_user: dict):
     """
     Actualiza el estado (activo/inactivo) de una serie en la base de datos.
@@ -223,9 +223,6 @@ def update_state_serie(db: Session, id_serie: int, current_user: dict):
     db.commit()
     db.refresh(db_serie)
     return db_serie.serie_activa
-
-
-
 
 def get_unique_series(db: Session) -> list[SerieUniqueRead]:
     rows = (

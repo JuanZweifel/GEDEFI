@@ -23,7 +23,11 @@ export const deletePartido = <T>(id: number, token: string): Promise<T> =>
         method: "DELETE",
     }, token);
 
-export const getRendimientosPartidoClub = <T>(id_club: number, id_partido: number, token: string): Promise<T> =>
-    fetchAPI<T>(`/rendimientos-partido/${id_club}/${id_partido}`, {}, token);
+export const getRendimientosPartido = <T>(id_partido: number, token: string | null): Promise<T> =>
+    fetchAPI<T>(`/rendimientos-partido/${id_partido}`, {}, token || "");
 
-//http://localhost:8000/rendimientos-partido/1/4
+export const updateRendimientoPartido = <T>(token: string | null, id_partido: number, listaRendimientos: any): Promise<T> =>
+    fetchAPI<T>(`/rendimientos-partido/${id_partido}`, {
+        method: "PUT",
+        body: JSON.stringify(listaRendimientos),
+    }, !!token ? token : undefined)

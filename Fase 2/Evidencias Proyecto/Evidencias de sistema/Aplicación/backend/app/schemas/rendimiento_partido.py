@@ -24,10 +24,11 @@ class RendimientoPartidoRead(RendimientoPartidoBase):
     model_config = ConfigDict(from_attributes=True)
 
 class RendimientoPartidoUpdate(BaseModel):
+    rut_jugador: str
     tiempo_jugado: Optional[int] = None
-    goles: Optional[str] = None
+    goles: Optional[int] = None
     asistencias: Optional[int] = None
-    amonestaciones: Optional[str] = None
+    amonestaciones: Optional[int] = None
     amonestaciones_amarillas: Optional[bool] = None
     amonestaciones_rojas: Optional[bool] = None
 

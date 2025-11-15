@@ -175,7 +175,7 @@ def lesion_tiene_datos(lesion: Lesion) -> bool:
     return any(c is not None for c in campos)
 
 
-@handle_audit("DELETE", "JUGADOR")
+@handle_db_exceptions
 def delete_jugador(db: Session, rut_jugador: str, current_user: dict) -> bool:
     """Elimina un jugador solo si NO tiene registros asociados con datos."""
 

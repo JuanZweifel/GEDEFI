@@ -34,6 +34,7 @@ import {
     disableClub
 }
     from '../services/clubServices.ts';
+import { Loading } from '../components/loading-bar-component.tsx';
 
 
 export const ClubCoreModule: React.FC = () => {
@@ -130,6 +131,9 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
     const navigate = useNavigate();
 
     // ! Control de estados (UseEffect)
+    useEffect(() => {
+        if(!admin) fetchClub(token, id_club)
+    }, [])
     useEffect(() => {
         const timer = setTimeout(() => {
             const rawTerm = searchTerm.trim();
@@ -383,19 +387,6 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                 </div>
             </>}
         </>
-    )
-}
-
-const Loading: React.FC<{ isLoading: number, component: string }> = ({ isLoading, component }) => {
-
-    return (
-        <div className="flex flex-col items-center justify-center space-y-4 p-6 text-center">
-            <p className="text-lg font-medium text-foreground">
-                Cargando {component}...
-            </p>
-            <Progress value={isLoading} label="Cargando módulo" />
-        </div>
-
     )
 }
 

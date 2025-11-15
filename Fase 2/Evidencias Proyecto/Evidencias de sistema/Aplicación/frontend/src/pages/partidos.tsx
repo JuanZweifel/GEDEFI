@@ -13,6 +13,7 @@ import { getSeries } from "../services/serieService"
 import { getCanchas } from "../services/canchaService"
 import { DialogHandle } from "../components/dialog-component"
 import { PartidoDetailsForm, PartidoForm } from "../forms/partidoForms.tsx"
+import { Loading } from "../components/loading-bar-component.tsx"
 
 
 export const PartidoCoreModule: React.FC = () => {
@@ -43,7 +44,6 @@ export const PartidoCoreModule: React.FC = () => {
             case !!params.id_partido && accion === "edit":
                 return <PartidoDialogModule token={token} isEdit={true} closeDialog={handleCloseDialog} />
             case !!params.id_partido && accion === "details":
-                console.log(params, accion)
                 return <PartidoRendimientoModule token={token} closeDialog={handleCloseDialog} isEdit />
             default:
                 navigate("/dashboard/partidos/", { replace: true })
@@ -148,68 +148,73 @@ const PartidoListModule: React.FC<PropsPartidoType> = ({ token, admin }) => {
     };
 
     return (
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Fecha/Hora</TableHead>
-                    <TableHead>Serie</TableHead>
-                    <TableHead>Partido</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Resultado</TableHead>
-                    <TableHead>Cancha</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Acciones</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {partidoList.map((p: PartidoType) => {
-                    const serie_local: SerieType | undefined = series.find((s: SerieType) => s.id_serie === p.id_serie_local)
-                    const serie_visita: SerieType | undefined = series.find((s: SerieType) => s.id_serie === p.id_serie_visitante)
-                    const cancha: CanchaType | undefined = canchas.find((c: CanchaType) => c.id_cancha === p.id_cancha)
-
-                    return (
-                        <TableRow key={p.id_partido}>
-                            <TableCell>
-                                <div className="flex items-center">
-                                    <Calendar className="w-4 h-4 mr-1" />
-                                    {p.fecha_partido} {p.hora_ini_partido}
-                                </div>
-                            </TableCell>
-                            <TableCell>{serie_local?.nombre_serie}</TableCell>
-                            <TableCell>
-                                {serie_local?.nombre_club} vs {serie_visita?.nombre_club}
-                            </TableCell>
-                            <TableCell>
-                                {p.tipo_partido.charAt(0).toUpperCase() + p.tipo_partido.slice(1)}
-                            </TableCell>
-                            <TableCell>
-                                {p.goles_local !== null && p.goles_visita !== null
-                                    ? `${p.goles_local} - ${p.goles_visita}`
-                                    : "-"}
-                            </TableCell>
-                            <TableCell>{cancha?.nombre_cancha ?? "-"}</TableCell>
-                            <TableCell>{renderBadge(p.estado_partido.charAt(0).toUpperCase() + p.estado_partido.slice(1))}</TableCell>
-                            <TableCell className="flex space-x-1">
-                                {admin ? (
-                                    <>
-                                        <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/details/${p.id_partido}`, { replace: true })}>
-                                            <Eye className="w-4 h-4" />
-                                        </Button>
-                                        <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/edit/${p.id_partido}`, { replace: true })}>
-                                            <Edit className="w-4 h-4 mr-1" />
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/details/${p.id_partido}`, { replace: true })}>
-                                        <Eye className="w-4 h-4" />
-                                    </Button>
-                                )}
-                            </TableCell>
+        <>
+            {isLoading < 100 && <Loading isLoading={isLoading} component="Modulo de partidos" />}
+            {isLoading === 100 &&
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Fecha/Hora</TableHead>
+                            <TableHead>Serie</TableHead>
+                            <TableHead>Partido</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead>Resultado</TableHead>
+                            <TableHead>Cancha</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead>Acciones</TableHead>
                         </TableRow>
-                    )
-                })}
-            </TableBody>
-        </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {partidoList.map((p: PartidoType) => {
+                            const serie_local: SerieType | undefined = series.find((s: SerieType) => s.id_serie === p.id_serie_local)
+                            const serie_visita: SerieType | undefined = series.find((s: SerieType) => s.id_serie === p.id_serie_visitante)
+                            const cancha: CanchaType | undefined = canchas.find((c: CanchaType) => c.id_cancha === p.id_cancha)
+
+                            return (
+                                <TableRow key={p.id_partido}>
+                                    <TableCell>
+                                        <div className="flex items-center">
+                                            <Calendar className="w-4 h-4 mr-1" />
+                                            {p.fecha_partido} {p.hora_ini_partido}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{serie_local?.nombre_serie}</TableCell>
+                                    <TableCell>
+                                        {serie_local?.nombre_club} vs {serie_visita?.nombre_club}
+                                    </TableCell>
+                                    <TableCell>
+                                        {p.tipo_partido.charAt(0).toUpperCase() + p.tipo_partido.slice(1)}
+                                    </TableCell>
+                                    <TableCell>
+                                        {p.goles_local !== null && p.goles_visita !== null
+                                            ? `${p.goles_local} - ${p.goles_visita}`
+                                            : "-"}
+                                    </TableCell>
+                                    <TableCell>{cancha?.nombre_cancha ?? "-"}</TableCell>
+                                    <TableCell>{renderBadge(p.estado_partido.charAt(0).toUpperCase() + p.estado_partido.slice(1))}</TableCell>
+                                    <TableCell className="flex space-x-1">
+                                        {admin ? (
+                                            <>
+                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/details/${p.id_partido}`, { replace: true })}>
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/edit/${p.id_partido}`, { replace: true })}>
+                                                    <Edit className="w-4 h-4 mr-1" />
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/partidos/details/${p.id_partido}`, { replace: true })}>
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
+            }
+        </>
     )
 }
 
@@ -262,7 +267,6 @@ const PartidoRendimientoModule: React.FC<PropsPartidoFormType> = ({ token, close
     const navigate = useNavigate();
 
     useEffect(() => {
-        console.log("llegamos")
         const id = Number(params.id_partido)
         if (Number.isNaN(id)) navigate("/dashboard/partidos", { replace: true })
         fetchPartido(token, id)
@@ -285,7 +289,7 @@ const PartidoRendimientoModule: React.FC<PropsPartidoFormType> = ({ token, close
             open={isDialogOpen}
             onOpenChange={closeDialog}
         >
-            {() => <PartidoDetailsForm partido={partido} onSuccess={closeDialog} />}
+            {() => <PartidoDetailsForm partido={partido} onSuccess={closeDialog} token={token} />}
         </DialogHandle>
     )
 }

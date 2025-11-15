@@ -4,7 +4,7 @@ from app.models import Auditoria
 from app.schemas import AuditoriaRead
 from app.utils.decorators import handle_db_exceptions
 from fastapi import HTTPException, status
-from datetime import datetime
+from datetime import datetime, time
 
 
 def get_auditoria(db: Session, id_auditoria: int) -> Auditoria | None:
@@ -22,7 +22,7 @@ def get_auditorias(
     recurso: str | None = None,
     fecha_ini: datetime | None = None,
     fecha_fin: datetime | None = None,
-) -> list[AuditoriaRead]:
+) -> dict:
 
     #if not current_user.get("asociacion"): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para ver los registros de auditoría")
     query = db.query(Auditoria).options(joinedload(Auditoria.usuario))
@@ -42,7 +42,7 @@ def get_auditorias(
 
     if filters:
         query = query.filter(and_(*filters))
-
+    total = query.count()
     # ⚙️ Solo aplicar skip/limit si no son None
     if skip is not None:
         query = query.offset(skip)
@@ -50,7 +50,6 @@ def get_auditorias(
         query = query.limit(limit)
 
     db_auditorias = query.all()
-
     auditorias = [
         AuditoriaRead(
             id_auditoria=a.id_auditoria,
@@ -67,16 +66,30 @@ def get_auditorias(
         for a in db_auditorias
     ]
 
-    return auditorias
+    return {"items": auditorias, "total": total}
 
 @handle_db_exceptions
 def get_resumen_auditoria(db: Session, current_user: dict | None = None):
     #if not current_user.get("admin"): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para ver el resumen de auditoría")
     
     hoy = datetime.now().date()
-    acciones_hoy = db.query(Auditoria).filter(Auditoria.fecha_cambio >= hoy).count()
-    exitos_hoy = db.query(Auditoria).filter(and_(Auditoria.fecha_cambio >= hoy, Auditoria.error == False)).count()
-    errores_hoy = db.query(Auditoria).filter(and_(Auditoria.fecha_cambio >= hoy, Auditoria.error == True)).count()
+    inicio = datetime.combine(hoy, time(0,0,0))
+    fin = datetime.combine(hoy, time(23,59,59,999999))
+
+    acciones_hoy = db.query(Auditoria).filter(
+        Auditoria.fecha_cambio.between(inicio, fin)
+    ).count()
+
+    exitos_hoy = db.query(Auditoria).filter(
+        Auditoria.fecha_cambio.between(inicio, fin),
+        Auditoria.error == False
+    ).count()
+
+    errores_hoy = db.query(Auditoria).filter(
+        Auditoria.fecha_cambio.between(inicio, fin),
+        Auditoria.error == True
+    ).count()
+
     modulos_auditados = db.query(Auditoria.recurso).distinct().count()
 
     return {

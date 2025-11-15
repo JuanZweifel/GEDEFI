@@ -29,7 +29,7 @@ def get_ordenes_pago(db: Session, current_user: dict):
     """
     Obtiene todas las órdenes de pago con sus relaciones (club, emisor, pagador)
     """
-    if current_user.get("admin"):
+    if current_user.get("asociacion"):
         db_ordenes = (
             db.query(OrdenPago)
             .options(
@@ -79,12 +79,12 @@ def get_ordenes_pago(db: Session, current_user: dict):
     return ordenes_salida
 
 
-@handle_audit("CREATE", "OrdenPago")
+@handle_db_exceptions
 def create_orden_pago(
     db: Session, orden_pago: OrdenPagoCreate, current_user: dict
 ) -> OrdenPago:
     try:
-        if not current_user.get("admin"):
+        if not current_user.get("asociacion"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No tienes permiso de crear una orden de pago",
@@ -117,11 +117,11 @@ def create_orden_pago(
         ) from e
 
 
-@handle_audit("DELETE", "OrdenPago")
+@handle_db_exceptions
 def delete_orden_pago(
     db: Session, id_orden: str, current_user: dict
 ) -> bool:
-    if not current_user.get("admin"): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para eliminar una orden de pago")
+    if not current_user.get("asociacion"): raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permiso para eliminar una orden de pago")
     db_orden = get_orden_pago(db, id_orden)
 
     if not db_orden: raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Orden no encontrada")
@@ -250,12 +250,12 @@ def get_egresos(db: Session) -> EgresosMes:
     return EgresosMes(total_egresos=total_str, variacion=variacion)
 
 
-@handle_audit("UPDATE", "OrdenPago")
+@handle_db_exceptions
 def cancel_orden(
     db: Session, id_orden_pago: str, current_user: dict
 ) -> EstadoOrdenEnum:
 
-    if not current_user.get("admin"):
+    if not current_user.get("asociacion"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso de modificar una orden de pago",
@@ -286,10 +286,10 @@ def cancel_orden(
     return db_orden.estado_orden
 
 
-@handle_audit("UPDATE", "OrdenPago")
+@handle_db_exceptions
 def pay_orden(db: Session, id_orden_pago: str, orden: OrdenPagoPay, current_user: dict) -> EstadoOrdenEnum:
 
-    if not current_user.get("admin"):
+    if not current_user.get("asociacion"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso de modificar una orden de pago",
@@ -324,9 +324,9 @@ def pay_orden(db: Session, id_orden_pago: str, orden: OrdenPagoPay, current_user
     db.refresh(db_orden)
     return db_orden.estado_orden
 
-@handle_audit("UPDATE", "OrdenPago")
+@handle_db_exceptions
 def pending_orden(db: Session, id_orden_pago: str, current_user: dict) -> bool:
-    if not current_user.get("admin"):
+    if not current_user.get("asociacion"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso de modificar una orden de pago",

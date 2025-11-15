@@ -223,9 +223,8 @@ export const FinanzasModule: React.FC = () => {
         const ordenEncontrada = ordenesList.find(
             (o) => o.id_orden_pago?.trim() === params.id_orden?.trim()
         );
-        console.log(ordenEncontrada)
         if (ordenEncontrada) {
-            if (["Pagada", "Anulada"].includes(ordenEncontrada.estado_orden)) {
+            if (["Anulada"].includes(ordenEncontrada.estado_orden)) {
                 toast.info("No puedes pagar una orden anulada o que ya se encuentra paga")
                 navigate("/dashboard/finanzas", { replace: true });
             }

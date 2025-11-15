@@ -134,7 +134,6 @@ def update_club(
     color_secundario: str = Form(...),
     color_respaldo: str = Form(None),
     logo_club: UploadFile = File(None),
-    club_activo: bool = Form(...),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -152,7 +151,6 @@ def update_club(
             color_secundario=color_secundario,
             color_respaldo=color_respaldo,
             logo_club=None,
-            club_activo=club_activo
         )
         # Guardar archivo localmente
         if logo_club:

@@ -7,8 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import {
   Users, Building, Trophy, Activity, User,
   Calendar, MapPin, DollarSign, Shield, AlertCircle,
-  ArrowBigLeft,
-  ArrowBigRight, Send
+  Send
 } from 'lucide-react';
 
 import { getAuditorias, getResumenAuditorias } from '../services/auditoriaServices';
@@ -51,7 +50,7 @@ export const AuditModule: React.FC = () => {
       const fecha_ini = fechaIni ? `${fechaIni}T00:00:00` : null;
       const fecha_fin = fechaFin ? `${fechaFin}T23:59:59` : null;
 
-      const data = await getAuditorias<AuditoriaType[]>(
+      const data = await getAuditorias<any>(
         token,
         page,
         20,
@@ -61,13 +60,12 @@ export const AuditModule: React.FC = () => {
         fecha_fin
       );
 
-      setAuditLogs(data);
-      setTotalPages(Math.ceil(data.length / 10));
+      setAuditLogs(data.items);
+      setTotalPages(Math.ceil(data.total / 20));
       if (data.length === 0) {
         toast.info("No hay registros de auditoría para los filtros seleccionados");
       }
     } catch (error) {
-      console.error(error);
       toast.error("Error al obtener auditorías");
     }
   };
@@ -82,18 +80,17 @@ export const AuditModule: React.FC = () => {
   }, [selectedModule, selectedAction, fechaIni, fechaFin, page]);
 
   const modules = [
-    "ROL", "USUARIO", "CLUB", "SERIES", "JUGADOR", "LESION", "CALENDARIO",
+    "ROL", "USUARIO", "CLUB", "SERIE", "JUGADOR", "LESION", "CALENDARIO",
     "ENTRENAMIENTO", "PARTIDO", "FINANZAS", "REUNION", "CANCHA", "SOLICITUDES",
   ];
-  const actions = ["CREATE", "UPDATE", "DELETE", "READ"];
+  const actions = ["INSERT", "UPDATE", "DELETE"];
 
   const getActionColor = (action: string, error: boolean) => {
     if (error) return "bg-gray-500";
     switch (action) {
-      case "CREATE": return "bg-green-500";
+      case "INSERT": return "bg-green-500";
       case "UPDATE": return "bg-yellow-500";
       case "DELETE": return "bg-red-500";
-      case "READ": return "bg-blue-500";
       default: return "bg-gray-500";
     }
   };
@@ -103,7 +100,7 @@ export const AuditModule: React.FC = () => {
       case "ROL": return <Shield className="w-4 h-4" />;
       case "USUARIO": return <User className="w-4 h-4" />;
       case "CLUB": return <Building className="w-4 h-4" />;
-      case "SERIES": return <Trophy className="w-4 h-4" />;
+      case "SERIE": return <Trophy className="w-4 h-4" />;
       case "JUGADOR": return <Users className="w-4 h-4" />;
       case "LESION": return <AlertCircle className="w-4 h-4" />;
       case "CALENDARIO": return <Calendar className="w-4 h-4" />;
@@ -235,32 +232,6 @@ export const AuditModule: React.FC = () => {
           <CardTitle>
             <div className="flex justify-between items-center w-full">
               <span>Registros de Auditoría</span>
-
-              {auditLogs.length > 0 && (
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    <ArrowBigLeft className="w-4 h-4" />
-                  </Button>
-
-                  <span className="text-sm font-medium">
-                    {page} / {totalPages === 0 ? "-" : totalPages}
-                  </span>
-
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                  >
-                    <ArrowBigRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
             </div>
           </CardTitle>
         </CardHeader>
@@ -311,6 +282,29 @@ export const AuditModule: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-sm text-gray-500">
+          Página {page} de {totalPages || 1}
+        </span>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+            disabled={page === 1}
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((prev) => prev + 1)}
+            disabled={page >= totalPages}
+          >
+            Siguiente
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

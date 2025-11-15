@@ -26,9 +26,11 @@ from app.schemas import (
 
 from app.services.serie import create_massive_series
 from fastapi import HTTPException, status
-from app.utils.decorators import handle_audit, handle_db_exceptions
+from app.utils.decorators import handle_db_exceptions
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, cast
+from app.utils.auditoria import auditoria_errores, set_rut
+
 
 @handle_db_exceptions
 def get_club(
@@ -107,10 +109,20 @@ def get_clubs(db: Session, current_user: dict) -> list[Club]:
     return db.query(Club).order_by(desc(Club.club_activo), asc(Club.nombre_club)).all()
 
 
-@handle_audit("CREATE", "CLUB")
+@handle_db_exceptions
 def create_club(db: Session, club: ClubCreate, current_user: dict) -> Club:  # Cambia el retorno a Club
     try:
-        if not current_user["asociacion"]:
+        set_rut(db, current_user.get("rut_usuario"))
+        if not current_user.get("asociacion"):
+            rut = cast(str, current_user.get("rut_usuario"))
+            auditoria_errores(
+                db, 
+                "CLUB", 
+                None, 
+                f"Sin permisos suficientes para crear club", 
+                "INSERT",
+                rut
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, 
                 detail="No tienes permiso para crear un club"
@@ -141,6 +153,15 @@ def create_club(db: Session, club: ClubCreate, current_user: dict) -> Club:  # C
                     )
                 )
             )
+            rut = cast(str, current_user.get("rut_usuario"))
+            auditoria_errores(
+                db, 
+                "CLUB", 
+                None, 
+                detail, 
+                "INSERT",
+                rut
+            )
             raise HTTPException(status_code=400, detail=detail) from e
         raise HTTPException(
             status_code=400, 
@@ -148,7 +169,7 @@ def create_club(db: Session, club: ClubCreate, current_user: dict) -> Club:  # C
         ) from e
 
 
-@handle_audit("UPDATE", "Club")
+@handle_db_exceptions
 def update_club(
     db: Session,
     id_club: int,
@@ -183,7 +204,7 @@ def update_club(
         campos a modificar en la entidad `Club`.
     
     current_user : dict
-        Diccionario con la información del usuario autenticado, incluyendo su nivel de privilegio (`admin`).
+        Diccionario con la información del usuario autenticado, incluyendo su nivel de privilegio (`asociacion`).
 
     Retorna
     -------
@@ -202,7 +223,7 @@ def update_club(
             return None
 
         # Determinar campos permitidos según permisos
-        if current_user.get("admin"):
+        if current_user.get("asociacion"):
             # Admin puede actualizar todo
             campos_permitidos = set(club_update.dict(exclude_unset=True).keys())
         else:
@@ -233,16 +254,34 @@ def update_club(
                 )
             )
         )
+        rut = cast(str, current_user.get("rut_usuario"))
+        auditoria_errores(
+            db, 
+            "CLUB", 
+            str(id_club), 
+            detail, 
+            "UPDATE",
+            rut
+        )
         raise HTTPException(status_code=400, detail=detail) from e
 
 
-@handle_audit("UPDATE", "Club")
+@handle_db_exceptions
 def disable_club(db: Session, id_club: int, current_user: dict):
     """
     Desactiva un club y todas sus relaciones (usuarios, jugadores, series, fichas).
     No realiza commit; el commit lo hace la auditoría.
     """
-    if not current_user.get("admin", False):
+    if not current_user.get("asociacion", False):
+        rut = cast(str, current_user.get("rut_usuario"))
+        auditoria_errores(
+            db, 
+            "CLUB", 
+            str(id_club), 
+            f"Sin permisos suficientes para desactivar un club", 
+            "UPDATE",
+            rut
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para desactivar un club."
@@ -250,6 +289,15 @@ def disable_club(db: Session, id_club: int, current_user: dict):
 
     db_club: Club | None = get_club(db, id_club, current_user)
     if not db_club:
+        rut = cast(str, current_user.get("rut_usuario"))
+        auditoria_errores(
+            db, 
+            "CLUB", 
+            None, 
+            f"No se encontro un club asociado al ID: {id_club}", 
+            "UPDATE",
+            rut
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Club no encontrado."
@@ -260,7 +308,7 @@ def disable_club(db: Session, id_club: int, current_user: dict):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El club ya está desactivado."
         )
-
+    set_rut(db, current_user.get("rut_usuario"))
     now = datetime.now()
 
     # Desactivar club
@@ -314,13 +362,22 @@ def disable_club(db: Session, id_club: int, current_user: dict):
     return db_club  
 
 
-@handle_audit("DELETE", "Club")
+@handle_db_exceptions
 def delete_club(db: Session, id_club: int, current_user: dict):
     """
     Elimina un club si ya está desactivado y no tiene asociaciones.
     No realiza commit; el commit lo hace la auditoría.
     """
     if not current_user.get("asociacion", False):
+        rut = cast(str, current_user.get("rut_usuario"))
+        auditoria_errores(
+            db, 
+            "CLUB", 
+            str(id_club), 
+            f"sin permisos suficientes para eliminar club", 
+            "DELETE",
+            rut
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para eliminar un club."
@@ -328,17 +385,35 @@ def delete_club(db: Session, id_club: int, current_user: dict):
 
     db_club: Club | None = get_club(db, id_club, current_user)
     if not db_club:
+        rut = cast(str, current_user.get("rut_usuario"))
+        auditoria_errores(
+            db, 
+            "CLUB", 
+            None, 
+            f"No se encontro un club asociado al ID: {id_club}", 
+            "DELETE",
+            rut
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Club no encontrado."
         )
 
     if db_club.club_activo:
+        rut = cast(str, current_user.get("rut_usuario"))
+        auditoria_errores(
+            db, 
+            "CLUB", 
+            str(id_club), 
+            f"Debes desactivar al club (ID: {id_club}) antes de eliminarlo", 
+            "DELETE",
+            rut
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Debes desactivar el club antes de eliminarlo."
         )
-
+    set_rut(db, current_user.get("rut_usuario"))
     # Verificar asociaciones activas
     usuarios_asociados = db.query(DetalleUsuarioClub).filter(
         DetalleUsuarioClub.id_club == id_club
@@ -348,9 +423,19 @@ def delete_club(db: Session, id_club: int, current_user: dict):
     ).count()
 
     if usuarios_asociados > 0 or jugadores_asociados > 0:
+        detail="No puedes eliminar un club que aún tiene usuarios o jugadores asociados."
+        rut = cast(str, current_user.get("rut_usuario"))
+        auditoria_errores(
+            db, 
+            "CLUB", 
+            str(id_club), 
+            detail, 
+            "DELETE",
+            rut
+        )
         raise HTTPException(
             status_code=400,
-            detail="No puedes eliminar un club que aún tiene usuarios o jugadores asociados."
+            detail=detail
         )
 
     # Eliminar series primero (por restricción de FK)

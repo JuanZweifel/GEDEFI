@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from app.models import RendimientoPartido, Partido, FichaJugador, Serie
 from app.schemas import RendimientoPartidoUpdate, RendimientoPartidoRead
 from fastapi import HTTPException, status
@@ -38,9 +38,45 @@ def get_rendimientos_partido_club(db: Session, id_club: int, id_partido: int) ->
     return resultado
 
 
-def get_rendimientos_partido(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(RendimientoPartido).offset(skip).limit(limit).all()
+def get_rendimientos_partido(id_partido: int, db: Session, current_user: dict):
 
+    db_partido = db.query(Partido).filter(Partido.id_partido == id_partido)
+    if not db_partido: raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partido no encontrado")
+
+    db_rendimientos = db.query(RendimientoPartido).options(
+        joinedload(RendimientoPartido.ficha_jugador)
+        .joinedload(FichaJugador.serie),
+        joinedload(RendimientoPartido.ficha_jugador)
+        .joinedload(FichaJugador.jugador)
+    )
+
+    if not current_user.get("asociacion"): 
+        id = current_user.get("id_club")
+        db_rendimientos.filter(and_(Serie.id_club == id, RendimientoPartido.id_partido == id_partido))
+    
+    db_rendimientos = db_rendimientos.all()
+
+    rendimientos = []
+
+    for r in db_rendimientos:
+        rendimiento = RendimientoPartidoRead(
+            id_partido=id_partido,
+            rut_jugador=r.rut_jugador,
+            id_serie=r.id_serie,
+            tiempo_jugado=r.tiempo_jugado,
+            goles=int(r.goles),
+            asistencias=r.asistencias,
+            amonestaciones=int(r.amonestaciones),
+            amonestaciones_amarillas=r.amonestaciones_amarillas,
+            amonestaciones_rojas=r.amonestaciones_rojas,
+            primer_nombre=r.ficha_jugador.jugador.primer_nombre,
+            segundo_nombre=r.ficha_jugador.jugador.segundo_nombre,
+            primer_apellido=r.ficha_jugador.jugador.primer_apellido,
+            segundo_apellido=r.ficha_jugador.jugador.segundo_apellido
+        )
+
+        rendimientos.append(rendimiento)
+    return rendimientos
 
 def create_rendimiento_partido(db: Session, id_partido: int) -> bool:
     db_partido = db.query(Partido).filter(Partido.id_partido == id_partido).first()
@@ -91,16 +127,45 @@ def create_rendimiento_partido(db: Session, id_partido: int) -> bool:
 
 
 def update_rendimiento_partido(
-    db: Session, id_partido: int, rut_jugador: str, id_serie: int, rendimiento_update: RendimientoPartidoUpdate
-) -> RendimientoPartido | None:
-    db_rendimiento = get_rendimiento_partido(db, id_partido, rut_jugador, id_serie)
-    if not db_rendimiento:
-        return None
-    for key, value in rendimiento_update.dict(exclude_unset=True).items():
-        setattr(db_rendimiento, key, value)
+    db: Session, current_user:dict, id_partido: int, rendimientos: list[RendimientoPartidoUpdate]
+) -> bool:
+    
+    db_partido = db.query(Partido).options(joinedload(Partido.serie_local), joinedload(Partido.serie_visitante)).filter(Partido.id_partido == id_partido).first()
+
+    if not db_partido: 
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Partido no encontrado"
+        ) 
+    
+    if db_partido.serie_local.id_club == current_user.get("id_club"): serie=db_partido.id_serie_local
+    elif db_partido.serie_visitante.id_club == current_user.get("id_club"):serie=db_partido.id_serie_visitante
+    else: 
+        raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"No tienes permiso para modificar rendimientos de otro club"
+            )
+    for r in rendimientos:
+        db_rend = db.query(RendimientoPartido).filter(
+            RendimientoPartido.id_partido == id_partido,
+            RendimientoPartido.id_serie == serie,
+            RendimientoPartido.rut_jugador == r.rut_jugador
+        ).first()
+
+        if not db_rend:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Rendimiento no encontrado para {r.rut_jugador}"
+            )
+
+        # Actualizar los campos enviados
+        data = r.dict(exclude={"rut_jugador"}, exclude_unset=True)
+
+        for key, value in data.items():
+            setattr(db_rend, key, value)
+
     db.commit()
-    db.refresh(db_rendimiento)
-    return db_rendimiento
+    return True
 
 
 def delete_rendimiento_partido(db: Session, id_partido: int, rut_jugador: str, id_serie: int) -> bool:

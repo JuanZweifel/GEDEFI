@@ -10,9 +10,9 @@ class RendimientoPartido(Base):
     __tablename__ = "RENDIMIENTO_PARTIDO"
 
     tiempo_jugado: Mapped[int] = mapped_column(Integer, nullable=True)
-    goles: Mapped[str] = mapped_column(String(50), nullable=False)
+    goles: Mapped[int] = mapped_column(Integer, nullable=False)
     asistencias: Mapped[int] = mapped_column(Integer, nullable=False)
-    amonestaciones: Mapped[str] = mapped_column(String(300), nullable=True)
+    amonestaciones: Mapped[int] = mapped_column(Integer, nullable=True)
     amonestaciones_amarillas: Mapped[bool] = mapped_column(Boolean, nullable=False)
     amonestaciones_rojas: Mapped[bool] = mapped_column(Boolean, nullable=False)
     id_partido: Mapped[int] = mapped_column(

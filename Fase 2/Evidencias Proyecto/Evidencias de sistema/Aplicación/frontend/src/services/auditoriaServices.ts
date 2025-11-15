@@ -7,6 +7,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
         throw new Error(errorData.detail)
     }
     const data: T = await response.json()
+    console.log(data)
     return data
 }
 

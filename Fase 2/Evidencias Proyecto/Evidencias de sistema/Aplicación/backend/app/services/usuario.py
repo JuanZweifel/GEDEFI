@@ -20,6 +20,7 @@ from app.utils.decorators import handle_db_exceptions, handle_audit
 from fastapi import HTTPException
 from app.services.correo import send_user_deactivated_email
 from datetime import datetime
+from app.utils.auditoria import set_rut
 from typing import Optional
 
 
@@ -125,8 +126,9 @@ def get_usuarios(
         )
 
 
-@handle_audit("CREATE", "USUARIO")
+@handle_db_exceptions
 def create_usuario(db: Session, usuario: UsuarioCreate, current_user: dict) -> Usuario:
+    set_rut(db, current_user.get("rut_usuario"))
     hashed_password = get_password_hash(usuario.pass_usuario)
 
     db_usuario = Usuario(
@@ -167,7 +169,7 @@ def create_usuario(db: Session, usuario: UsuarioCreate, current_user: dict) -> U
         raise HTTPException(status_code=409, detail=detail) from e
 
 
-@handle_audit("UPDATE", "USUARIO")
+@handle_db_exceptions
 def update_usuario(
     db: Session, rut_usu: str, usuario_update: UsuarioUpdate, current_user: dict
 ) -> Usuario | None:
@@ -238,7 +240,7 @@ def update_usuario(
         raise HTTPException(status_code=409, detail=detail) from e
 
 
-@handle_audit("DELETE", "USUARIO")
+@handle_db_exceptions
 def delete_usuario(db: Session, rut_usu: str, current_user: dict) -> bool:
     db_usuario = get_usuario(db, rut_usu, current_user=current_user)
     if not db_usuario:

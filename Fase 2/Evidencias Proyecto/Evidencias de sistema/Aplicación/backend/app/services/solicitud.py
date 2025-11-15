@@ -60,7 +60,7 @@ def get_solicitudes_usuario(
     )
 
 
-@handle_audit("CREATE", "SOLICITUD")
+@handle_db_exceptions
 def create_solicitud(
     db: Session, solicitud_data: SolicitudCreate, current_user: dict
 ) -> Solicitud:
@@ -75,7 +75,7 @@ def create_solicitud(
     return db_solicitud
 
 
-@handle_audit("UPDATE", "SOLICITUD")
+@handle_db_exceptions
 def update_solicitud(
     db: Session,
     id_solicitud: int,
@@ -98,7 +98,7 @@ def update_solicitud(
     return db_solicitud
 
 
-@handle_audit("DELETE", "SOLICITUD")
+@handle_db_exceptions
 def delete_solicitud(db: Session, id_solicitud: int, current_user: dict) -> bool:
     db_solicitud: Solicitud = get_solicitud(db, id_solicitud)
     if not db_solicitud:
