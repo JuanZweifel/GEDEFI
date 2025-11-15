@@ -7,8 +7,8 @@ import { DollarSign, Calendar, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/authContext";
 import { getFas, getUsosFas } from "../services/fasServices";
-import { DialogAddFas, DialogViewFas, DialogEditFas, ButtonDeleteFas } from "../forms/fas-form";
-import { DialogAddUsoFas } from "../forms/usosFasForm";
+import { DialogAddFas, DialogEditFas, ButtonDeleteFas } from "../forms/fas-form";
+import { DialogAddUsoFas, DialogEditUsoFas, ButtonDeleteUsoFas } from "../forms/usosFasForm";
 
 
 // Tipos de datos
@@ -31,6 +31,7 @@ type UsoFas = {
     monto_usado: number;
     descripcion_gasto: string;
     fecha_uso: string;
+    club_nombre: string;
 };
 
 export const FasModule: React.FC = () => {
@@ -60,7 +61,6 @@ export const FasModule: React.FC = () => {
     const fasDelAnioActual = fasList.some(fas => fas.anio_fas === currentYear);
 
 
-
     const fetchFas = async () => {
         if (!token) return;
         try {
@@ -88,25 +88,32 @@ export const FasModule: React.FC = () => {
     };
 
     useEffect(() => {
-        if (token) {
-            if (activeTab === "fondos") {
-                fetchFas();
-            } else if (activeTab === "usos") {
-                fetchUsosFas();
-            }
+        if (!token) return;
+        fetchFas();
+        if (activeTab === "usos") {
+            fetchUsosFas();
         }
-    }, [activeTab]);
+    }, [activeTab, token]);
 
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2>Gestión de Fondo de Ayuda Solidaria (FAS)</h2>
+
                 <div className="flex space-x-2">
-                    {/* Solo muestra el botón si NO existe un FAS del año actual */}
-                    {!fasDelAnioActual && <DialogAddFas refreshFas={fetchFas} />}
-                    <DialogAddUsoFas refreshUsosFas={fetchUsosFas}
-                        fasList={fasList} />
+                    {/* Botón de agregar FAS solo en tab fondos */}
+                    {activeTab === "fondos" && !fasDelAnioActual && (
+                        <DialogAddFas refreshFas={fetchFas} />
+                    )}
+
+                    {/* Botón de agregar Uso solo en tab usos */}
+                    {activeTab === "usos" && (
+                        <DialogAddUsoFas
+                            refreshUsosFas={fetchUsosFas}
+                            fasList={fasList}
+                        />
+                    )}
                 </div>
             </div>
 
@@ -148,7 +155,6 @@ export const FasModule: React.FC = () => {
                                                 })}
                                             </TableCell>
                                             <TableCell className="flex space-x-1">
-                                                <DialogViewFas fas={f} />
                                                 <DialogEditFas
                                                     refreshFas={fetchFas}
                                                     fas={f} />
@@ -172,10 +178,10 @@ export const FasModule: React.FC = () => {
                             <CardTitle>Usos del Fondo (Ayudas entregadas)</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
+                            <Table className="table-fixed">
                                 <TableHeader>
                                     <TableRow>
-                                        {["Jugador", "RUT", "Monto Usado", "Descripción", "Fecha Uso", "Año Fondo"].map((h, i) => (
+                                        {["Jugador", "RUT", "Club", "Monto Usado", "Fecha Uso", "Descripción", "Año Fondo", "Acciones"].map((h, i) => (
                                             <TableHead key={i}>{h}</TableHead>
                                         ))}
                                     </TableRow>
@@ -184,22 +190,40 @@ export const FasModule: React.FC = () => {
                                     {usosList.map((uso) => {
                                         const fondo = fasList.find((f) => f.id_fas === uso.id_fas);
                                         return (
-                                            <TableRow key={uso.id_uso_fas}>
-                                                <TableCell className="flex items-center">
-                                                    <User className="w-4 h-4 mr-1 text-blue-500" />
-                                                    {uso.jugador_nombre}
+                                            <TableRow key={uso.id_uso_fas} className="align-middle">
+                                                <TableCell className="whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        <User className="w-4 h-4 mr-1 text-blue-500" />
+                                                        {uso.jugador_nombre}
+                                                    </div>
                                                 </TableCell>
+
                                                 <TableCell>{uso.rut_jugador}</TableCell>
-                                                <TableCell className="flex items-center">
-                                                    <DollarSign className="w-4 h-4 mr-1 text-green-600" />
-                                                    ${uso.monto_usado.toLocaleString("es-CL")}
+                                                <TableCell>{uso.club_nombre}</TableCell>
+
+                                                <TableCell className="whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        ${uso.monto_usado.toLocaleString("es-CL")}
+                                                    </div>
                                                 </TableCell>
-                                                <TableCell>{uso.descripcion_gasto}</TableCell>
-                                                <TableCell>
-                                                    <Calendar className="w-4 h-4 mr-1 inline" />
+
+                                                <TableCell className="whitespace-nowrap">
                                                     {new Date(uso.fecha_uso).toLocaleDateString("es-CL")}
                                                 </TableCell>
+
+                                                <TableCell className="max-w-[120px] break-words whitespace-normal">
+                                                    {uso.descripcion_gasto}
+                                                </TableCell>
+
                                                 <TableCell>{fondo ? fondo.anio_fas : "-"}</TableCell>
+
+                                                <TableCell className="flex space-x-1">
+                                                    <DialogEditUsoFas uso={uso} refreshUsosFas={fetchUsosFas} />
+                                                    <ButtonDeleteUsoFas
+                                                        id_uso_fas={uso.id_uso_fas}
+                                                        refreshUsosFas={fetchUsosFas}
+                                                    />
+                                                </TableCell>
                                             </TableRow>
                                         );
                                     })}

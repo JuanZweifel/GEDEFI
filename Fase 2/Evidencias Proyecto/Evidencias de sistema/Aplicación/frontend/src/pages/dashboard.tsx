@@ -1,22 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Navigate, NavLink, Routes, useNavigate, Outlet, Route } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Navigate, NavLink, Routes, useNavigate, Route } from 'react-router';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '../components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { LandingPage } from '../components/landing-page';
 import { PlayerDetails } from '../components/player-details';
 import { MeetingsModule } from '../components/meetings-module';
 import { ClubManagement } from '../components/club-management';
-import { AnalyticsModule, FingerprintModule, UserPermissionsModule } from '../components/enhanced-modules';
-import { PenaltiesModule } from '../components/additional-modules';
+import { AnalyticsModule, FingerprintModule } from '../components/enhanced-modules';
 import { AuditModule } from './auditoria.tsx'; //-> SE DEBE REVISAR LA AUDITORIA Y SEPARAR EN UN POSIBLE MODULO DIFERENTE
 import { UsuarioRolModule } from './usuarioRol.tsx'
 import { ClubCoreModule } from './club.tsx'
-import { EnhancedFieldsModule } from '../components/enhanced-fields-module';
 import { useAuth } from '../contexts/authContext.tsx';
-import { Login } from './login.tsx'
-import { ResetPassword } from './reset-password'
 import { CalendarioModule } from './calendario.tsx';
 import { CanchasModule } from './canchas.tsx';
 import { SolicitudesModule } from './solicitudes.tsx';
@@ -24,18 +19,15 @@ import {
     Home,
     Users,
     Settings,
-    Trophy,
     UserPlus,
     Calendar,
     DollarSign,
     BarChart3,
     FileText,
     Fingerprint,
-    AlertTriangle,
     MapPin,
     Shield,
     Menu,
-    Eye,
     Building,
     Activity,
     Archive,
@@ -53,7 +45,6 @@ import { MatchesTrainingModule } from './entrenamiento.tsx';
 import { FasModule } from './fas.tsx';
 import { ComunicadosModule } from './comunicados.tsx';
 import { PartidoCoreModule } from './partidos.tsx';
-
 
 
 // Mock user data with roles
@@ -196,6 +187,18 @@ export default function DashboardComponent() {
 
     const { token, rol, nombre, club_nombre, logout } = useAuth();
 
+    const getInitials = (fullName: string | undefined): string => {
+    if (!fullName) return "?";
+
+    return fullName
+        .trim()
+        .split(" ")
+        .filter(Boolean)
+        .map(n => n[0].toUpperCase())
+        .join("")
+        .slice(0, 2);
+};
+
     // Si no tiene token de login, lo redirecciona a la landing page
     if (!token) {
         return <Navigate to="/" replace />;
@@ -266,6 +269,8 @@ export default function DashboardComponent() {
 
     const ActiveComponent = modules.find(m => m.id === activeModule)?.component || Dashboard;
 
+
+
     // esto lo hice recien (lucho)
     const navigate = useNavigate()
     return (
@@ -278,8 +283,8 @@ export default function DashboardComponent() {
                                 <Shield className="w-5 h-5" />
                             </div>
                             <div>
-                                <h2 className="font-medium">Asociación de Fútbol Caupolicán</h2>
-                                <p className="text-xs text-muted-foreground">{club_nombre ? club_nombre : "Admin"}</p>
+                                <h2 className="font-medium">Asociación de Futbol</h2>
+                                <p className="text-xs text-muted-foreground">Caupolicán Chiguayante</p>
                             </div>
                         </div>
                     </SidebarHeader>
@@ -335,15 +340,17 @@ export default function DashboardComponent() {
                                         <p className="font-medium">{nombre}</p>
                                         <p className="text-xs text-muted-foreground">{club_nombre}</p>
                                     </div>
+
+
+
+
                                     <div className="w-8 h-8 rounded-full bg-[#0000db] text-white flex items-center justify-center">
-                                        {nombre
-                                            ?.split(' ')
-                                            .filter(n => n.length > 0)
-                                            .slice(0, 2)
-                                            .map(n => n[0])
-                                            .join('')
-                                        }
+                                        {getInitials(nombre!)}
                                     </div>
+
+
+
+
                                 </NavLink>
                                 <Button variant="outline" size="sm" onClick={logout}>
                                     Logout

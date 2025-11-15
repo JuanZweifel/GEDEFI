@@ -68,6 +68,7 @@ export type JugadorType = {
     jugador_activo?: boolean;
     fecha_creacion?: string;
     fecha_modificacion?: string;
+    id_club: number;
 };
 
 export type ClubDetailsType = {

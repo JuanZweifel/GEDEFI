@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Edit, Eye, Trash2 } from 'lucide-react';
+import { Edit, Eye, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -145,7 +145,8 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
                     <Button style={{ backgroundColor: "#0000db" }} className="text-white">
-                        + Agregar Lesión
+                        <Plus className="w-4 h-4 mr-2" />
+                        Agregar Lesión
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl">
@@ -184,6 +185,7 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
                                     value={nombreLesion}
                                     onChange={(e) => setNombreLesion(e.target.value)}
                                     required
+                                    minLength={5}
                                 />
                             </div>
 
@@ -225,6 +227,7 @@ export const DialogAddLesion: React.FC<DialogAddLesionProps> = ({ refreshLesione
                                     value={tiempoRecuperacion}
                                     onChange={(e) => setTiempoRecuperacion(e.target.value)}
                                     min={0}
+                                    max={156}
                                 />
                             </div>
 

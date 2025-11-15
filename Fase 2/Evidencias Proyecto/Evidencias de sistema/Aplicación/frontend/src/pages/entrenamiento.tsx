@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
@@ -11,7 +10,7 @@ import { getEntrenamientos } from '../services/entrenamientoServices';
 import { useAuth } from "../contexts/authContext";
 import { toast } from 'sonner';
 import { getSeries } from "../services/serieService";
-import { getClub } from '../services/clubServices';
+import { getClub, getClubs } from '../services/clubServices';
 import { getUsers } from '../services/usuarioService';
 import { getCanchas } from '../services/canchaService';
 import { DialogEditEntrenamiento, DialogViewEntrenamiento, ButtonDeleteEntrenamiento, DialogAddEntrenamiento } from '../forms/entrenamiento-form';
@@ -108,6 +107,16 @@ interface MatchesTrainingModuleProps {
     matchHistory?: HistoryItem[];
 }
 
+type Usuario = {
+    rut_usuario: string;
+    nombre_usuario: string;
+    apellido_usuario: string;
+};
+
+
+type UsersResponse = {
+    items: Usuario[];
+};
 
 
 export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () => {
@@ -115,12 +124,12 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () =>
     const [trainingsFromDB, setTrainingsFromDB] = useState<Training[]>([]);
     const [series, setSeries] = useState<{ id_serie: number; nombre_serie: string; id_club: number }[]>([]);
     const [club, setClub] = useState<{ id_club: number; nombre_club: string } | null>(null);
-    const [users, setUsers] = useState<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>([]);
+    const [users, setUsers] = useState<Usuario[]>([]);
     const [canchas, setCanchas] = useState<{ id_cancha: number; nombre_cancha: string }[]>([]);
     const [trainingPerformanceFromDB, setTrainingPerformanceFromDB] = useState<TrainingPerformance[]>([]);
     const [selectedTrainingId, setSelectedTrainingId] = useState<number | null>(null);
 
-    const { id_club, token } = useAuth();
+    const { id_club, token, admin } = useAuth();
 
     // enrutamiento react router
     const navigate = useNavigate();
@@ -129,71 +138,153 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () =>
 
     //Use effect de ruta dashboard
     useEffect(() => {
-    const path = location.pathname;
+        const path = location.pathname;
 
-    switch (true) {
-        case path === "/dashboard":
-        case path === "/dashboard/":
-            navigate("/dashboard/entrenamientos", { replace: true });
-            setActiveTab("entrenamientos");
-            break;
+        switch (true) {
+            case path === "/dashboard":
+            case path === "/dashboard/":
+                navigate("/dashboard/entrenamientos", { replace: true });
+                setActiveTab("entrenamientos");
+                break;
 
-        case path.includes("rendimiento_entrenamiento"):
-            setActiveTab("rendimiento_entrenamiento");
-            break;
+            case path.includes("rendimiento_entrenamiento"):
+                setActiveTab("rendimiento_entrenamiento");
+                break;
 
-        case path.includes("entrenamientos"):
-            setActiveTab("entrenamientos");
-            break;
+            case path.includes("entrenamientos"):
+                setActiveTab("entrenamientos");
+                break;
 
-        default:
-            navigate("/dashboard/entrenamientos", { replace: true });
-            setActiveTab("entrenamientos");
-            break;
-    }
-}, [location.pathname, navigate]);
+            default:
+                navigate("/dashboard/entrenamientos", { replace: true });
+                setActiveTab("entrenamientos");
+                break;
+        }
+    }, [location.pathname, navigate]);
+
+
+    const limpiarRut = (rut: string) =>
+        rut ? rut.replace(/\./g, "").replace(/-/g, "").toUpperCase() : "";
+
 
     const fetchData = async () => {
-        if (!token || !id_club) return;
+        if (!token) return;
+
+        // 👉 Si NO es admin y NO tiene id_club → no continuar
+        if (!admin && !id_club) return;
 
         try {
-            const rendimientosEntrenamientos = await getRendimientosEntrenamiento<TrainingPerformance[]>(token);
-
             const clubId = Number(id_club);
 
-            const [entrenamientos, seriesData, clubsData, usersData, canchasData, fichasData, jugadoresData] =
-                await Promise.all([
-                    getEntrenamientos<Training[]>(token),
-                    getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token),
+            // 📌 Llamadas comunes para admin y club
+            const [
+                entrenamientos,
+                seriesData,
+                canchasData,
+                fichasData,
+                jugadoresData
+            ] = await Promise.all([
+                getEntrenamientos<Training[]>(token),
+                getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token),
+                getCanchas<{ id_cancha: number; nombre_cancha: string }[]>(token),
+                getFichasPorFiltro<any[]>(token),
+                getJugadores<any[]>(token),
+            ]);
+
+            let clubsData: { id_club: number; nombre_club: string }[] = [];
+
+            if (admin) {
+                const clubsResponse = await getClubs<{
+                    items: { id_club: number; nombre_club: string }[]
+                }>(token);
+
+                clubsData = clubsResponse.items; // <-- ESTE ES EL FIX REAL
+            }
+
+            // 📌 Crear Mapa de clubes
+            const mapaClubs = new Map<number, string>(
+                clubsData.map(c => [c.id_club, c.nombre_club])
+            );
+
+
+            // 📌 Llamadas exclusivas para usuario de club (NO admin)
+            let _clubDataUsuario = null;
+            let usersData: UsersResponse = { items: [] };
+
+            if (!admin) {
+                const [clubDataUsuario, usersDataResponse] = await Promise.all([
                     getClub<{ id_club: number; nombre_club: string }>(clubId, token),
-                    getUsers<{ rut_usuario: string; nombre_usuario: string; apellido_usuario: string }[]>(token),
-                    getCanchas<{ id_cancha: number; nombre_cancha: string }[]>(token),
-                    getFichasPorFiltro<any[]>(token),
-                    getJugadores<any[]>(token),
+                    getUsers<UsersResponse>(token, { club: Number(id_club) }),
                 ]);
 
-            const mergedTrainings = entrenamientos.map((t: any) => {
-                const serie = seriesData.find((s: any) => s.id_serie === t.id_serie);
-                const cancha = canchasData.find((c: any) => c.id_cancha === t.id_cancha);
-                const usuario = usersData.find((u: any) => u.rut_usuario === t.rut_usuario);
-                const jugadoresDeSerie = fichasData.filter((f: any) => f.id_serie === t.id_serie);
-                const totalJugadores = jugadoresDeSerie.length;
+                _clubDataUsuario = clubDataUsuario;
+                usersData = usersDataResponse;
+            } else {
+                // 📌 ADMIN — cargar TODOS los usuarios
+                const allUsers = await getUsers<UsersResponse>(token);
+                usersData = allUsers;
+            }
+
+            // PREPARAR MAPAS PARA ACELERAR BÚSQUEDAS
+            const mapaSeries = new Map(seriesData.map(s => [s.id_serie, s]));
+            const mapaCanchas = new Map(canchasData.map(c => [c.id_cancha, c]));
+            const mapaUsuarios = new Map<string, Usuario>(
+                usersData.items.map((u: Usuario) => [u.rut_usuario, u])
+            );
+
+            const mapaFichasPorSerie = new Map();
+            fichasData.forEach(f => {
+                if (!mapaFichasPorSerie.has(f.id_serie)) mapaFichasPorSerie.set(f.id_serie, 0);
+                mapaFichasPorSerie.set(f.id_serie, mapaFichasPorSerie.get(f.id_serie) + 1);
+            });
+
+            // 1️⃣ FILTRAR ENTRENAMIENTOS
+            let entrenamientosDelClub: Training[] = [];
+
+            if (admin) {
+                entrenamientosDelClub = entrenamientos; // Admin ve todo 👑
+            } else {
+                entrenamientosDelClub = entrenamientos.filter(t => {
+                    const serie = mapaSeries.get(t.id_serie);
+                    return serie?.id_club === clubId;
+                });
+            }
+
+            // 2️⃣ MERGE ENTRENAMIENTOS
+            const mergedTrainings = entrenamientosDelClub.map(t => {
+                const serie = mapaSeries.get(t.id_serie);
+                const cancha = mapaCanchas.get(t.id_cancha);
+
+                const usuario = Array.from(mapaUsuarios.values()).find(
+                    u => limpiarRut(u.rut_usuario) === limpiarRut(t.rut_usuario)
+                );
+
+                const participantes = mapaFichasPorSerie.get(t.id_serie) || 0;
+
+                // ✔ Obtener club real desde el mapa generado arriba
+                const clubRealNombre = serie
+                    ? mapaClubs.get(serie.id_club) || "Sin club"
+                    : "Sin club";
 
                 return {
                     ...t,
                     nombre_serie: serie?.nombre_serie || "Sin serie",
-                    club_nombre: clubsData?.nombre_club || "Sin club",
+                    club_nombre: clubRealNombre,
                     entrenador_nombre: usuario
                         ? `${usuario.nombre_usuario} ${usuario.apellido_usuario}`
                         : "Sin asignar",
                     cancha_nombre: cancha?.nombre_cancha || "Sin cancha",
-                    participantes: totalJugadores,
+                    participantes,
                 };
             });
 
-            const mergedPerformance = rendimientosEntrenamientos.map((r) => {
-                const jugador = jugadoresData.find((j: any) => j.rut_jugador === r.rut_jugador);
-                const entrenamiento = entrenamientos.find((t: any) => t.id_entrenamiento === r.id_entrenamiento);
+
+            // 3️⃣ RENDIMIENTOS
+            const rendimientos = await getRendimientosEntrenamiento<TrainingPerformance[]>(token);
+
+            const mergedPerformance = rendimientos.map(r => {
+                const jugador = jugadoresData.find(j => j.rut_jugador === r.rut_jugador);
+                const entrenamiento = entrenamientos.find(t => t.id_entrenamiento === r.id_entrenamiento);
 
                 return {
                     ...r,
@@ -201,41 +292,53 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () =>
                     segundo_nombre: jugador?.segundo_nombre || "",
                     primer_apellido: jugador?.primer_apellido || "",
                     segundo_apellido: jugador?.segundo_apellido || "",
-                    fecha_entrenamiento: entrenamiento?.fecha_entrenamiento || undefined,
-                    hora_ini: entrenamiento?.hora_ini || undefined,
-                    hora_fin: entrenamiento?.hora_fin || undefined,
+                    fecha_entrenamiento: entrenamiento?.fecha_entrenamiento,
+                    hora_ini: entrenamiento?.hora_ini,
+                    hora_fin: entrenamiento?.hora_fin,
                 };
             });
 
+            // 4️⃣ SET STATES
             setTrainingsFromDB(mergedTrainings);
             setTrainingPerformanceFromDB(mergedPerformance);
             setSeries(seriesData);
-            setClub(clubsData);
-            setUsers(usersData);
+
+            if (!admin) {
+                setUsers(usersData.items as Usuario[]);
+            }
+
             setCanchas(canchasData);
+
         } catch (error) {
             console.error("❌ Error general al cargar datos:", error);
             toast.error("No se pudieron cargar los entrenamientos");
         }
     };
 
-    // ✅ Ejecutar al montar o si cambia el token o id_club
+    // Ejecutar al montar
     useEffect(() => {
-        if (token && id_club) {
-            console.log("🏟️ ID del club desde contexto:", id_club);
+        if (!token) return;
+
+        // 👉 Admin debe cargar SIEMPRE
+        if (admin) {
+            fetchData();
+            return;
+        }
+
+        // 👉 Usuario normal requiere id_club
+        if (id_club) {
             fetchData();
         }
-    }, [token, id_club]);
 
+    }, [token, id_club, admin]);
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2>Gestión de Partidos y Entrenamientos</h2>
                 <div className="flex space-x-2">
-                    <Button className="bg-blue-700 text-white flex items-center">
-                        <Plus className="w-4 h-4 mr-1" /> Nuevo Partido
-                    </Button>
-                    <DialogAddEntrenamiento refreshEntrenamientos={fetchData} />
+                    {activeTab === "entrenamientos" && (
+                        <DialogAddEntrenamiento refreshEntrenamientos={fetchData} />
+                    )}
                 </div>
             </div>
 
@@ -395,14 +498,16 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () =>
                                     {/* 🟠 Entrenamientos individuales */}
                                     {trainingsFromDB.map((t) => (
                                         <SelectItem key={t.id_entrenamiento} value={t.id_entrenamiento.toString()}>
-                                            {t.club_nombre} -{" "}
+                                            {admin && `${t.club_nombre} - `}
+
                                             {t.fecha_entrenamiento
                                                 ? new Date(`${t.fecha_entrenamiento}T00:00:00`).toLocaleDateString("es-CL", {
                                                     day: "2-digit",
                                                     month: "2-digit",
                                                     year: "numeric",
                                                 })
-                                                : "-"}
+                                                : "-"
+                                            }
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

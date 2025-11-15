@@ -22,10 +22,6 @@ type DialogAddFasProps = {
     refreshFas: () => Promise<void>;
 };
 
-type DialogViewFasProps = {
-    fas: Fas;
-};
-
 type DialogEditFasProps = {
     refreshFas: () => Promise<void>;
     fas: Fas;
@@ -71,7 +67,7 @@ export const DialogAddFas: React.FC<DialogAddFasProps> = ({ refreshFas }) => {
                     monto_disponible: Number(montoInicial),
                     descripcion,
                 },
-                token
+                token!
             );
             toast.success("Fondo FAS creado correctamente");
             await refreshFas();
@@ -164,65 +160,6 @@ export const DialogAddFas: React.FC<DialogAddFasProps> = ({ refreshFas }) => {
     );
 };
 // Aqui termina la logica de crear un FAS
-
-
-// aqui comienza la logica de ver un FAS
-export const DialogViewFas: React.FC<DialogViewFasProps> = ({ fas }) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <Eye className="w-4 h-4" />
-                </Button>
-            </DialogTrigger>
-
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Detalles del Fondo FAS</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-3">
-                    <div className="flex flex-col">
-                        <label>Año:</label>
-                        <Input value={fas.anio_fas} disabled />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>Monto Inicial:</label>
-                        <Input value={`$${fas.monto_inicial.toLocaleString("es-CL")}`} disabled />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>Monto Disponible:</label>
-                        <Input value={`$${fas.monto_disponible.toLocaleString("es-CL")}`} disabled />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>Descripción:</label>
-                        <Input value={fas.descripcion || "-"} disabled />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>Fecha de creación:</label>
-                        <Input
-                            value={new Date(fas.fecha_creacion).toLocaleDateString("es-CL")}
-                            disabled
-                        />
-                    </div>
-
-                    <div className="flex justify-end mt-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)}>
-                            Cerrar
-                        </Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-};
-// Aqui comienza la logica de editar un FAS
 
 
 // Aqui comienza la logica de editar un FAS
