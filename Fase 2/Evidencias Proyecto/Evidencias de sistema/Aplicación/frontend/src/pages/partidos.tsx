@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react"
 import { useAuth } from "../contexts/authContext"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { Button } from "../components/ui/button"
-import { Calendar, Edit, Eye, Plus } from "lucide-react"
+import { Calendar, Edit, Eye, FileText, Plus } from "lucide-react"
 import { Badge } from "../components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import type { CanchaType, ClubType, PartidoType, SerieType } from "../types"
@@ -12,12 +12,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { getSeries } from "../services/serieService"
 import { getCanchas } from "../services/canchaService"
 import { DialogHandle } from "../components/dialog-component"
-import { PartidoDetailsForm, PartidoForm } from "../forms/partidoForms.tsx"
+import { CalendarioPartidoForm, PartidoDetailsForm, PartidoForm } from "../forms/partidoForms.tsx"
 import { Loading } from "../components/loading-bar-component.tsx"
 
 
 export const PartidoCoreModule: React.FC = () => {
     const [accion, setAccion] = useState("view")
+    const [openCalendario, setOpenCalendario] = useState<boolean>(false)
+    const [partidoList, setPartidoList] = useState<PartidoType[]>([])
 
 
     const { token, admin } = useAuth();
@@ -26,9 +28,10 @@ export const PartidoCoreModule: React.FC = () => {
     const params = useParams()
 
     useEffect(() => {
+        if (!!admin) fetchPartidos(token)
         const acc = params.accion
         const id = params.id_partido
-        const isInvalid = (!!acc && !["new", "edit", "details"].includes(acc)) ||
+        const isInvalid = (!!acc && !["new", "edit", "details", "calendario"].includes(acc)) ||
             (acc === "edit" && !id)
         if (isInvalid) {
             navigate("/dashboard/partidos/", { replace: true })
@@ -38,6 +41,7 @@ export const PartidoCoreModule: React.FC = () => {
     const getModule = (accion: string) => {
         switch (true) {
             case accion === "view":
+                if (!!openCalendario && partidoList.length > 0) setOpenCalendario(false)
                 return <PartidoListModule token={token} admin={admin} />
             case accion === "new":
                 return <PartidoDialogModule token={token} isEdit={false} closeDialog={handleCloseDialog} />
@@ -45,9 +49,22 @@ export const PartidoCoreModule: React.FC = () => {
                 return <PartidoDialogModule token={token} isEdit={true} closeDialog={handleCloseDialog} />
             case !!params.id_partido && accion === "details":
                 return <PartidoRendimientoModule token={token} closeDialog={handleCloseDialog} isEdit />
+            case params.accion === "calendario":
+                return <CalendarioModule token={token} closeDialog={handleCloseDialog} isEdit />
             default:
                 navigate("/dashboard/partidos/", { replace: true })
                 break
+        }
+    }
+
+    const fetchPartidos = async (token: string | null) => {
+        try {
+            console.log("Hola", partidoList.length
+            )
+            const data = await getPartidos<PartidoType[]>(token);
+            setPartidoList(data);
+        } catch (error) {
+            toast.error(String(error));
         }
     }
 
@@ -63,6 +80,11 @@ export const PartidoCoreModule: React.FC = () => {
                     <Button style={{ backgroundColor: '#0000db' }} className="text-white" onClick={() => navigate('/dashboard/partidos/new')}>
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Partido
+                    </Button>
+
+                    <Button style={{ backgroundColor: '#0000db' }} className="text-white" onClick={() => navigate('/dashboard/partidos/calendario')}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Crear calendario
                     </Button>
                 </div>
             </div>
@@ -113,6 +135,7 @@ const PartidoListModule: React.FC<PropsPartidoType> = ({ token, admin }) => {
             setPartidoList(data);
             setIsLoading(100)
         } catch (error) {
+            setIsLoading(100)
             toast.error(String(error));
         }
     }
@@ -150,7 +173,14 @@ const PartidoListModule: React.FC<PropsPartidoType> = ({ token, admin }) => {
     return (
         <>
             {isLoading < 100 && <Loading isLoading={isLoading} component="Modulo de partidos" />}
-            {isLoading === 100 &&
+            {isLoading === 100 && partidoList.length === 0 &&
+                <div className="text-center py-8 text-gray-500 col-span-2">
+                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No hay partidos registrados</p>
+                </div>
+
+            }
+            {isLoading === 100 && partidoList.length > 0 &&
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -254,7 +284,7 @@ const PartidoDialogModule: React.FC<PropsPartidoFormType> = ({ token, isEdit, cl
             open={isDialogOpen}
             onOpenChange={closeDialog}
         >
-            {() => !!isEdit ? <PartidoForm isEdit={isEdit} onSuccess={closeDialog} partido={partido} /> : <PartidoForm isEdit={isEdit} onSuccess={closeDialog} />}
+            {() => !!isEdit ? <PartidoForm token={token} isEdit={isEdit} onSuccess={closeDialog} partido={partido} /> : <PartidoForm token={token} isEdit={isEdit} onSuccess={closeDialog} />}
         </DialogHandle>
     )
 }
@@ -290,6 +320,27 @@ const PartidoRendimientoModule: React.FC<PropsPartidoFormType> = ({ token, close
             onOpenChange={closeDialog}
         >
             {() => <PartidoDetailsForm partido={partido} onSuccess={closeDialog} token={token} />}
+        </DialogHandle>
+    )
+}
+
+const CalendarioModule: React.FC<PropsPartidoFormType> = ({ token, closeDialog }) => {
+    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(true)
+
+    const handleOpenChange = (open: boolean) => {
+        setIsDialogOpen(open)
+        closeDialog(open)
+    }
+
+    return (
+        <DialogHandle
+            title="Crear calendario"
+            size="w-auto"
+            trigger={<div />}
+            open={isDialogOpen}
+            onOpenChange={handleOpenChange}
+        >
+            {() => <CalendarioPartidoForm token={token} onSuccess={handleOpenChange} />}
         </DialogHandle>
     )
 }

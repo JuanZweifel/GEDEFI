@@ -381,7 +381,7 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                     {isLoading === 100 && clubList.length === 0 &&
                         <div className="text-center py-8 text-gray-500 col-span-2">
                             <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>No se encontraron clubs que coincidan con la busqueda.</p>
+                            <p>{searchTerm === "" && selectedEstado !== null ? "No hay clubs registrados" : "No se encontraron clubs que coincidan con la busqueda."}</p>
                         </div>
                     }
                 </div>

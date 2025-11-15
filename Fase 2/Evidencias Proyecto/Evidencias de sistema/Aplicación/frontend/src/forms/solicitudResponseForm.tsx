@@ -7,6 +7,14 @@ import { toast } from "sonner";
 import { useAuth } from "../contexts/authContext";
 import { respondSolicitud } from "../services/solicitudService";
 
+
+const categorias = [
+    { id: 1, name: "Solicitud de Permiso" },
+    { id: 2, name: "Cambio de Horario" },
+    { id: 3, name: "Actualización de Datos" },
+    { id: 4, name: "Otros" },
+];
+
 type Solicitud = {
     id_solicitud: number;
     categoria: string;
@@ -63,7 +71,9 @@ export function SolicitudResponseForm({
         <form onSubmit={handleAlert} className="space-y-4">
             <div>
                 <label className="block text-sm font-medium mb-1">Categoría</label>
-                <p className="border rounded p-2 bg-gray-100">{solicitud.categoria}</p>
+                <p className="border rounded p-2 bg-gray-100">
+                    {categorias.find(c => c.id === Number(solicitud.categoria))?.name || "Sin categoría"}
+                </p>
             </div>
 
             <div>

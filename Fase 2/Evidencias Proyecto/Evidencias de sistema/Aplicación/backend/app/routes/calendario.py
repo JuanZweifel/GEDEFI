@@ -54,6 +54,8 @@ def generate_calendar(
 
     except Exception as e:
         db.rollback()
+        print("error calendario")
+        print(e)
         raise HTTPException(
             status_code=500, detail=f"Error al crear el calendario: {e}"
         )
