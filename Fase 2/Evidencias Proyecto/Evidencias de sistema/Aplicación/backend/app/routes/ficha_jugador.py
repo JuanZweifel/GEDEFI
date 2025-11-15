@@ -27,8 +27,12 @@ def read_fichas_jugador(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    # 🔹 CASO 1: ADMINISTRADOR → devuelve todas las fichas
-    if current_user["rol"] == "Administrador":
+    print("\n📌 RUTA FICHAS")
+    print("👤 USER:", current_user)
+
+    # 🔹 CASO 1: ASOCIACIÓN → devuelve todas las fichas
+    if current_user.get("asociacion", False):
+        print("🟢 USUARIO ASOCIACIÓN → TODAS LAS FICHAS")
         return (
             db.query(models.FichaJugador)
             .offset(skip)
@@ -36,8 +40,14 @@ def read_fichas_jugador(
             .all()
         )
 
-    # 🔹 CASO 2: USUARIO DE CLUB → devuelve solo sus fichas
-    id_club = current_user["id_club"]
+    # 🔹 CASO 2: USUARIO DE CLUB → devuelve solo su club
+    id_club = current_user.get("id_club")
+
+    if not id_club:
+        print("⚠️ USUARIO SIN CLUB → RETORNANDO VACÍO")
+        return []
+
+    print(f"🏟️ FILTRANDO POR CLUB DEL TOKEN → {id_club}")
 
     # Obtener ruts asociados al club
     ruts_club = (
@@ -46,10 +56,14 @@ def read_fichas_jugador(
         .all()
     )
 
-    # Convertir tuplas → lista simple
+    print("🧾 RUTS EN EL CLUB:", ruts_club)
+
     ruts_club = [r[0] for r in ruts_club]
 
-    # Obtener solo fichas de esos jugadores
+    if not ruts_club:
+        print("⚠️ NO HAY JUGADORES EN ESTE CLUB")
+        return []
+
     fichas = (
         db.query(models.FichaJugador)
         .filter(models.FichaJugador.rut_jugador.in_(ruts_club))
@@ -57,6 +71,8 @@ def read_fichas_jugador(
         .limit(limit)
         .all()
     )
+
+    print("📄 FICHAS OBTENIDAS:", fichas)
 
     return fichas
 

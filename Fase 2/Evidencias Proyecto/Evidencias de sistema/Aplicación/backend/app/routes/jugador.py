@@ -29,8 +29,13 @@ def read_jugador(rut_jugador: str, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[schemas.JugadorRead])
-def read_jugadores(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return services.get_jugadores(db, skip=skip, limit=limit)
+def read_jugadores(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    return services.get_jugadores(db, current_user, skip=skip, limit=limit)
 
 
 @router.put("/{rut_jugador}", response_model=schemas.JugadorRead)

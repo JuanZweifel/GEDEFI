@@ -57,7 +57,7 @@ def read_lesiones(
     current_user: dict = Depends(get_current_user)
 ):
 
-    if current_user["rol"] == "Administrador":
+    if current_user.get("asociacion", False):
         return (
             db.query(Lesion)
             .offset(skip)
@@ -65,17 +65,25 @@ def read_lesiones(
             .all()
         )
 
-    ruts_club = (
+    id_club_usuario = current_user.get("id_club")
+
+    if not id_club_usuario:
+        return []
+
+    ruts = (
         db.query(DetalleClubJugador.rut_jugador)
-        .filter(DetalleClubJugador.id_club == current_user["id_club"])
+        .filter(DetalleClubJugador.id_club == id_club_usuario)
         .all()
     )
 
-    ruts_club = [r[0] for r in ruts_club]
+    ruts = [rut for (rut,) in ruts]
+
+    if not ruts:
+        return []  
 
     lesiones = (
         db.query(Lesion)
-        .filter(Lesion.rut_jugador.in_(ruts_club))
+        .filter(Lesion.rut_jugador.in_(ruts))
         .offset(skip)
         .limit(limit)
         .all()

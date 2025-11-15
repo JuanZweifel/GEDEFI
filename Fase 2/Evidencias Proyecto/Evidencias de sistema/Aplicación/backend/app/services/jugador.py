@@ -3,7 +3,7 @@ from app.models import Jugador, DetalleClubJugador, FichaJugador, UsoFas, Rendim
 from app.schemas import JugadorCreate, JugadorUpdate
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
-from app.utils.decorators import handle_audit, handle_db_exceptions
+from app.utils.decorators import  handle_db_exceptions
 from datetime import date, datetime
 
 # TODO: Aplicar auth security para poder implementar auditoria
@@ -11,8 +11,26 @@ def get_jugador(db: Session, rut_jugador: str) -> Jugador | None:
     return db.query(Jugador).filter(Jugador.rut_jugador == rut_jugador).first()
 
 
-def get_jugadores(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Jugador).offset(skip).limit(limit).all()
+def get_jugadores(db: Session, current_user: dict, skip: int = 0, limit: int = 100):
+
+    query = db.query(Jugador)
+
+    if not current_user.get("asociacion", False):
+
+        id_club_usuario = current_user.get("id_club")
+        
+
+        if id_club_usuario:
+            query = (
+                query.join(
+                    DetalleClubJugador,
+                    DetalleClubJugador.rut_jugador == Jugador.rut_jugador
+                )
+                
+                .filter(DetalleClubJugador.id_club == id_club_usuario)
+            )
+
+    return query.offset(skip).limit(limit).all()
 
 
 def create_jugador(db: Session, jugador: JugadorCreate) -> Jugador:
@@ -23,10 +41,6 @@ def create_jugador(db: Session, jugador: JugadorCreate) -> Jugador:
             status_code=409,
             detail="El RUT ingresado ya se encuentra registrado"
         )
-
-    # ============================
-    # Validación FECHA DE NACIMIENTO
-    # ============================
 
     fecha_raw = jugador.fecha_nacimiento
 

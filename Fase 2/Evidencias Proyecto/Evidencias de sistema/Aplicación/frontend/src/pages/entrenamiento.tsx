@@ -198,7 +198,16 @@ export const MatchesTrainingModule: React.FC<MatchesTrainingModuleProps> = () =>
                     items: { id_club: number; nombre_club: string }[]
                 }>(token);
 
-                clubsData = clubsResponse.items; // <-- ESTE ES EL FIX REAL
+                clubsData = clubsResponse.items;
+            } else if (id_club) {
+                const clubResponse = await getClub<{ id_club: number; nombre_club: string }>(id_club, token);
+
+                clubsData = [
+                    {
+                        id_club: clubResponse.id_club,
+                        nombre_club: clubResponse.nombre_club,
+                    }
+                ];
             }
 
             // 📌 Crear Mapa de clubes

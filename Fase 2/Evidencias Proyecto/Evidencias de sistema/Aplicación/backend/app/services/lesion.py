@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import Lesion
+from app.models import Lesion, DetalleClubJugador
 from app.schemas import LesionCreate, LesionUpdate
 from app.models import Jugador
 from fastapi import HTTPException
@@ -9,8 +9,38 @@ def get_lesion(db: Session, lesion_id: int) -> Lesion | None:
     return db.query(Lesion).filter(Lesion.id_lesion == lesion_id).first()
 
 
-def get_lesiones(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Lesion).offset(skip).limit(limit).all()
+def get_lesiones(db: Session, current_user: dict, skip: int = 0, limit: int = 100):
+    print("📌 USUARIO LOGEADO:", current_user)
+
+    query = db.query(Lesion)
+
+    # Si NO es asociación => filtrar por club
+    if not current_user.get("asociacion", False):
+        id_club_usuario = current_user.get("id_club")
+
+        print("📌 ES USER DE CLUB:", True)
+        print("📌 ID CLUB DEL TOKEN:", id_club_usuario)
+
+        if id_club_usuario:
+            print("📌 FILTRANDO POR CLUB:", id_club_usuario)
+
+            query = (
+                query.join(
+                    DetalleClubJugador,
+                    DetalleClubJugador.rut_jugador == Lesion.rut_jugador
+                )
+                .filter(DetalleClubJugador.id_club == id_club_usuario)
+            )
+        else:
+            print("⚠️ TOKEN SIN ID_CLUB! NO FILTRA!")
+
+    else:
+        print("📌 ES ADMIN, NO FILTRA")
+
+    lesiones = query.offset(skip).limit(limit).all()
+
+    print("📌 LESIONES RETORNADAS:", len(lesiones))
+    return lesiones
 
 
 def create_lesion(db: Session, lesion: LesionCreate) -> Lesion:

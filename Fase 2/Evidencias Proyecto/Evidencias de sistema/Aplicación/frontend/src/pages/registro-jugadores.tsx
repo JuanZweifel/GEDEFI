@@ -6,12 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Trash2, Search, History, FileText, AlertCircle, CheckCircle, Upload, X, Plus } from 'lucide-react';
-import { getJugadores, uploadExcel, getLesiones, } from '../services/jugadoresService';
-import { getDetallesClubJugador } from '../services/detalleClubJugadorService';
-import { getClub, getClubs } from '../services/clubServices';
-import { getFichasPorFiltro } from '../services/fichaJugadorService'
-import { getSeries } from '../services/serieService';
+import { Trash2, Search, History, FileText, AlertCircle, CheckCircle, Upload, X } from 'lucide-react';
+import { getJugadores, uploadExcel, getLesiones } from '../services/jugadoresService';
+import { getClub, getClubs } from '../services/clubServices.ts';
+import { getSeries } from '../services/serieService.ts';
 import { AlertDialogHandle } from '../components/alert-dialog-component';
 import { toast } from "sonner";
 import { useAuth } from '../contexts/authContext';
@@ -20,6 +18,7 @@ import { DialogAddLesion, DialogEditLesion, DialogViewLesion, ButtonDeleteLesion
 import { DialogEditFichaJugador, DialogViewFichaJugador, DialogDeleteFichaJugador } from '../forms/ficha-jugador-form';
 import { Input } from '../components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { getFichasPorFiltro } from '../services/fichaJugadorService.ts';
 
 // Exportaciones de type
 import type { UploadExcelProps, JugadorType } from "../types.tsx"
@@ -210,6 +209,7 @@ export const RegistroJugadoresModule: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedClubFilter, setSelectedClubFilter] = useState<string>("ALL");
     const [mapaJugadorClub, setMapaJugadorClub] = useState<Map<string, number>>(new Map());
+    const [isLoading, setIsLoading] = useState(true)
 
 
     // enrutamiento react router
@@ -243,8 +243,10 @@ export const RegistroJugadoresModule: React.FC = () => {
 
 
     const fetchJugadores = async (): Promise<JugadorType[]> => {
+        if (!token) return [];
+
         try {
-            const data = await getJugadores<JugadorType[]>();
+            const data = await getJugadores<JugadorType[]>(token);
             return data;
         } catch (error) {
             console.error("Error al obtener jugadores:", error);
@@ -252,109 +254,123 @@ export const RegistroJugadoresModule: React.FC = () => {
         }
     };
 
-    // 🔹 Obtener lesiones
+    useEffect(() => {
+        if (!token) return;
+
+        fetchJugadores().then((res) => {
+            setPlayers(res);
+        });
+    }, [token, admin, id_club]);
+
+
+
     const fetchLesiones = async (): Promise<void> => {
-        if (!token) {
-            console.log("❌ NO HAY TOKEN TODAVÍA");
-            return;
-        }
+        if (!token) return;
 
         try {
-            const todasLasLesiones = await getLesiones<any[]>(token)
-            if (admin) {
-                setInjuries(todasLasLesiones);
-                return;
-            }
-            if (id_club) {
-                const detalles: any[] = await getDetallesClubJugador<any[]>(token);
-                const detallesDelClub = detalles.filter(d => Number(d.id_club) === Number(id_club));
-                const jugadoresIds = [...new Set(detallesDelClub.map(d => d.rut_jugador))]
-                const lesionesDelClub = todasLasLesiones.filter(l =>
-                    jugadoresIds.includes(l.rut_jugador)
-                );
-                setInjuries(lesionesDelClub);
-                return;
-            }
+            // EL BACKEND YA FILTRA SOLO
+            const data = await getLesiones<any[]>(token);
+            setInjuries(data);
         } catch (error) {
             console.error("Error cargando lesiones:", error);
         }
     };
 
-    // 🔹 Obtener clubes
-    const fetchClubs = async () => {
-        if (!token) return;
-
-        try {
-            // CASO 1 — ADMIN: trae todos los clubes
-            if (admin === true) {
-                const data = await getClubs<any>(token);
-
-                console.log("🟦 Respuesta completa BACKEND:", data);
-
-                // data.items → es la lista real
-                const mapped = data.items.map((c: any) => ({
-                    id_club: c.id_club,
-                    nombre: c.nombre_club,
-                }));
-
-                setClubs(mapped);
-                console.log("✅ Clubes ADMIN cargados:", mapped);
-                return;
-            }
-
-            // CASO 2 — USUARIO DE CLUB: trae solo su club
-            if (id_club) {
-                const data = await getClub<any>(id_club, token);
-
-                const mapped = [{
-                    id_club: data.id_club,
-                    nombre: data.nombre_club,
-                }];
-
-                setClubs(mapped);
-                console.log("✅ Club del usuario cargado:", mapped);
-                return;
-            }
-
-            console.warn("⚠️ id_club es null para usuario de club");
-
-        } catch (error) {
-            console.error("❌ Error al obtener clubes:", error);
-        }
-    };
-
-    // 🔹 Obtener todas las series (sin filtrar)
-    const fetchSeries = async () => {
-        try {
-            const data = await getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token);
-            setAllSeries(data);
-        } catch (error) {
-            console.error("Error al obtener series:", error);
-        }
-    };
-
-
     useEffect(() => {
         if (!token) return;
         fetchLesiones();
+    }, [token]);
+
+
+    const buscarFichas = async () => {
+        if (!token) return;
+
+        try {
+            const params = new URLSearchParams();
+
+            if (selectedSerie) {
+                params.append("id_serie", selectedSerie);
+            }
+
+            // sólo los admin pueden filtrar por club
+            if (admin && selectedClub) {
+                params.append("id_club", selectedClub);
+            }
+
+            const data = await getFichasPorFiltro<any[]>(token);
+
+            setFichas(data);
+
+        } catch (error) {
+            console.error("Error al obtener fichas:", error);
+            setFichas([]);
+        }
+    };
+
+    const fetchClubs = async () => {
+        console.log("sdazfsfdgsfhgsdfhsdfhbdfhgdfsdf")
+        if (!token) return;
+
+        try {
+            if (admin) {
+                const data = await getClubs<any>(token);
+                setClubs(data.items);
+            } else if (id_club) {
+                const data = await getClub<any>(id_club, token);
+
+                setClubs([
+                    {
+                        id_club: data.id_club,
+                        nombre: data.nombre_club,
+                    },
+                ]);
+            }
+            if (!admin && id_club) {
+                console.log("dfsadfsdfsdfsdfs")
+                setSelectedClub(id_club.toString());
+            }
+        } catch (error) {
+            console.error("Error al obtener clubes:", error);
+        }
+        finally {
+            setIsLoading(false)
+        }
+    };
+
+    useEffect(() => {
+        if (!token) return;
+        fetchClubs();
     }, [token, admin, id_club]);
 
 
-    useEffect(() => {
-        if (token) {
-            fetchSeries();
-            fetchClubs();
 
-            fetchJugadoresPorClub().then((res) => {
-                console.log("👇 SETEANDO PLAYERS:", res);
-                setPlayers(res);
-            });
+
+    const fetchSeries = async () => {
+        if (!token) return;
+
+        try {
+            const data = await getSeries<{
+                id_serie: number;
+                nombre_serie: string;
+                id_club: number;
+            }[]>(token);
+
+            setAllSeries(data);
+        } catch (err) {
+            console.error("Error al obtener series:", err);
         }
-    }, [id_club, token, admin]);
+    };
 
 
     useEffect(() => {
-        // Caso 1 — ADMIN selecciona un club manualmente
+        if (!token) return;
+        fetchSeries();
+    }, [token]);
+
+    useEffect(() => {
+        if (!clubs.length) return;
+
+        // ADMIN → serie depende del club seleccionado
         if (admin && selectedClub) {
             const filtered = allSeries
                 .filter(s => s.id_club === Number(selectedClub))
@@ -366,13 +382,9 @@ export const RegistroJugadoresModule: React.FC = () => {
             setSeries(filtered);
             return;
         }
-        // Caso 2 — USUARIO DE CLUB (selectedClub viene del token)
-        if (!admin && id_club && allSeries.length > 0) {
-            // Forzar selectedClub para usuario de club
-            if (!selectedClub) {
-                setSelectedClub(String(id_club));
-            }
 
+        // USUARIO DE CLUB
+        if (!admin && id_club) {
             const filtered = allSeries
                 .filter(s => s.id_club === Number(id_club))
                 .map(s => ({
@@ -381,21 +393,18 @@ export const RegistroJugadoresModule: React.FC = () => {
                 }));
 
             setSeries(filtered);
+
+            // si no hay serie ya elegida, limpia
+            if (!selectedSerie) {
+                setSelectedSerie(null);
+            }
+
             return;
         }
 
-        // Caso sin club seleccionado
+        // Caso sin club aún
         setSeries([]);
     }, [admin, selectedClub, id_club, allSeries]);
-
-
-    useEffect(() => {
-        if (!busquedaRealizada) return;
-        if (!selectedSerie) return;
-
-        console.log("🔁 Re-ejecutando buscarFichas() tras cambios…");
-        buscarFichas();
-    }, [selectedSerie, selectedClub, id_club]);
 
 
     // 🔹 Filtrado historial
@@ -410,102 +419,6 @@ export const RegistroJugadoresModule: React.FC = () => {
     const totalExitosos = uploadHistory.filter(item => item.status === 'success').length;
     const totalErrores = uploadHistory.filter(item => item.status === 'error').length;
 
-    // 🔹 Buscar fichas
-    const buscarFichas = async () => {
-        if (!selectedSerie) {
-            alert("Seleccione una serie antes de buscar");
-            return;
-        }
-
-        if (!token) return;
-
-        try {
-            // Backend = Admin → TODAS ; Club → solo su club
-            const data = await getFichasPorFiltro<any[]>(token);
-
-            // Añadimos id_club a cada ficha usando allSeries
-            const fichasConClub = data.map(ficha => {
-                const serie = allSeries.find(s => s.id_serie === ficha.id_serie);
-                return { ...ficha, id_club: serie?.id_club };
-            });
-
-            // ⭐ FILTRO PRINCIPAL
-            const filtered = fichasConClub.filter(ficha => {
-                const coincideSerie = ficha.id_serie === Number(selectedSerie);
-
-                // ⭐ ADMIN → puede filtrar por selectedClub
-                if (admin) {
-                    const coincideClubAdmin = selectedClub
-                        ? ficha.id_club === Number(selectedClub)
-                        : true; // si no elige club, no filtra por club
-
-                    return coincideSerie && coincideClubAdmin;
-                }
-
-                // ⭐ USUARIO DE CLUB → solo su club
-                if (id_club) {
-                    const coincideClubUsuario = ficha.id_club === Number(id_club);
-                    return coincideSerie && coincideClubUsuario;
-                }
-
-                return coincideSerie;
-            });
-
-            setFichas(filtered);
-
-        } catch (error) {
-            console.error("Error al obtener fichas:", error);
-            setFichas([]);
-            alert("Error al filtrar las fichas");
-        }
-    };
-
-    // Filtrar jugadores por club del usuario logeado
-    const fetchJugadoresPorClub = async (): Promise<JugadorType[]> => {
-        if (!token) return [];
-
-        try {
-            console.log("🔵 Ejecutando fetchJugadoresPorClub...");
-
-            const todosLosJugadores = await fetchJugadores();
-            console.log("👥 Jugadores:", todosLosJugadores);
-
-            const detalles: any[] = await getDetallesClubJugador<any[]>(token);
-            console.log("🟣 Detalles club-jugador:", detalles);
-
-            const mapa = new Map(detalles.map(det => [det.rut_jugador, Number(det.id_club)]));
-            console.log("🗺️ Mapa jugador → club:", mapa);
-
-            setMapaJugadorClub(mapa);
-
-            if (admin) {
-                console.log("🟢 ADMIN → retornando todos");
-                return todosLosJugadores;
-            }
-
-            if (id_club) {
-                const clubId = Number(id_club);
-                const jugadoresDelClub = todosLosJugadores.filter(
-                    (j) => mapa.get(j.rut_jugador) === clubId
-                );
-
-                console.log("🏆 Jugadores filtrados por club:", jugadoresDelClub);
-                return jugadoresDelClub;
-            }
-
-            return [];
-
-        } catch (error) {
-            console.error("❌ ERROR en fetchJugadoresPorClub:", error);
-            return [];
-        }
-    };
-
-
-
-
-
-
 
     return (
         <div className="space-y-6">
@@ -517,7 +430,7 @@ export const RegistroJugadoresModule: React.FC = () => {
                             {!admin && (
                                 <UploadExcel
                                     refreshJugadores={async () => {
-                                        const updatedPlayers = await fetchJugadoresPorClub();
+                                        const updatedPlayers = await fetchJugadores();
                                         setPlayers(updatedPlayers);
                                     }}
                                     onUploadComplete={(result) => setUploadHistory(result)}
@@ -537,10 +450,12 @@ export const RegistroJugadoresModule: React.FC = () => {
                             )}
 
                             {!admin && (
-                                <DialogAddJugador refreshJugadores={async () => {
-                                    const updatedPlayers = await fetchJugadoresPorClub();
-                                    setPlayers(updatedPlayers);
-                                }} />
+                                <DialogAddJugador
+                                    refreshJugadores={async () => {
+                                        const updatedPlayers = await fetchJugadores();
+                                        setPlayers(updatedPlayers);
+                                    }}
+                                />
                             )}
                         </>
                     )}
@@ -813,7 +728,7 @@ export const RegistroJugadoresModule: React.FC = () => {
                                                             <DialogEditJugador
                                                                 jugador={player}
                                                                 refreshJugadores={async () => {
-                                                                    const updatedPlayers = await fetchJugadoresPorClub();
+                                                                    const updatedPlayers = await fetchJugadores();
                                                                     setPlayers(updatedPlayers);
                                                                 }}
                                                             />
@@ -824,7 +739,7 @@ export const RegistroJugadoresModule: React.FC = () => {
                                                                 primerNombre={player.primer_nombre}
                                                                 primerApellido={player.primer_apellido}
                                                                 refreshJugadores={async () => {
-                                                                    const updatedPlayers = await fetchJugadoresPorClub();
+                                                                    const updatedPlayers = await fetchJugadores();
                                                                     setPlayers(updatedPlayers);
                                                                 }}
                                                             />
@@ -969,9 +884,8 @@ export const RegistroJugadoresModule: React.FC = () => {
 
                         <CardContent>
                             <div className="space-y-4">
-                                {/* 🔹 Filtros */}
+                                {/* 🔹 Filtro de búsqueda */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                    {/* Input de búsqueda por RUT o Nombre */}
                                     <Input
                                         type="text"
                                         placeholder="Buscar ficha por nombre o RUT..."
@@ -981,31 +895,35 @@ export const RegistroJugadoresModule: React.FC = () => {
                                     />
                                 </div>
 
+                                {/* 🔹 Selectores */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                    {/* Selección de Club (preseleccionado y deshabilitado) */}
-                                    <Select
-                                        value={selectedClub}
-                                        onValueChange={setSelectedClub}
-                                        disabled={!admin}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Seleccionar Club" />
-                                        </SelectTrigger>
 
-                                        <SelectContent>
-                                            {clubs.map((club) => (
-                                                <SelectItem key={club.id_club} value={club.id_club.toString()}>
-                                                    {club.nombre}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    {/* Selección de Club (solo admin) */}
+                                    {!isLoading &&
+                                        <Select
+                                            value={selectedClub}
+                                            onValueChange={setSelectedClub}
+                                            disabled={!admin}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccionar Club" />
+                                            </SelectTrigger>
+
+                                            <SelectContent>
+                                                {clubs.map((club) => (
+                                                    <SelectItem key={club.id_club} value={club.id_club.toString()}>
+                                                        {club.nombre}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    }
 
                                     {/* Selección de Serie */}
                                     <Select
                                         value={selectedSerie || ""}
                                         onValueChange={setSelectedSerie}
-                                        disabled={!selectedClub}   // se habilita solo si ya hay club
+                                        disabled={!admin && !id_club} // solo avanza si hay club
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Seleccionar Serie" />
@@ -1020,13 +938,13 @@ export const RegistroJugadoresModule: React.FC = () => {
                                         </SelectContent>
                                     </Select>
 
-                                    {/* Botón de búsqueda */}
+                                    {/* Botón Buscar */}
                                     <Button
                                         style={{ backgroundColor: '#0000db' }}
                                         className="text-white"
                                         onClick={() => {
                                             setBusquedaRealizada(true);
-                                            buscarFichas();
+                                            buscarFichas(); // 🔥 ahora solo consulta back
                                         }}
                                         disabled={!selectedSerie}
                                     >
@@ -1035,7 +953,7 @@ export const RegistroJugadoresModule: React.FC = () => {
                                     </Button>
                                 </div>
 
-                                {/* 🔹 Tabla de fichas o mensajes */}
+                                {/* 🔹 Tabla o mensaje */}
                                 {fichas.length > 0 ? (
                                     <div className="overflow-auto border rounded-lg">
                                         <Table>
@@ -1049,15 +967,20 @@ export const RegistroJugadoresModule: React.FC = () => {
                                                     <TableHead>Acciones</TableHead>
                                                 </TableRow>
                                             </TableHeader>
+
                                             <TableBody>
                                                 {fichas
                                                     .filter(ficha => {
+                                                        if (!searchTerm) return true;
+
                                                         const jugador = players.find(j => j.rut_jugador === ficha.rut_jugador);
                                                         const fullName = jugador
                                                             ? `${jugador.primer_nombre} ${jugador.segundo_nombre || ''} ${jugador.primer_apellido} ${jugador.segundo_apellido || ''}`.toLowerCase()
                                                             : '';
+
                                                         const rut = ficha.rut_jugador.toLowerCase();
                                                         const term = searchTerm.toLowerCase();
+
                                                         return fullName.includes(term) || rut.includes(term);
                                                     })
                                                     .map(ficha => {
@@ -1083,20 +1006,17 @@ export const RegistroJugadoresModule: React.FC = () => {
                                                                         <DialogEditFichaJugador
                                                                             ficha={ficha}
                                                                             refreshFichas={buscarFichas}
-                                                                            jugador={players.find(j => j.rut_jugador === ficha.rut_jugador)}
+                                                                            jugador={jugador}
                                                                         />
                                                                         <DialogViewFichaJugador
                                                                             ficha={ficha}
-                                                                            jugador={players.find(j => j.rut_jugador === ficha.rut_jugador)}
+                                                                            jugador={jugador}
                                                                         />
                                                                         <DialogDeleteFichaJugador
                                                                             fichaRut={ficha.rut_jugador}
                                                                             fichaIdSerie={ficha.id_serie}
                                                                             refreshFichas={buscarFichas}
                                                                         />
-
-
-
                                                                     </div>
                                                                 </TableCell>
                                                             </TableRow>
@@ -1111,7 +1031,7 @@ export const RegistroJugadoresModule: React.FC = () => {
                                         <p>
                                             {!busquedaRealizada
                                                 ? "Seleccione una serie para ver las fichas de jugadores"
-                                                : "No hay fichas para la serie seleccionada, vuelva a seleccionar una serie"}
+                                                : "No hay fichas para la serie seleccionada"}
                                         </p>
                                     </div>
                                 )}
@@ -1120,9 +1040,6 @@ export const RegistroJugadoresModule: React.FC = () => {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="historial" className="space-y-4">
-                    <p>HISTORIAL</p>
-                </TabsContent>
             </Tabs>
         </div >
     )
