@@ -40,7 +40,7 @@ class Partido(Base):
         default=TipoPartidoEnum.CAMPEONATO,
         nullable=False,
     )
-    observaciones: Mapped[str] = mapped_column(String, nullable=False)
+    observaciones: Mapped[str] = mapped_column(String(500), nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
