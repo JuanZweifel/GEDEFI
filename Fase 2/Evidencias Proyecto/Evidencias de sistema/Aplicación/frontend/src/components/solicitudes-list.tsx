@@ -67,6 +67,8 @@ export default function SolicitudesList({
     (s) => String(s.id_solicitud) === id
   );
 
+  console.log("selectedSolicitud:", selectedSolicitud);
+
   const openDetail = (solicitud: any) => navigate(`/dashboard/solicitudes/${solicitud.id_solicitud}`);
   const openResponder = (solicitud: any) =>
     navigate(`/dashboard/solicitudes/${solicitud.id_solicitud}/responder`);
@@ -246,7 +248,7 @@ export default function SolicitudesList({
       {/* Response dialog */}
       {id && action === "responder" && selectedSolicitud && (
         <DialogHandle
-          title={`Responder solicitud de ${selectedSolicitud.usuario_solicitud}`}
+          title={`Responder solicitud de ${selectedSolicitud.nombre_usuario}`}
           open
           onOpenChange={(open) => !open && closeDialog()}
           size="max-w-2xl"
