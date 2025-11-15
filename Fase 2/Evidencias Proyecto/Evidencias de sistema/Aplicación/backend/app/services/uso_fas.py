@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from app.models import UsoFas, Fas, Jugador, DetalleClubJugador, Club
 from app.schemas import UsoFasCreate, UsoFasUpdate
 from sqlalchemy import func
+from app import schemas
 
 # TODO: Aplicar auth security para poder implementar auditoria
 
@@ -35,8 +36,45 @@ def get_uso_fas(db: Session, uso_id: int) -> UsoFas | None:
 
 
 def get_usos_fas(db: Session, skip: int = 0, limit: int = 100):
-    """Obtiene todos los usos FAS."""
-    return db.query(UsoFas).offset(skip).limit(limit).all()
+    """Obtiene todos los usos FAS con el nombre del jugador y del club."""
+
+    resultados = (
+        db.query(UsoFas, Jugador, DetalleClubJugador, Club)
+        .join(Jugador, Jugador.rut_jugador == UsoFas.rut_jugador)
+        .join(DetalleClubJugador, DetalleClubJugador.rut_jugador == Jugador.rut_jugador)
+        .join(Club, Club.id_club == DetalleClubJugador.id_club)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    usos = []
+
+    for uso, jugador, detalle, club in resultados:
+        
+        nombre_completo = " ".join(filter(None, [
+                            jugador.primer_nombre,
+                            jugador.segundo_nombre,
+                            jugador.primer_apellido,
+                            jugador.segundo_apellido
+                                ]))
+
+        usos.append(
+            schemas.UsoFasWithDetails(
+                id_uso_fas=uso.id_uso_fas,
+                id_fas=uso.id_fas,
+                rut_jugador=uso.rut_jugador,
+                jugador_nombre=nombre_completo,
+                club_nombre=club.nombre,
+                monto_usado=uso.monto_usado,
+                descripcion_gasto=uso.descripcion_gasto,
+                fecha_uso=uso.fecha_uso,
+                fecha_creacion=uso.fecha_creacion,
+                fecha_modificacion=uso.fecha_modificacion,
+            )
+        )
+
+    return usos
 
 
 def create_uso_fas(db: Session, uso_data: UsoFasCreate) -> UsoFas:

@@ -34,8 +34,9 @@ class UsoFasUpdate(BaseModel):
 
 
 class UsoFasWithDetails(UsoFasRead):
-    jugador: Optional[JugadorBase] = Field(None, description="Información del jugador que usó el fondo.")
-    fas: Optional[FasRead] = Field(None, description="Información del fondo de ayuda solidaria asociado.")
+    jugador_nombre: str
+    club_nombre: str
 
 class UsoFasList(BaseModel):
     usos: List[UsoFasRead] = Field(default_factory=list)
+

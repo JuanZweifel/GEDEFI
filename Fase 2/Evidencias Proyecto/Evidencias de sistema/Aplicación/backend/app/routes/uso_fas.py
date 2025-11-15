@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
-from app.models import DetalleClubJugador, UsoFas
+from app.models import DetalleClubJugador, UsoFas, Fas, Jugador, Club
 from app.security import get_current_user
 
 router = APIRouter(prefix="/uso_fas", tags=["Usos del Fondo FAS"])
@@ -44,37 +44,32 @@ def create_uso_fas(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Registra un nuevo uso del fondo FAS por un jugador.
+    Registra un nuevo uso del fondo FAS.
+    Solo administradores pueden registrar usos del FAS.
     """
-    # Validar que el jugador pertenezca al mismo club del usuario
-    detalle = (
-        db.query(DetalleClubJugador)
-        .filter(
-            DetalleClubJugador.rut_jugador == uso_fas.rut_jugador,
-            DetalleClubJugador.id_club == current_user["id_club"],
-        )
-        .first()
-    )
 
-    if not detalle:
+    # Validar que sea administrador (asociación)
+    if not current_user.get("asociacion", False):
         raise HTTPException(
             status_code=403,
-            detail="No puedes registrar usos del FAS para jugadores de otro club.",
+            detail="Solo administradores pueden registrar usos del FAS.",
         )
 
+    # Obtener el FAS asociado
+    fas = db.query(Fas).filter(Fas.id_fas == uso_fas.id_fas).first()
+    if not fas:
+        raise HTTPException(status_code=404, detail="El fondo FAS no existe.")
+
+    # Validar monto disponible
+    if uso_fas.monto_usado > fas.monto_disponible:
+        raise HTTPException(
+            status_code=400,
+            detail=f"El monto utilizado excede el monto disponible (${fas.monto_disponible})."
+        )
+
+    # Crear el uso
     nuevo_uso = services.create_uso_fas(db, uso_fas)
     return nuevo_uso
-
-
-@router.get("/{id_uso_fas}", response_model=schemas.UsoFasWithDetails)
-def read_uso_fas(id_uso_fas: int, db: Session = Depends(get_db)):
-    """
-    Obtiene un uso del FAS por su ID.
-    """
-    db_uso = services.get_uso_fas(db, id_uso_fas)
-    if not db_uso:
-        raise HTTPException(status_code=404, detail="Uso FAS no encontrado")
-    return db_uso
 
 
 @router.get("/", response_model=list[schemas.UsoFasWithDetails])
@@ -87,35 +82,58 @@ def read_usos_fas(
     """
     Lista los usos del FAS.
     - Si el usuario pertenece a un club, solo se muestran los usos de jugadores de ese club.
-    - Si el usuario no tiene club (por ejemplo, es administrador o asociación), se muestran todos los usos.
+    - Si el usuario no tiene club (administrador/asociación), se muestran todos los usos.
     """
 
-    # 🔹 Caso 1: Usuario sin club → devolver todos los usos
+    # BASE QUERY con JOINs a jugador, detalle club y club
+    query = (
+        db.query(UsoFas, Jugador, DetalleClubJugador, Club)
+        .join(Jugador, Jugador.rut_jugador == UsoFas.rut_jugador)
+        .join(DetalleClubJugador, DetalleClubJugador.rut_jugador == Jugador.rut_jugador)
+        .join(Club, Club.id_club == DetalleClubJugador.id_club)
+    )
+
+    # 🔹 CASO 1 — Usuario SIN club → ver todo
     if not current_user.get("id_club"):
-        return (
-            db.query(UsoFas)
-            .offset(skip)
-            .limit(limit)
-            .all()
+        resultados = query.offset(skip).limit(limit).all()
+
+    else:
+        # 🔹 CASO 2 — Usuario CON club → filtrar por jugadores de ese club
+        resultados = (
+            query.filter(DetalleClubJugador.id_club == current_user["id_club"])
+                .offset(skip)
+                .limit(limit)
+                .all()
         )
 
-    # 🔹 Caso 2: Usuario con club → filtrar por jugadores de ese club
-    ruts_club = (
-        db.query(DetalleClubJugador.rut_jugador)
-        .filter(DetalleClubJugador.id_club == current_user["id_club"])
-        .all()
-    )
-    ruts_club = [r[0] for r in ruts_club]
+    usos_con_detalles = []
 
-    usos = (
-        db.query(UsoFas)
-        .filter(UsoFas.rut_jugador.in_(ruts_club))
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    for uso, jugador, detalle, club in resultados:
 
-    return usos
+        # ✔ Construcción segura del nombre completo
+        nombre_completo = " ".join(filter(None, [
+            jugador.primer_nombre,
+            jugador.segundo_nombre,
+            jugador.primer_apellido,
+            jugador.segundo_apellido
+        ]))
+
+        usos_con_detalles.append(
+            schemas.UsoFasWithDetails(
+                id_uso_fas=uso.id_uso_fas,
+                id_fas=uso.id_fas,
+                rut_jugador=uso.rut_jugador,
+                jugador_nombre=nombre_completo,
+                club_nombre=club.nombre_club,  # ✔ Nombre correcto del club
+                monto_usado=uso.monto_usado,
+                descripcion_gasto=uso.descripcion_gasto,
+                fecha_uso=uso.fecha_uso,
+                fecha_creacion=uso.fecha_creacion,
+                fecha_modificacion=uso.fecha_modificacion,
+            )
+        )
+
+    return usos_con_detalles
 
 
 @router.put("/{id_uso_fas}", response_model=schemas.UsoFasRead)

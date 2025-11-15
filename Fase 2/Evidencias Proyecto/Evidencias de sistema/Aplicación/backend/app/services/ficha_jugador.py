@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import FichaJugador, Serie, Jugador
 from app.schemas import FichaJugadorCreate, FichaJugadorUpdate
+from fastapi import HTTPException
 
 
 def get_ficha_jugador(db: Session, rut_jugador: str, id_serie: int) -> FichaJugador | None:
@@ -56,8 +57,34 @@ def update_ficha_jugador(
 
 def delete_ficha_jugador(db: Session, rut_jugador: str, id_serie: int) -> bool:
     db_ficha = get_ficha_jugador(db, rut_jugador, id_serie)
+
     if not db_ficha:
         return False
+
+    # Campos que deben estar vacíos para permitir eliminación
+    campos_relevantes = [
+        "fecha_fin",
+        "talla_camiseta",
+        "talla_short",
+        "talla_media",
+        "talla_botin",
+        "estatura",
+        "Peso",
+        "imc",
+    ]
+
+    # Revisar si alguno de estos campos tiene datos
+    for campo in campos_relevantes:
+        valor = getattr(db_ficha, campo)
+
+        # Si el campo tiene valor NO vacío → bloquear eliminación
+        if valor not in (None, "", 0):
+            raise HTTPException(
+                status_code=400,
+                detail=f"No se puede eliminar la ficha porque el campo '{campo}' contiene datos."
+            )
+
+    # Si todos están vacíos → eliminar
     db.delete(db_ficha)
     db.commit()
     return True

@@ -7,6 +7,7 @@ import { Input } from "../components/ui/input";
 import { Dialog } from "../components/ui/dialog";
 import { Edit, Eye, Trash2 } from "lucide-react";
 import { DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { useAuth } from "../contexts/authContext";
 
 interface DialogEditFichaJugadorProps {
     ficha: FichaJugador;
@@ -357,11 +358,12 @@ export const DialogDeleteFichaJugador: React.FC<DialogDeleteFichaJugadorProps> =
 }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const { token } = useAuth()
 
     const handleDelete = async () => {
         setIsLoading(true);
         try {
-            await deleteFichaJugador(fichaRut, fichaIdSerie);
+            await deleteFichaJugador(fichaRut, fichaIdSerie, token!);
             toast.success("Ficha eliminada correctamente");
             await refreshFichas();
         } catch (err: any) {

@@ -208,6 +208,8 @@ export const RegistroJugadoresModule: React.FC = () => {
     const [busquedaRealizada, setBusquedaRealizada] = useState(false);
     const { token, id_club, admin } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedClubFilter, setSelectedClubFilter] = useState<string>("ALL");
+    const [mapaJugadorClub, setMapaJugadorClub] = useState<Map<string, number>>(new Map());
 
 
     // enrutamiento react router
@@ -341,8 +343,12 @@ export const RegistroJugadoresModule: React.FC = () => {
     useEffect(() => {
         if (token) {
             fetchSeries();
-            fetchJugadoresPorClub();
             fetchClubs();
+
+            fetchJugadoresPorClub().then((res) => {
+                console.log("👇 SETEANDO PLAYERS:", res);
+                setPlayers(res);
+            });
         }
     }, [id_club, token, admin]);
 
@@ -360,7 +366,6 @@ export const RegistroJugadoresModule: React.FC = () => {
             setSeries(filtered);
             return;
         }
-
         // Caso 2 — USUARIO DE CLUB (selectedClub viene del token)
         if (!admin && id_club && allSeries.length > 0) {
             // Forzar selectedClub para usuario de club
@@ -383,6 +388,16 @@ export const RegistroJugadoresModule: React.FC = () => {
         setSeries([]);
     }, [admin, selectedClub, id_club, allSeries]);
 
+
+    useEffect(() => {
+        if (!busquedaRealizada) return;
+        if (!selectedSerie) return;
+
+        console.log("🔁 Re-ejecutando buscarFichas() tras cambios…");
+        buscarFichas();
+    }, [selectedSerie, selectedClub, id_club]);
+
+
     // 🔹 Filtrado historial
     const filteredHistory = uploadHistory.filter(item => {
         if (historyFilter === 'ALL') return true;
@@ -403,8 +418,6 @@ export const RegistroJugadoresModule: React.FC = () => {
         }
 
         if (!token) return;
-
-        setBusquedaRealizada(true);
 
         try {
             // Backend = Admin → TODAS ; Club → solo su club
@@ -452,34 +465,40 @@ export const RegistroJugadoresModule: React.FC = () => {
         if (!token) return [];
 
         try {
-            const todosLosJugadores = await fetchJugadores();
+            console.log("🔵 Ejecutando fetchJugadoresPorClub...");
 
-            // Si el usuario es administrador de asociación → ve todos
+            const todosLosJugadores = await fetchJugadores();
+            console.log("👥 Jugadores:", todosLosJugadores);
+
+            const detalles: any[] = await getDetallesClubJugador<any[]>(token);
+            console.log("🟣 Detalles club-jugador:", detalles);
+
+            const mapa = new Map(detalles.map(det => [det.rut_jugador, Number(det.id_club)]));
+            console.log("🗺️ Mapa jugador → club:", mapa);
+
+            setMapaJugadorClub(mapa);
+
             if (admin) {
-                setPlayers(todosLosJugadores);
+                console.log("🟢 ADMIN → retornando todos");
                 return todosLosJugadores;
             }
 
-            // Si es usuario de club → filtra por su club
             if (id_club) {
                 const clubId = Number(id_club);
-                const detalles: any[] = await getDetallesClubJugador<any[]>(token);
-                const detallesDelClub = detalles.filter(d => Number(d.id_club) === clubId);
-                const jugadoresIds = [...new Set(detallesDelClub.map(d => d.rut_jugador))];
-                const jugadoresDelClub = todosLosJugadores.filter(j => jugadoresIds.includes(j.rut_jugador));
-                setPlayers(jugadoresDelClub);
+                const jugadoresDelClub = todosLosJugadores.filter(
+                    (j) => mapa.get(j.rut_jugador) === clubId
+                );
+
+                console.log("🏆 Jugadores filtrados por club:", jugadoresDelClub);
                 return jugadoresDelClub;
             }
 
-            // En caso de no tener club asociado
-            setPlayers([]);
             return [];
 
         } catch (error) {
-            console.error("Error al cargar jugadores:", error);
-            setPlayers([]);
+            console.error("❌ ERROR en fetchJugadoresPorClub:", error);
             return [];
-        };
+        }
     };
 
 
@@ -495,14 +514,16 @@ export const RegistroJugadoresModule: React.FC = () => {
                 <div className="flex space-x-2 items-center">
                     {activeTab === "jugadores" && (
                         <>
-                            <UploadExcel
-                                refreshJugadores={async () => {
-                                    const updatedPlayers = await fetchJugadoresPorClub();
-                                    setPlayers(updatedPlayers);
-                                }}
-                                onUploadComplete={(result) => setUploadHistory(result)}
-                                openHistory={() => setIsUploadHistoryOpen(true)}
-                            />
+                            {!admin && (
+                                <UploadExcel
+                                    refreshJugadores={async () => {
+                                        const updatedPlayers = await fetchJugadoresPorClub();
+                                        setPlayers(updatedPlayers);
+                                    }}
+                                    onUploadComplete={(result) => setUploadHistory(result)}
+                                    openHistory={() => setIsUploadHistoryOpen(true)}
+                                />
+                            )}
 
                             {uploadHistory.length > 0 && (
                                 <Button
@@ -515,14 +536,19 @@ export const RegistroJugadoresModule: React.FC = () => {
                                 </Button>
                             )}
 
-                            <DialogAddJugador refreshJugadores={async () => {
-                                await fetchJugadoresPorClub();
-                            }} />
+                            {!admin && (
+                                <DialogAddJugador refreshJugadores={async () => {
+                                    const updatedPlayers = await fetchJugadoresPorClub();
+                                    setPlayers(updatedPlayers);
+                                }} />
+                            )}
                         </>
                     )}
                     {activeTab === "lesiones" && (
                         <>
-                            <DialogAddLesion refreshLesiones={fetchLesiones} />
+                            {!admin && (
+                                <DialogAddLesion refreshLesiones={fetchLesiones} />
+                            )}
                         </>
                     )}
                 </div>
@@ -684,9 +710,13 @@ export const RegistroJugadoresModule: React.FC = () => {
                         <CardHeader>
                             <CardTitle>Jugadores Registrados</CardTitle>
                         </CardHeader>
+
                         <CardContent>
-                            {/* 🔹 Input de búsqueda */}
+
+                            {/* 🔹 Input + Select */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+                                {/* Buscador */}
                                 <Input
                                     type="text"
                                     placeholder="Buscar jugador por nombre o RUT..."
@@ -694,6 +724,27 @@ export const RegistroJugadoresModule: React.FC = () => {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-64"
                                 />
+
+                                {/* Select SOLO para ADMIN */}
+                                {admin && (
+                                    <Select
+                                        value={selectedClubFilter}
+                                        onValueChange={(value: any) => setSelectedClubFilter(value)}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Filtrar por club" />
+                                        </SelectTrigger>
+
+                                        <SelectContent>
+                                            <SelectItem value="ALL">Todos los clubes</SelectItem>
+                                            {clubs.map((club) => (
+                                                <SelectItem key={club.id_club} value={String(club.id_club)}>
+                                                    {club.nombre}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
                             </div>
 
                             <Table>
@@ -707,55 +758,75 @@ export const RegistroJugadoresModule: React.FC = () => {
                                         <TableHead>Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
+
                                 <TableBody>
                                     {players.length > 0 ? (
                                         players
                                             .filter((player) => {
-                                                const fullName = `${player.primer_nombre} ${player.segundo_nombre || ''} ${player.primer_apellido} ${player.segundo_apellido || ''}`.toLowerCase();
-                                                const rut = player.rut_jugador.toLowerCase();
+
+                                                // 🔹 Búsqueda
                                                 const term = searchTerm.toLowerCase();
-                                                return fullName.includes(term) || rut.includes(term);
+                                                const fullName = `${player.primer_nombre} ${player.segundo_nombre || ""} ${player.primer_apellido} ${player.segundo_apellido || ""}`.toLowerCase();
+                                                const rut = player.rut_jugador.toLowerCase();
+
+                                                const matchesSearch = fullName.includes(term) || rut.includes(term);
+                                                if (!matchesSearch) return false;
+
+                                                // 🔹 FILTRO POR CLUB (SOLO ADMIN)
+                                                if (admin && selectedClubFilter !== "ALL") {
+                                                    const clubDelJugador = mapaJugadorClub.get(player.rut_jugador);
+                                                    return String(clubDelJugador) === selectedClubFilter;
+                                                }
+
+                                                return true;
                                             })
                                             .map((player) => (
                                                 <TableRow key={player.rut_jugador}>
                                                     <TableCell className="font-medium">{player.rut_jugador}</TableCell>
+
                                                     <TableCell>
-                                                        {player.primer_nombre} {player.segundo_nombre || ''} {player.primer_apellido} {player.segundo_apellido || ''}
+                                                        {player.primer_nombre} {player.segundo_nombre || ''}
+                                                        {" "}
+                                                        {player.primer_apellido} {player.segundo_apellido || ''}
                                                     </TableCell>
+
                                                     <TableCell>
                                                         {player.fecha_nacimiento
-                                                            ? player.fecha_nacimiento
-                                                                .split("T")[0]
-                                                                .split("-")
-                                                                .reverse()
-                                                                .join("/")
+                                                            ? player.fecha_nacimiento.split("T")[0].split("-").reverse().join("/")
                                                             : "—"}
                                                     </TableCell>
+
                                                     <TableCell>
                                                         <Badge variant={player.enfermedades_cronicas === "Ninguna" ? "outline" : "destructive"}>
                                                             {player.enfermedades_cronicas}
                                                         </Badge>
                                                     </TableCell>
+
                                                     <TableCell>
                                                         <Badge className={player.jugador_activo ? 'bg-green-500' : 'bg-red-500'}>
                                                             {player.jugador_activo ? 'Activo' : 'Inactivo'}
                                                         </Badge>
                                                     </TableCell>
+
                                                     <TableCell>
                                                         <div className="flex space-x-1">
                                                             <DialogEditJugador
                                                                 jugador={player}
                                                                 refreshJugadores={async () => {
-                                                                    const updatedPlayers = await fetchJugadoresPorClub()
-                                                                    setPlayers(updatedPlayers)
+                                                                    const updatedPlayers = await fetchJugadoresPorClub();
+                                                                    setPlayers(updatedPlayers);
                                                                 }}
                                                             />
                                                             <DialogViewJugador jugador={player} refreshJugadores={async () => { await fetchJugadores(); }} />
+
                                                             <ButtonDeleteJugador
                                                                 rutJugador={player.rut_jugador}
                                                                 primerNombre={player.primer_nombre}
                                                                 primerApellido={player.primer_apellido}
-                                                                refreshJugadores={async () => { await fetchJugadores(); }}
+                                                                refreshJugadores={async () => {
+                                                                    const updatedPlayers = await fetchJugadoresPorClub();
+                                                                    setPlayers(updatedPlayers);
+                                                                }}
                                                             />
                                                         </div>
                                                     </TableCell>
@@ -842,7 +913,11 @@ export const RegistroJugadoresModule: React.FC = () => {
                                                     <TableCell className="max-w-xs truncate">
                                                         {injury.descripcion}
                                                     </TableCell>
-                                                    <TableCell>{injury.fecha_lesion}</TableCell>
+                                                    <TableCell>
+                                                        {injury.fecha_lesion
+                                                            ? injury.fecha_lesion.split("T")[0].split("-").reverse().join("/")
+                                                            : "—"}
+                                                    </TableCell>
                                                     <TableCell>{injury.tiempo_recuperacion}</TableCell>
                                                     <TableCell>
                                                         <Badge
@@ -949,7 +1024,10 @@ export const RegistroJugadoresModule: React.FC = () => {
                                     <Button
                                         style={{ backgroundColor: '#0000db' }}
                                         className="text-white"
-                                        onClick={buscarFichas}
+                                        onClick={() => {
+                                            setBusquedaRealizada(true);
+                                            buscarFichas();
+                                        }}
                                         disabled={!selectedSerie}
                                     >
                                         <Search className="w-4 h-4 mr-2" />

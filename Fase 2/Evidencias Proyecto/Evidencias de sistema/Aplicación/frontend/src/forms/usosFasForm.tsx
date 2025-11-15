@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
@@ -15,7 +15,7 @@ type UsoFas = {
     rut_jugador: string;
     monto_usado: number;
     fecha_uso: string;
-    descripcion?: string;
+    descripcion_gasto: string;
 };
 type Fas = {
     id_fas: number;
@@ -64,6 +64,15 @@ export const DialogAddUsoFas: React.FC<DialogAddUsoFasProps> = ({ fasList, refre
     const currentYear = new Date().getFullYear();
     const fasActual = fasList?.find(f => f.anio_fas === currentYear);
 
+    useEffect(() => {
+        console.log("TOKEN ACTUAL:", token);
+        if (!isOpen) {
+            setIdFas("");
+            setRutJugador("");
+            setMontoUsado("");
+            setDescripcion("");
+        }
+    }, [isOpen]);
 
     const handleSave = async () => {
         setIsLoading(true);
@@ -73,21 +82,27 @@ export const DialogAddUsoFas: React.FC<DialogAddUsoFasProps> = ({ fasList, refre
                     id_fas: fasActual?.id_fas,
                     rut_jugador: rutJugador.trim(),
                     monto_usado: Number(montoUsado),
-                    descripcion,
+                    descripcion_gasto: descripcion,
                     fecha_uso: new Date().toISOString().split("T")[0],
                 },
                 token!
             );
             toast.success("Uso de FAS registrado correctamente");
             await refreshUsosFas();
-            setIsOpen(false);
             setIdFas("");
             setRutJugador("");
             setMontoUsado("");
             setDescripcion("");
-            
+
         } catch (error: any) {
-            toast.error(error.message || "Error al registrar el uso de FAS");
+            console.log("❌ Error recibido del backend:", error);
+
+            const backendMessage =
+                error?.data?.detail ||
+                error?.data?.message ||
+                "Error al registrar el uso del FAS.";
+
+            toast.error(backendMessage);
         } finally {
             setIsLoading(false);
         }
@@ -136,7 +151,7 @@ export const DialogAddUsoFas: React.FC<DialogAddUsoFasProps> = ({ fasList, refre
                         </div>
 
                         <div className="flex justify-end gap-2 mt-4">
-                            <Button variant="outline" onClick={() => setIsOpen(false)}>
+                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={isLoading}>
@@ -155,8 +170,9 @@ export const DialogAddUsoFas: React.FC<DialogAddUsoFasProps> = ({ fasList, refre
                 open={isConfirmDialogOpen}
                 onOpenChange={setIsConfirmDialogOpen}
                 onConfirm={async () => {
-                    setIsConfirmDialogOpen(false);
                     await handleSave();
+                    setIsConfirmDialogOpen(false);
+                    setIsOpen(false);
                 }}
             />
         </>
@@ -165,53 +181,22 @@ export const DialogAddUsoFas: React.FC<DialogAddUsoFasProps> = ({ fasList, refre
 // Aqui termina la logica de crear un uso del FAS
 
 
-// ---------- VER ----------
-export const DialogViewUsoFas: React.FC<DialogViewUsoFasProps> = ({ uso }) => {
-    const [isOpen, setIsOpen] = useState(false);
 
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <Eye className="w-4 h-4" />
-                </Button>
-            </DialogTrigger>
-
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Detalles del Uso del FAS</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-3">
-                    <div><label>RUT Jugador:</label><Input value={uso.rut_jugador} disabled /></div>
-                    <div><label>Monto Utilizado:</label><Input value={`$${uso.monto_usado.toLocaleString("es-CL")}`} disabled /></div>
-                    <div><label>Fecha de Uso:</label><Input value={new Date(uso.fecha_uso).toLocaleDateString("es-CL")} disabled /></div>
-                    <div><label>Descripción:</label><Input value={uso.descripcion || "-"} disabled /></div>
-
-                    <div className="flex justify-end mt-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)}>Cerrar</Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
-// ---------- EDITAR ----------
+// Aqui comienza la logica de editar un uso del FAS
 export const DialogEditUsoFas: React.FC<DialogEditUsoFasProps> = ({ uso, refreshUsosFas }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
     const [montoUtilizado, setMontoUtilizado] = useState(uso.monto_usado);
-    const [descripcion, setDescripcion] = useState(uso.descripcion || "");
+    const [descripcion, setDescripcion] = useState(uso.descripcion_gasto || "");
 
     const handleSave = async () => {
         setIsLoading(true);
         try {
             await putUsoFas(uso.id_uso_fas, {
-                monto_utilizado: Number(montoUtilizado),
-                descripcion,
+                monto_usado: Number(montoUtilizado),
+                descripcion_gasto: descripcion,
             });
             toast.success("Uso de FAS actualizado correctamente");
             await refreshUsosFas();
@@ -284,8 +269,10 @@ export const DialogEditUsoFas: React.FC<DialogEditUsoFasProps> = ({ uso, refresh
         </>
     );
 };
+// Aqui termina la logica de editar un uso del FAS
 
-// ---------- ELIMINAR ----------
+
+// Aqui comienza la logica de eliminar un uso del FAS
 export const ButtonDeleteUsoFas: React.FC<ButtonDeleteUsoFasProps> = ({
     id_uso_fas,
     refreshUsosFas,
@@ -334,3 +321,4 @@ export const ButtonDeleteUsoFas: React.FC<ButtonDeleteUsoFasProps> = ({
         </>
     );
 };
+// Aqui termina la logica de eliminar un uso del FAS

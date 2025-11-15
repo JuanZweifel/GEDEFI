@@ -42,7 +42,7 @@ def get_usuarios(
     """
     Retorna los usuarios con su club asignado.
     Soporta paginación (skip, limit), búsqueda y filtrado por estado.
-    Excluye al usuario actual.
+    Excluye al usuario actual SOLO si no se filtra por club.
     Respuesta: { items: list[Usuario], total: int }
     """
     try:
@@ -55,8 +55,13 @@ def get_usuarios(
                 & (DetalleUsuarioClub.fecha_fin == None),
             )
             .outerjoin(Club, DetalleUsuarioClub.id_club == Club.id_club)
-            .filter(Usuario.rut_usuario != current_user.get("rut_usuario"))
         )
+
+        # ❗ Solo excluir al usuario actual si NO se está filtrando por club
+        if club is None:
+            base_query = base_query.filter(
+                Usuario.rut_usuario != current_user.get("rut_usuario")
+            )
 
         # --- Filtro por estado ---
         if estado == 1:

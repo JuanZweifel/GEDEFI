@@ -74,7 +74,13 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
     const [horaInicio, setHoraInicio] = useState("");
     const [horaFin, setHoraFin] = useState("");
 
-    const { token } = useAuth();
+    const { token, id_club, rut } = useAuth();
+
+
+    const convertirHoraAMinutos = (hora: string): number => {
+        const [h, m] = hora.split(":").map(Number);
+        return h * 60 + m;
+    };
 
     // Cargar canchas y series solo cuando se abre el diálogo
     useEffect(() => {
@@ -82,35 +88,43 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
 
         const fetchData = async () => {
             try {
-                // Log del token completo
-                console.log("Token JWT:", token);
-
-                // Decodificar token
-                const decoded: any = jwtDecode(token);
-                console.log("Token decodificado:", decoded);
-
-                // Log de cada parámetro dentro del token
-                console.log("RUT del usuario:", decoded.rut);
-                console.log("ID del club:", decoded.club_id);
+                console.log("📌 id_club desde useAuth:", id_club);
 
                 // Cargar canchas
                 const dataCanchas = await getCanchas(token);
                 setCanchas(dataCanchas);
 
-                // Traer todas las series
-                const dataSeries = await getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token);
+                // Cargar series
+                const dataSeries = await getSeries<{
+                    id_serie: number;
+                    nombre_serie: string;
+                    id_club: number
+                }[]>(token);
 
-                // Filtrar solo las series del club del usuario
-                const seriesUsuario = dataSeries.filter(serie => serie.id_club === decoded.id_club);
+                console.log("📌 Series completas:", dataSeries);
+
+                // Determinar el club del usuario SOLO desde useAuth()
+                const clubIdUsuario = id_club ? Number(id_club) : null;
+
+                console.log("📌 clubIdUsuario:", clubIdUsuario);
+
+                // FILTRAR series del club
+                const seriesUsuario = clubIdUsuario
+                    ? dataSeries.filter(s => s.id_club === clubIdUsuario)
+                    : [];
+
+                console.log("📌 seriesUsuario filtradas:", seriesUsuario);
+
                 setSeries(seriesUsuario);
+
             } catch (error) {
-                console.error("Error al cargar canchas o series:", error);
+                console.error("❌ Error al cargar canchas o series:", error);
                 toast.error("No se pudieron cargar canchas o series");
             }
         };
 
         fetchData();
-    }, [token, isOpen]);
+    }, [token, isOpen, id_club]);
 
     const resetForm = () => {
         setFechaEntrenamiento("");
@@ -121,16 +135,8 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
     };
 
     const handleSave = async () => {
-        if (!token) {
+        if (!token || !rut) {
             toast.error("Usuario no autenticado");
-            return;
-        }
-
-        let decoded: { rut: string };
-        try {
-            decoded = jwtDecode<{ rut: string }>(token);
-        } catch {
-            toast.error("Token inválido");
             return;
         }
 
@@ -151,19 +157,20 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                     fecha_entrenamiento: fechaEntrenamiento,
                     descripcion_entrenamiento: descripcion,
                     activo,
-                    rut_usuario: decoded.rut,
+                    rut_usuario: rut,        
                     id_cancha: idCancha,
                     id_serie: idSerie,
                     hora_ini: horaInicio,
                     hora_fin: horaFin,
-
                 },
                 token
             );
+
             toast.success("Entrenamiento creado correctamente");
             await refreshEntrenamientos();
             setIsOpen(false);
             resetForm();
+
         } catch (error: any) {
             toast.error(error.message || "Error al crear entrenamiento");
         } finally {
@@ -207,6 +214,7 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                             {/* Hora Inicio */}
                             <div className="flex flex-col flex-1">
                                 <label>Hora de Inicio *</label>
+
                                 <Select
                                     value={horaInicio}
                                     onValueChange={(v: string) => setHoraInicio(v)}
@@ -214,42 +222,70 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecciona hora de inicio" />
                                     </SelectTrigger>
+
                                     <SelectContent>
-                                        {Array.from({ length: 48 }, (_, i) => {
-                                            const hours = Math.floor(i / 2);
-                                            const minutes = i % 2 === 0 ? "00" : "30";
-                                            const time = `${hours.toString().padStart(2, "0")}:${minutes}`;
-                                            return (
-                                                <SelectItem key={time} value={time}>
-                                                    {time}
-                                                </SelectItem>
-                                            );
-                                        })}
+                                        {(() => {
+                                            const opciones = [];
+                                            const horaInicio = 10 * 60; // 10:00 → minutos totales
+                                            const horaFin = 23 * 60; // 23:00 → minutos totales
+
+                                            for (let min = horaInicio; min <= horaFin; min += 5) {
+                                                const h = Math.floor(min / 60)
+                                                    .toString()
+                                                    .padStart(2, "0");
+                                                const m = (min % 60).toString().padStart(2, "0");
+                                                const time = `${h}:${m}`;
+                                                opciones.push(
+                                                    <SelectItem key={time} value={time}>
+                                                        {time}
+                                                    </SelectItem>
+                                                );
+                                            }
+                                            return opciones;
+                                        })()}
                                     </SelectContent>
                                 </Select>
                             </div>
 
+
                             {/* Hora Fin */}
                             <div className="flex flex-col flex-1">
                                 <label>Hora de Fin *</label>
+
                                 <Select
                                     value={horaFin}
                                     onValueChange={(v: string) => setHoraFin(v)}
+                                    disabled={!horaInicio} // evita seleccionar hora fin sin hora inicio
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecciona hora de fin" />
                                     </SelectTrigger>
+
                                     <SelectContent>
-                                        {Array.from({ length: 48 }, (_, i) => {
-                                            const hours = Math.floor(i / 2);
-                                            const minutes = i % 2 === 0 ? "00" : "30";
-                                            const time = `${hours.toString().padStart(2, "0")}:${minutes}`;
-                                            return (
-                                                <SelectItem key={time} value={time}>
-                                                    {time}
-                                                </SelectItem>
-                                            );
-                                        })}
+                                        {(() => {
+                                            if (!horaInicio) return null;
+
+                                            const opciones = [];
+                                            const minInicio = convertirHoraAMinutos(horaInicio);
+                                            const minMin = Math.max(minInicio + 5, 10 * 60); // mínimo 5 min después
+                                            const minMax = 23 * 60;
+
+                                            for (let min = minMin; min <= minMax; min += 5) {
+                                                const h = Math.floor(min / 60)
+                                                    .toString()
+                                                    .padStart(2, "0");
+                                                const m = (min % 60).toString().padStart(2, "0");
+                                                const time = `${h}:${m}`;
+
+                                                opciones.push(
+                                                    <SelectItem key={time} value={time}>
+                                                        {time}
+                                                    </SelectItem>
+                                                );
+                                            }
+
+                                            return opciones;
+                                        })()}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -260,10 +296,10 @@ export const DialogAddEntrenamiento: React.FC<DialogAddEntrenamientoProps> = ({ 
                             <label>Descripción *</label>
                             <textarea
                                 value={descripcion}
-                                    onChange={(e) => setDescripcion(e.target.value)}
-                                    className="w-full border p-2 rounded"
-                                    maxLength={500}
-                                    required
+                                onChange={(e) => setDescripcion(e.target.value)}
+                                className="w-full border p-2 rounded"
+                                maxLength={500}
+                                required
                             />
                         </div>
 
@@ -659,7 +695,7 @@ export const DialogViewEntrenamiento: React.FC<DialogViewEntrenamientoProps> = (
                     {/* 🔹 Fila 4: Descripción */}
                     <div className="flex flex-col">
                         <label>Descripción:</label>
-                        <textarea value={entrenamiento.descripcion_entrenamiento} className="w-full border p-2 rounded" disabled/>
+                        <textarea value={entrenamiento.descripcion_entrenamiento} className="w-full border p-2 rounded" disabled />
                     </div>
 
                     {/* 🔹 Fila 5: Activo */}

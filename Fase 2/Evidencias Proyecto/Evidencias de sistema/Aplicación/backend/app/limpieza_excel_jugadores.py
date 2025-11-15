@@ -12,6 +12,17 @@ from app.security import get_current_user
 
 router = APIRouter()
 
+def formatear_nombre(texto: str) -> str:
+    if not texto:
+        return None
+
+    texto = texto.strip().lower()
+    palabras = texto.split()
+
+    palabras = [p.capitalize() for p in palabras]
+
+    return " ".join(palabras)
+
 
 def crear_fichas_jugadores(db: Session, rut_jugadores: list[str], id_serie: int):
     resultados = []
@@ -76,7 +87,7 @@ async def upload_excel(
     try:
         id_club = current_user["id_club"]
 
-        # ✅ 1️⃣ Validar tipo MIME real (no solo extensión)
+        # Validar tipo MIME real (no solo extensión)
         head = await file.read(2048)
         mime_type = magic.from_buffer(head, mime=True)
         await file.seek(0)
@@ -92,21 +103,21 @@ async def upload_excel(
                 status_code=400
             )
 
-        # ✅ 2️⃣ Validar extensión del nombre
+        # Validar extensión del nombre
         if not (file.filename.endswith(".xls") or file.filename.endswith(".xlsx")):
             return JSONResponse(
                 content={"message": "Formato de archivo no válido. Solo se permiten .xls o .xlsx."},
                 status_code=400
             )
 
-        # ✅ 3️⃣ Leer contenido (el middleware ya limitó el tamaño)
+        # Leer contenido (el middleware ya limitó el tamaño)
         contents = await file.read()
 
         # Detectar motor según extensión
         ext = file.filename.lower().split(".")[-1]
         engine = "openpyxl" if ext == "xlsx" else "xlrd"
 
-        # ✅ 4️⃣ Procesar Excel
+        # Procesar Excel
         try:
             df = pd.read_excel(BytesIO(contents), header=2, engine=engine)
         except Exception:
@@ -128,7 +139,7 @@ async def upload_excel(
 
         nombre_serie_excel = df['NOMBRE DE LA SERIE'].dropna().iloc[0].strip().title()
 
-        # ✅ 5️⃣ Verificar que la serie pertenezca al club
+        # Verificar que la serie pertenezca al club
         serie_obj = db.query(Serie).filter(
             Serie.nombre_serie == nombre_serie_excel,
             Serie.id_club == id_club
@@ -146,14 +157,14 @@ async def upload_excel(
         jugadores_validos = []
         seen_ruts = set()
 
-        # ✅ 6️⃣ Procesar filas del Excel
+        # Procesar filas del Excel
         for idx, row in df.iterrows():
             fila = idx + 1
             rut = str(row.get('CÉDULA DE IDENTIDAD', '')).strip()
-            primer_nombre = str(row.get('PRIMER NOMBRE', '')).strip()
-            segundo_nombre = str(row.get('SEGUNDO NOMBRE', '')).strip() or None
-            primer_apellido = str(row.get('PRIMER APELLIDO', '')).strip()
-            segundo_apellido = str(row.get('SEGUNDO APELLIDO', '')).strip() or None
+            primer_nombre = formatear_nombre(str(row.get('PRIMER NOMBRE', '')))
+            segundo_nombre = formatear_nombre(str(row.get('SEGUNDO NOMBRE', ''))) or None
+            primer_apellido = formatear_nombre(str(row.get('PRIMER APELLIDO', '')))
+            segundo_apellido = formatear_nombre(str(row.get('SEGUNDO APELLIDO', ''))) or None
             genero = str(row.get('GÉNERO', '')).strip()
             fecha_raw = row.get('FECHA DE NACIMIENTO', None)
 
@@ -173,16 +184,27 @@ async def upload_excel(
             if not primer_apellido or len(primer_apellido) < 3:
                 errores.append("Primer apellido inválido")
 
+
             fecha_nac = None
-            if fecha_raw and not pd.isna(fecha_raw):
+
+            # Validar que la fecha NO esté vacía
+            if fecha_raw is None or pd.isna(fecha_raw) or str(fecha_raw).strip() == "":
+                errores.append("Fecha vacía")
+            else:
                 try:
                     fecha_nac = pd.to_datetime(fecha_raw, dayfirst=True).date()
+
                     if fecha_nac > date.today():
                         errores.append("Fecha futura")
+
+                    # Validar edad mínima (8 años)
+                    edad = (date.today() - fecha_nac).days // 365
+                    if edad < 8:
+                        errores.append("Jugador menor de 8 años no puede ser registrado")
+
                 except Exception:
                     errores.append("Fecha inválida")
-            else:
-                errores.append("Fecha vacía")
+
 
             genero_bool = genero.upper() == "MASCULINO" if genero else None
             if genero_bool is None:
@@ -224,7 +246,7 @@ async def upload_excel(
             results.append({"status": "success", "fila": fila, "rut": rut, "primer_nombre": primer_nombre, "segundo_nombre": segundo_nombre,
                             "primer_apellido": primer_apellido, "segundo_apellido": segundo_apellido})
 
-        # ✅ 7️⃣ Guardar registros
+        # Guardar registros
         db.add_all(jugadores_validos)
         db.commit()
 
@@ -242,7 +264,7 @@ async def upload_excel(
             db.add(detalle)
         db.commit()
 
-        # ✅ 8️⃣ Respuesta final
+        # Respuesta final
         return JSONResponse({
             "message": "Archivo procesado ✅",
             "total_procesados": len(df),
