@@ -5,6 +5,7 @@ from app.models import Rol, Usuario
 from app.schemas import RolCreate, RolUpdate
 from app.utils.decorators import handle_db_exceptions
 
+
 # TODO: Aplicar auth security para poder implementar auditoria
 @handle_db_exceptions
 def get_rol(db: Session, id_rol: int) -> Rol | None:
@@ -13,7 +14,7 @@ def get_rol(db: Session, id_rol: int) -> Rol | None:
 
 @handle_db_exceptions
 def get_roles(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Rol).offset(skip).limit(limit).all()
+    return db.query(Rol).order_by(Rol.nombre_rol).offset(skip).limit(limit).all()
 
 
 @handle_db_exceptions

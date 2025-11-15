@@ -184,6 +184,7 @@ export function CanchaForm({ cancha, isEdit, refreshCanchas, onSuccess }: Cancha
                         onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
                         rows={3}
                         placeholder="Notas sobre el estado o uso de la cancha..."
+                        maxLength={500}
                     />
                 </div>
             </div>

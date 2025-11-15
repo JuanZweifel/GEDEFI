@@ -243,41 +243,6 @@ export const UsuarioRolModule: React.FC = () => {
     }, [params.id, roles, isFetchingRols, navigate, isRoleEditRoute]);
 
     useEffect(() => {
-        const fetchFilteredUsers = async () => {
-            try {
-                setIsFetchingUsers(true);
-
-                const estado =
-                    userStatusFilter === "activo"
-                        ? 1
-                        : userStatusFilter === "inactivo"
-                            ? 2
-                            : undefined;
-
-                const search = userFilter.trim() || undefined;
-                const club = userClubFilter || undefined;
-
-                const safePage = Number(page) > 0 ? Number(page) : 1;
-                const skip = (safePage - 1) * limit;
-
-                const res = await getUsers(token, {
-                    skip,
-                    limit,
-                    search,
-                    estado,
-                    club,
-                });
-
-                setUsers(res.items);
-                setTotal(res.total);
-            } catch (err) {
-                console.error(err);
-                toast.error("Error al cargar los usuarios");
-            } finally {
-                setIsFetchingUsers(false);
-            }
-        };
-
         fetchFilteredUsers();
     }, [userFilter, userStatusFilter, userClubFilter, page]);
 
@@ -345,15 +310,12 @@ export const UsuarioRolModule: React.FC = () => {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="usuarios" onClick={() => navigate("/dashboard/usuarios-roles/usuarios")}>
                         Usuarios
                     </TabsTrigger>
                     <TabsTrigger value="roles" onClick={() => navigate("/dashboard/usuarios-roles/roles")}>
                         Roles
-                    </TabsTrigger>
-                    <TabsTrigger value="historial" onClick={() => navigate("/dashboard/usuarios-roles/historial")}>
-                        Historial
                     </TabsTrigger>
                 </TabsList>
 
@@ -592,37 +554,6 @@ export const UsuarioRolModule: React.FC = () => {
                                     </Card>
                                 ))}
                             </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* Tab Historial*/}
-                <TabsContent value="historial">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Historial de Usuarios</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Fecha</TableHead>
-                                        <TableHead>Acción</TableHead>
-                                        <TableHead>Usuario</TableHead>
-                                        <TableHead>Detalle</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow>
-                                        <TableCell>2025-10-01</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline">Creación</Badge>
-                                        </TableCell>
-                                        <TableCell>Juan Perez</TableCell>
-                                        <TableCell>Usuario creado</TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
                         </CardContent>
                     </Card>
                 </TabsContent>

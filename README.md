@@ -3,10 +3,11 @@
 ## Lista de pendientes Fase 2:
 
 ### general 
-- definir colores de los botones 
-- colocar timers en activar o desactivar
+- definir colores de los botones -> Se dejo en azul de manera global (LUCHO)
+- colocar timers en activar o desactivar -> solo se debe activar, se dejo el parametro timer en el componente (LUCHO)
 - eliminar opciones de menú que no se ocupan
 - colocar los trim a los form
+- revisar refresh de dashboard por rutas 
 
 ### usuario
 - cambiar el titulo de asociación 
@@ -17,20 +18,19 @@
 - eliminar el tab de historial en usuario 
 
 ### club
-- revisar permiso para desactivar club
-- revisar refresh de dashboard por rutas 
-- warning RGB
-- 422 al modificar cualquier cosa (club activo)
-- como usuario de club no se puede ver el club (revisar)
-- verificar rut en otras tablas 
+- revisar permiso para desactivar club -> corregido
+- warning RGB -> corregido
+- 422 al modificar cualquier cosa (club activo) -> corregido
+- como usuario de club no se puede ver el club (revisar) -> corregido
+- verificar rut en otras tablas
 
 ### serie
-- sacar el tab de historial de serie 
-- revisar iconos durante carga de serie y limpiar la lista 
+- sacar el tab de historial de serie  -> corregido
+- revisar iconos durante carga de serie y limpiar la lista  -> corregido
 - paginado en serie 
 
 ### partido
-- agregar barra de carga al agregar nuevo partido
+- agregar barra de carga al agregar nuevo partido -> corregido
 - revisar el tamaño formulario
 - bloquear club duplicado
 - revisar el crear partido (no envia id serie y horafin)
@@ -46,11 +46,11 @@
 - poner un wrap en observación 
 
 ### finanzas
-- verificar el cero a la izquierda
-- verificar tipo de orden
-- verificar monto 
-- verificar el admin (cambiar a asociación)
-- no deja ver detalle de ordenes pagadas
+- verificar el cero a la izquierda -> corregido
+- verificar tipo de orden -> corregido
+- verificar monto -> corregido
+- verificar el admin (cambiar a asociación) -> corregido
+- no deja ver detalle de ordenes pagadas -> corregido
 - agregar el filtro por tipo (enum)
 
 ### auditoria 

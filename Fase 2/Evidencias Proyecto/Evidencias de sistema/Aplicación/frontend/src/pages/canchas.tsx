@@ -185,7 +185,7 @@ export const CanchasModule: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCanchas.map((cancha) => (
-          <Card key={cancha.id_cancha}>
+          <Card key={cancha.id_cancha} className="flex flex-col">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <CardTitle className="text-lg">{cancha.nombre_cancha}</CardTitle>
@@ -196,7 +196,7 @@ export const CanchasModule: React.FC = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className='flex-1'>
               <div className="space-y-3">
                 <div className="flex items-start">
                   <MapPin className="w-4 h-4 mr-2 mt-1 text-gray-500" />
@@ -228,7 +228,7 @@ export const CanchasModule: React.FC = () => {
                   </div>
 
                   {cancha.observaciones && (
-                    <p>
+                    <p className='break-words whitespace-pre-line'>
                       <span className="font-medium">Observaciones:</span> {cancha.observaciones}
                     </p>
                   )}
@@ -244,39 +244,6 @@ export const CanchasModule: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-2">
-                <NavLink
-                  to={`/dashboard/canchas/${cancha.id_cancha}/edit`}
-                  className="flex-1"
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full flex-1"
-                  >
-                    <Edit className="w-4 h-4 mr-1" /> Editar
-                  </Button>
-                </NavLink>
-                {cancha.cancha_activa ? (
-                  <Button
-                    onClick={() => setOpenSelected(cancha.id_cancha)}
-                    variant="destructive"
-                    size="sm"
-                    className="flex-1"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => handleReactivateCancha(cancha.id_cancha)}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-green-500 text-white hover:bg-green-500 hover:text-white"
-                  >
-                    Activar
-                  </Button>
-                )}
-              </div>
 
               <AlertDialogHandle
                 title={`Eliminación de cancha ${cancha.nombre_cancha}`}
@@ -290,6 +257,40 @@ export const CanchasModule: React.FC = () => {
                 }}
               />
             </CardContent>
+
+            <div className="mt-auto flex gap-2 px-6 pb-6">
+              <NavLink
+                to={`/dashboard/canchas/${cancha.id_cancha}/edit`}
+                className="flex-1"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full flex-1"
+                >
+                  <Edit className="w-4 h-4 mr-1" /> Editar
+                </Button>
+              </NavLink>
+              {cancha.cancha_activa ? (
+                <Button
+                  onClick={() => setOpenSelected(cancha.id_cancha)}
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handleReactivateCancha(cancha.id_cancha)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 bg-green-500 text-white hover:bg-green-500 hover:text-white"
+                >
+                  Activar
+                </Button>
+              )}
+            </div>
           </Card>
         ))}
       </div>

@@ -34,7 +34,13 @@ from app.routes import (
     correos,
 )
 from app.utils.trigger import create_trigger
-from app.utils.ejecutar_sql import insertar_ordenes_egresos_demo, insertar_ordenes_ingresos_demo, insertar_clubs_demo, insertar_jugadores_demo
+from app.utils.ejecutar_sql import (
+    insertar_ordenes_egresos_demo,
+    insertar_ordenes_ingresos_demo,
+    insertar_clubs_demo,
+    insertar_jugadores_demo,
+    seed_roles,
+)
 
 
 # validacion de tamaño de archivos
@@ -117,18 +123,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # TODO: CREACIÓN DE TRIGGER, SE DEBE DESCOMENTAR JUNTO A LA ELIMINACION DE TODO EN LA BASE DE DATOS, WARNING DE ARRIBA
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
 # Base.metadata.drop_all(bind=engine)
 # Base.metadata.create_all(bind=engine)
-# @app.on_event("startup")
-# def startup_event():
-#    insertar_ordenes_egresos_demo()
-#    insertar_ordenes_ingresos_demo()
-#    insertar_clubs_demo()
-#    create_trigger()
-#    insertar_jugadores_demo()
+@app.on_event("startup")
+def startup_event():
+    #    insertar_ordenes_egresos_demo()
+    #    insertar_ordenes_ingresos_demo()
+    #    insertar_clubs_demo()
+    #    create_trigger()
+    #    insertar_jugadores_demo()
+    seed_roles()
 
 
 @app.get("/api")
