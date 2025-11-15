@@ -24,13 +24,21 @@ def create_solicitud(
     return services.create_solicitud(db, solicitud, current_user=current_user)
 
 
+@router.get("/usuario", response_model=list[SolicitudWithUserClub])
+def get_solicitudes_usuarios(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    return services.get_solicitudes_usuario(db, current_user=current_user)
+
+
 @router.get("/{id_solicitud}", response_model=SolicitudRead)
 def get_solicitud(
     id_solicitud: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_solicitud = services.get_solicitud(db, id_solicitud, current_user=current_user)
+    db_solicitud = services.get_solicitud(db, id_solicitud)
     if db_solicitud is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     return db_solicitud
@@ -41,7 +49,7 @@ def get_solicitudes(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    return services.get_solicitudes(db, current_user=current_user)
+    return services.get_solicitudes(db)
 
 
 @router.put("/{id_solicitud}", response_model=SolicitudRead)
@@ -78,12 +86,12 @@ def respond_solicitud(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    if not current_user.get("admin"):
+    if not current_user.get("asociacion"):
         raise HTTPException(
             status_code=403, detail="No autorizado para responder solicitudes"
         )
 
-    db_solicitud = services.get_solicitud(db, id_solicitud, current_user=current_user)
+    db_solicitud = services.get_solicitud(db, id_solicitud)
     if db_solicitud is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 

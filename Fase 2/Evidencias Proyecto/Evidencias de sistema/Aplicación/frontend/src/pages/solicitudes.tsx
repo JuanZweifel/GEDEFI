@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 import { SolicitudClubForm } from "../forms/solicitudClubForm";
 import SolicitudesList from "../components/solicitudes-list";
-import { getSolicitudes } from "../services/solicitudService";
+import { getSolicitudes, getUserSolicitudes } from "../services/solicitudService";
 import { useAuth } from "../contexts/authContext";
 import { RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
@@ -16,10 +16,19 @@ export const SolicitudesModule: React.FC = () => {
   const fetchSolicitudes = async () => {
     try {
       setLoading(true);
-      const data = await getSolicitudes(token);
+
+      const data = admin
+        ? await getSolicitudes(token)         // Admin → all solicitudes
+        : await getUserSolicitudes(token);     // Regular user → only their own solicitudes
+
       setSolicitudes(data);
+
       if (data.length === 0) {
-        toast.info("No hay solicitudes registradas.");
+        toast.info(
+          admin
+            ? "No hay solicitudes registradas."
+            : "Aún no has enviado ninguna solicitud."
+        );
       }
     } catch (err) {
       console.error(err);
@@ -30,7 +39,7 @@ export const SolicitudesModule: React.FC = () => {
   };
 
   useEffect(() => {
-    if (admin) fetchSolicitudes();
+    fetchSolicitudes();
   }, [admin]);
 
   return (
@@ -41,6 +50,8 @@ export const SolicitudesModule: React.FC = () => {
         </CardHeader>
 
         <CardContent className="space-y-6">
+
+          {/* ADMIN VIEW */}
           {admin && (
             <div>
               <div className="flex justify-between items-center mb-4">
@@ -64,11 +75,24 @@ export const SolicitudesModule: React.FC = () => {
             </div>
           )}
 
+          {/* USER VIEW */}
           {!admin && (
-            <div className="border p-4 rounded-lg bg-gray-50">
-              <h2 className="text-lg font-semibold mb-3">Nueva solicitud</h2>
-              <SolicitudClubForm refreshSolicitudes={fetchSolicitudes} />
-            </div>
+            <>
+              <div className="border p-4 rounded-lg bg-gray-50">
+                <h2 className="text-lg font-semibold mb-3">Nueva solicitud</h2>
+                <SolicitudClubForm refreshSolicitudes={fetchSolicitudes} />
+              </div>
+
+              <div className="border p-4 rounded-lg bg-gray-50">
+                <h2 className="text-lg font-semibold mb-3">Mis solicitudes</h2>
+
+                <SolicitudesList
+                  solicitudes={solicitudes}
+                  loading={loading}
+                  refreshSolicitudes={fetchSolicitudes}
+                />
+              </div>
+            </>
           )}
 
         </CardContent>

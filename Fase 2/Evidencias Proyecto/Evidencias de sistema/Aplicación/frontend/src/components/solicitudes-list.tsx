@@ -33,6 +33,8 @@ export default function SolicitudesList({
   const { id, action } = useParams();
   const location = useLocation();
 
+  const { admin } = useAuth();
+
   const truncate = (text: string, maxLength = 90) =>
     text.length > maxLength ? text.slice(0, maxLength) + "…" : text;
 
@@ -146,7 +148,7 @@ export default function SolicitudesList({
               </div>
 
               <div className="flex gap-2">
-                {!sol.estado && (
+                {!sol.estado && admin && (
                   <Button
                     variant="ghost"
                     className="bg-green-500 text-white"

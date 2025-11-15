@@ -7,14 +7,12 @@ from app.utils.decorators import handle_db_exceptions, handle_audit
 
 
 @handle_db_exceptions
-def get_solicitud(
-    db: Session, id_solicitud: int, current_user: dict
-) -> Solicitud | None:
+def get_solicitud(db: Session, id_solicitud: int) -> Solicitud | None:
     return db.query(Solicitud).filter(Solicitud.id_solicitud == id_solicitud).first()
 
 
 @handle_db_exceptions
-def get_solicitudes(db: Session, current_user: dict, skip: int = 0, limit: int = 100):
+def get_solicitudes(db: Session, skip: int = 0, limit: int = 100):
     return (
         db.query(
             Solicitud.id_solicitud,
@@ -30,6 +28,32 @@ def get_solicitudes(db: Session, current_user: dict, skip: int = 0, limit: int =
         .join(Usuario, Solicitud.usuario_solicitud == Usuario.rut_usuario)
         .join(DetalleUsuarioClub, DetalleUsuarioClub.rut_usuario == Usuario.rut_usuario)
         .join(Club, DetalleUsuarioClub.id_club == Club.id_club)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+@handle_db_exceptions
+def get_solicitudes_usuario(
+    db: Session, skip: int = 0, limit: int = 100, current_user: dict = None
+):
+    return (
+        db.query(
+            Solicitud.id_solicitud,
+            Solicitud.categoria,
+            Solicitud.descripcion,
+            Solicitud.estado,
+            Solicitud.respuesta,
+            Solicitud.fecha_creacion,
+            Usuario.nombre_usuario.label("nombre_usuario"),
+            Usuario.apellido_usuario.label("apellido_usuario"),
+            Club.nombre_club.label("nombre_club"),
+        )
+        .join(Usuario, Solicitud.usuario_solicitud == Usuario.rut_usuario)
+        .join(DetalleUsuarioClub, DetalleUsuarioClub.rut_usuario == Usuario.rut_usuario)
+        .join(Club, DetalleUsuarioClub.id_club == Club.id_club)
+        .where(Usuario.rut_usuario == current_user["rut_usuario"])
         .offset(skip)
         .limit(limit)
         .all()
@@ -58,7 +82,7 @@ def update_solicitud(
     solicitud_update: SolicitudUpdate,
     current_user: dict,
 ) -> Solicitud | None:
-    db_solicitud: Solicitud = get_solicitud(db, id_solicitud, current_user=current_user)
+    db_solicitud: Solicitud = get_solicitud(db, id_solicitud)
     if not db_solicitud:
         return None
 
