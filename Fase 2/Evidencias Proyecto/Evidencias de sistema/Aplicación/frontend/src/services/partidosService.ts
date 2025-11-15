@@ -31,3 +31,8 @@ export const updateRendimientoPartido = <T>(token: string | null, id_partido: nu
         method: "PUT",
         body: JSON.stringify(listaRendimientos),
     }, !!token ? token : undefined)
+
+export const generarCalendario= <T>(token: string | null, calendario: any): Promise<T> =>
+    fetchAPI<T>(`/calendario/calendar/?start_date=${calendario.start_date}&total_jornadas=${calendario.total_jornadas}`, {
+        method: "POST",
+    }, !!token ? token : undefined)

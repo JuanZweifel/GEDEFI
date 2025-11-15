@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from io import BytesIO
 import pandas as pd
 from datetime import date
-import magic  # 👈 para validar el tipo real del archivo
 from app.db import get_db
 from app.models import Jugador, FichaJugador, Serie, Usuario, DetalleClubJugador
 from app.utils.validaciones import validar_rut
@@ -89,19 +88,12 @@ async def upload_excel(
 
         # Validar tipo MIME real (no solo extensión)
         head = await file.read(2048)
-        mime_type = magic.from_buffer(head, mime=True)
         await file.seek(0)
 
         valid_mimes = [
             "application/vnd.ms-excel",  # .xls
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"  # .xlsx
         ]
-
-        if mime_type not in valid_mimes:
-            return JSONResponse(
-                content={"message": f"Archivo no válido. Tipo detectado: {mime_type}"},
-                status_code=400
-            )
 
         # Validar extensión del nombre
         if not (file.filename.endswith(".xls") or file.filename.endswith(".xlsx")):

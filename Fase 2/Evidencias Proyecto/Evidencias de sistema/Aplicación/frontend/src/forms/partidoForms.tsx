@@ -9,7 +9,7 @@ import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 import { useAuth } from '../contexts/authContext.tsx';
-import { createPartido, getRendimientosPartido, updatePartido, updateRendimientoPartido } from '../services/partidosService.ts';
+import { createPartido, generarCalendario, getRendimientosPartido, updatePartido, updateRendimientoPartido } from '../services/partidosService.ts';
 import { getSeries } from '../services/serieService.ts';
 import { getCanchas } from '../services/canchaService.ts';
 import { getClubs } from '../services/clubServices.ts';
@@ -331,13 +331,13 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
 
     const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if(!submit) setSubmit(true)
+        if (!submit) setSubmit(true)
         else setOpen(true);
     };
 
-    const handleSubmit = async() => {
+    const handleSubmit = async () => {
         try {
-            if(!partido?.id_partido) return
+            if (!partido?.id_partido) return
             const formArray = Object.values(formData)
             const response = await updateRendimientoPartido<any>(token, partido?.id_partido, formArray)
             toast.success(response.message)
@@ -366,7 +366,7 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                 </div>
                 <div className='col-span-2 flex justify-end'>
                     {!isEdit ? (
-                        <Button type="button" className="bg-blue-500" onClick={() => {setIsEdit(!isEdit)}}>Modificar</Button>
+                        <Button type="button" className="bg-blue-500" onClick={() => { setIsEdit(!isEdit) }}>Modificar</Button>
 
                     ) : (
                         <Button type="submit" form='formRendimientos' className="bg-blue-500">Guardar</Button>
@@ -389,144 +389,144 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                             </TableHeader>
                             <TableBody>
                                 {Object.values(formData).map((r: any) => (
-                                        <TableRow key={r.rut_jugador}>
-                                            <TableCell className="font-medium">
-                                                {r.rut_jugador}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {r.primer_nombre} {r.segundo_nombre} {r.primer_apellido} {r.segundo_apellido}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {!!isEdit ? (
-                                                    <Input
-                                                        type="number"
-                                                        value={r.tiempo_jugado || 0}
-                                                        onChange={(e) =>
-                                                            setFormData((prev: any) => ({
-                                                                ...prev,
-                                                                [r.rut_jugador]: {
-                                                                    ...prev[r.rut_jugador],
-                                                                    tiempo_jugado: Number(e.target.value)
-                                                                }
-                                                            }))
-                                                        }
-                                                        min={0}
-                                                        max={90}
-                                                    />
-                                                ) : (
-                                                    <Input
-                                                        type="number"
-                                                        value={r.tiempo_jugado || 0}
-                                                        readOnly
-                                                    />
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {!!isEdit ? (
-                                                    <Input
-                                                        type="number"
-                                                        value={r.goles || 0}
-                                                        onChange={(e) =>
-                                                            setFormData((prev: any) => ({
-                                                                ...prev,
-                                                                [r.rut_jugador]: {
-                                                                    ...prev[r.rut_jugador],
-                                                                    goles: Number(e.target.value)
-                                                                }
-                                                            }))
-                                                        }
-                                                        min={0}
-                                                    />
-                                                ) : (
-                                                    <Input
-                                                        type="number"
-                                                        value={r.goles || 0}
-                                                        readOnly
-                                                    />
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {!!isEdit ? (
-                                                    <Input
-                                                        type="number"
-                                                        value={r.asistencias || 0}
-                                                        onChange={(e) =>
-                                                            setFormData((prev: any) => ({
-                                                                ...prev,
-                                                                [r.rut_jugador]: {
-                                                                    ...prev[r.rut_jugador],
-                                                                    asistencias: Number(e.target.value)
-                                                                }
-                                                            }))
-                                                        }
-                                                        min={0}
-                                                    />
-                                                ) : (
-                                                    <Input
-                                                        type="number"
-                                                        value={r.asistencias || 0}
-                                                        readOnly
-                                                    />
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {!!isEdit ? (
-                                                    <Input
-                                                        type="number"
-                                                        value={r.amonestaciones || 0}
-                                                        onChange={(e) =>
-                                                            setFormData((prev: any) => ({
-                                                                ...prev,
-                                                                [r.rut_jugador]: {
-                                                                    ...prev[r.rut_jugador],
-                                                                    amonestaciones: Number(e.target.value)
-                                                                }
-                                                            }))
-                                                        }
-                                                        min={0}
-                                                    />
-                                                ) : (
-                                                    <Input
-                                                        type="number"
-                                                        value={r.amonestaciones || 0}
-                                                        readOnly
-                                                    />
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {!!isEdit ? (<Checkbox
-                                                    checked={r.amonestaciones_amarillas || false}
-                                                    onCheckedChange={(checked: boolean) =>
+                                    <TableRow key={r.rut_jugador}>
+                                        <TableCell className="font-medium">
+                                            {r.rut_jugador}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {r.primer_nombre} {r.segundo_nombre} {r.primer_apellido} {r.segundo_apellido}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {!!isEdit ? (
+                                                <Input
+                                                    type="number"
+                                                    value={r.tiempo_jugado || 0}
+                                                    onChange={(e) =>
                                                         setFormData((prev: any) => ({
                                                             ...prev,
                                                             [r.rut_jugador]: {
                                                                 ...prev[r.rut_jugador],
-                                                                amonestaciones_amarillas: checked
+                                                                tiempo_jugado: Number(e.target.value)
                                                             }
                                                         }))
                                                     }
-                                                />) : (
-                                                    <>{r.amonestaciones_amarillas ? "SI" : "NO"}</>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {!!isEdit ? (<Checkbox
-                                                    checked={r.amonestaciones_rojas || false}
-                                                    onCheckedChange={(checked: boolean) =>
+                                                    min={0}
+                                                    max={90}
+                                                />
+                                            ) : (
+                                                <Input
+                                                    type="number"
+                                                    value={r.tiempo_jugado || 0}
+                                                    readOnly
+                                                />
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {!!isEdit ? (
+                                                <Input
+                                                    type="number"
+                                                    value={r.goles || 0}
+                                                    onChange={(e) =>
                                                         setFormData((prev: any) => ({
                                                             ...prev,
                                                             [r.rut_jugador]: {
                                                                 ...prev[r.rut_jugador],
-                                                                amonestaciones_rojas: checked
+                                                                goles: Number(e.target.value)
                                                             }
                                                         }))
                                                     }
-                                                />) : (
-                                                    <>{r.amonestaciones_rojas ? "SI" : "NO"}</>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    )
+                                                    min={0}
+                                                />
+                                            ) : (
+                                                <Input
+                                                    type="number"
+                                                    value={r.goles || 0}
+                                                    readOnly
+                                                />
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {!!isEdit ? (
+                                                <Input
+                                                    type="number"
+                                                    value={r.asistencias || 0}
+                                                    onChange={(e) =>
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                asistencias: Number(e.target.value)
+                                                            }
+                                                        }))
+                                                    }
+                                                    min={0}
+                                                />
+                                            ) : (
+                                                <Input
+                                                    type="number"
+                                                    value={r.asistencias || 0}
+                                                    readOnly
+                                                />
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {!!isEdit ? (
+                                                <Input
+                                                    type="number"
+                                                    value={r.amonestaciones || 0}
+                                                    onChange={(e) =>
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                amonestaciones: Number(e.target.value)
+                                                            }
+                                                        }))
+                                                    }
+                                                    min={0}
+                                                />
+                                            ) : (
+                                                <Input
+                                                    type="number"
+                                                    value={r.amonestaciones || 0}
+                                                    readOnly
+                                                />
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {!!isEdit ? (<Checkbox
+                                                checked={r.amonestaciones_amarillas || false}
+                                                onCheckedChange={(checked: boolean) =>
+                                                    setFormData((prev: any) => ({
+                                                        ...prev,
+                                                        [r.rut_jugador]: {
+                                                            ...prev[r.rut_jugador],
+                                                            amonestaciones_amarillas: checked
+                                                        }
+                                                    }))
+                                                }
+                                            />) : (
+                                                <>{r.amonestaciones_amarillas ? "SI" : "NO"}</>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {!!isEdit ? (<Checkbox
+                                                checked={r.amonestaciones_rojas || false}
+                                                onCheckedChange={(checked: boolean) =>
+                                                    setFormData((prev: any) => ({
+                                                        ...prev,
+                                                        [r.rut_jugador]: {
+                                                            ...prev[r.rut_jugador],
+                                                            amonestaciones_rojas: checked
+                                                        }
+                                                    }))
+                                                }
+                                            />) : (
+                                                <>{r.amonestaciones_rojas ? "SI" : "NO"}</>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                )
                                 )}
                             </TableBody>
                         </Table>
@@ -543,5 +543,89 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                 onOpenChange={setOpen}
             />
         </>
+    )
+}
+export const CalendarioPartidoForm: React.FC<PartidoFormProps> = ({ token, onSuccess }) => {
+    const [calendario, setCalendario] = useState({ start_date: "", total_jornadas: 0 })
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [open, setOpen] = useState<boolean>(false)
+
+    const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setOpen(true);
+    };
+
+    const handleSubmit = async () => {
+        try {
+            setIsLoading(true)
+            const response = await generarCalendario<any>(token, calendario)
+            toast.success(response.message)
+        } catch (error) {
+            toast.info(String(error))
+        } finally {
+            setIsLoading(false)
+            // cerramos modal y notificamos al padre (true/false = abierto?)
+            // here we use false to mean "cerrar"
+            if (onSuccess) onSuccess(false)
+        }
+    }
+
+    return (
+        <form onSubmit={handleAlert} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div>
+                <Label className="block mb-2">Fecha calendario*:</Label>
+                <Input
+                    value={calendario["start_date"]}
+                    type='date'
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setCalendario((prev) => ({
+                            ...prev,
+                            start_date: value
+                        }));
+                    }}
+                    required
+                    placeholder='01-01-2026'
+                />
+            </div>
+            <div>
+                <Label className="block mb-2">Vueltas*:</Label>
+                <Input
+                    type="number"
+                    value={calendario["total_jornadas"]}
+                    onChange={(e) => setCalendario((prev) => ({
+                        ...prev,
+                        total_jornadas: Number(e.target.value)
+                    }))}
+                    required
+                    max={17}
+                />
+            </div>
+            <div className="flex justify-end space-x-2 col-span-2">
+                <Button
+                    variant="outline"
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => onSuccess ? onSuccess(false) : undefined} // <<--- importante
+                >
+                    Cancelar
+                </Button>
+
+                <Button type="submit" style={{ backgroundColor: "#0000db" }} className="text-white">
+                    {!isLoading && <Plus className="w-4 h-4 mr-2" />}
+                    {isLoading ? "Guardando..." : "Guardar"}
+                </Button>
+
+                <AlertDialogHandle
+                    title="¿Crear calendario?"
+                    description={`¿Esta seguro de crear el calendario con ${calendario.total_jornadas} para el ${calendario.start_date}`}
+                    confirmLabel="Guardar"
+                    cancelLabel="Cancelar"
+                    onConfirm={handleSubmit}
+                    open={open}
+                    onOpenChange={setOpen}
+                />
+            </div>
+        </form>
     )
 }
