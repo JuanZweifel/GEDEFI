@@ -18,26 +18,32 @@ class SerieCreate(SerieBase):
     pass
 
 
-class SerieUpdate(SerieBase):
-    nombre_serie: Optional[str] = None
-
+class SerieUpdate(BaseModel):
+    state: bool
 
 class SerieRead(SerieBase):
     id_serie: int
     serie_activa: bool
-    id_club: int
-    nombre_club: str
-    jugadores: List[JugadorRead] = Field(default_factory=list)
-    cantidad_jugadores: int
-    fecha_creacion: str
-    fecha_modificacion: str
-
+    fecha_creacion: datetime
+    fecha_modificacion: datetime
     class Config:
+        from_attributes = True
+
+class SerieWithDetails(SerieRead):
+    nombre_club: str
+    cantidad_jugadores: int
+    jugadores: list[JugadorRead] = Field(default_factory=list)
+
+    class Config: 
         from_attributes = True
 
 class SerieList(BaseModel):
     series: List[SerieRead] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SerieUniqueRead(BaseModel):
+    nombre_serie: str
 
 

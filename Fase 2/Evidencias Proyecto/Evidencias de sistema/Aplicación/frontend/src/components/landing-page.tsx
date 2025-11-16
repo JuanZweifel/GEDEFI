@@ -1,14 +1,141 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Calendar, Trophy, Users, MapPin, Clock, LogIn } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { NavLink } from "react-router";
+import { createPortal } from "react-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Trophy, LogIn } from "lucide-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "./ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { getUniqueSeries } from "../services/serieService";
+import { getFasPublico, getFasUsosPublico } from "../services/fasServices";
 
-interface LandingPageProps {
-  onLogin: () => void;
-}
+// 🔹 Tooltip de encabezados abreviados
+type AbbrevThProps = {
+  abbr: string;
+  hint: string;
+  className?: string;
+};
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
+const AbbrevTh: React.FC<AbbrevThProps> = ({
+  abbr,
+  hint,
+  className = "",
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setPos({ x: r.left + r.width / 2, y: r.top - r.height - 10 });
+  }, [open]);
+
+  return (
+    <th className={`px-3 py-2 text-center ${className}`}>
+      <div
+        ref={ref}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        className="inline-block cursor-help"
+      >
+        {abbr}
+      </div>
+
+      {open &&
+        pos &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              left: pos.x,
+              top: pos.y,
+            }}
+            className="
+              -translate-x-1/2 -translate-y-full
+              bg-black/90 text-black text-xs rounded-md px-2 py-1
+              shadow-md whitespace-nowrap z-[9999]
+              pointer-events-none
+            "
+          >
+            {hint}
+          </div>,
+          document.body
+        )}
+    </th>
+  );
+};
+
+// 🔹 Landing principal
+export const LandingPage = () => {
+  const [series, setSeries] = useState<string[]>([]);
+  const [fasDisponible, setFasDisponible] = useState<number>(0);
+  const [detalleFas, setDetalleFas] = useState<
+    { club: string; personas: number; monto: number }[]
+  >([]);
+  const [isFasDialogOpen, setIsFasDialogOpen] = useState(false);
+  const [montoInicial, setMontoInicial] = useState<number | null>(null);
+  const [montoDisponible, setMontoDisponible] = useState<number | null>(null);
+  const [anioFas, setAnioFas] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+  const fetchFas = async () => {
+    try {
+      const data = await getFasPublico();
+      console.log("DATA FAS PUBLICO:", data); // 👈 agrega esto
+
+      setMontoDisponible(data.monto_disponible);
+      setMontoInicial(data.monto_inicial);
+      setAnioFas(data.anio_fas);
+    } catch (err: any) {
+      console.error("Error al cargar FAS público:", err);
+      setError(err.message);
+    }
+  };
+
+  fetchFas();
+}, []);
+
+  useEffect(() => {
+    const fetchSeries = async () => {
+      try {
+        const data = await getUniqueSeries<any[]>();
+        const nombresUnicos = Array.from(
+          new Set(data.map((s) => s.nombre_serie))
+        );
+        setSeries(nombresUnicos);
+      } catch (error) {
+        console.error("Error cargando series:", error);
+      }
+    };
+    fetchSeries();
+  }, []);
+
+  useEffect(() => {
+    const fetchUsosFas = async () => {
+      try {
+        const data = await getFasUsosPublico();
+        setDetalleFas(data);
+      } catch (err: any) {
+        console.error("Error al cargar los usos del FAS:", err);
+        setError(err.message);
+      }
+    };
+    fetchUsosFas();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -22,194 +149,207 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 <p className="text-blue-100">Portal Oficial</p>
               </div>
             </div>
-            <Button
-              className="bg-[#FF8C00] hover:bg-[#FF7700] text-white flex items-center"
-              onClick={onLogin}
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Iniciar Sesión
-            </Button>
+            <NavLink to="/login">
+              <Button className="bg-[#FF8C00] hover:bg-[#FF7700] text-white flex items-center">
+                <LogIn className="w-4 h-4 mr-2" />
+                Iniciar Sesión
+              </Button>
+            </NavLink>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Temporada 2024</h2>
-          <p className="text-xl text-gray-600">Sigue todos los partidos, resultados y noticias de tu liga favorita</p>
-        </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="flex flex-row items-start justify-between mb-12 w-full">
 
-          {/* Standings */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-[#0000db] flex items-center">
-                  <Trophy className="w-5 h-5 mr-2" />
-                  Tabla de Posiciones - Serie A
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {[
-                    { pos: 1, team: "FC Barcelona Santiago", pts: 45, pj: 16, pg: 14, pe: 3, pp: -1, gf: 42, gc: 12 },
-                    { pos: 2, team: "Real Madrid Chile", pts: 38, pj: 16, pg: 12, pe: 2, pp: 2, gf: 35, gc: 15 },
-                    { pos: 3, team: "Universidad de Chile", pts: 35, pj: 16, pg: 10, pe: 5, pp: 1, gf: 28, gc: 18 },
-                    { pos: 4, team: "Colo-Colo", pts: 32, pj: 16, pg: 9, pe: 5, pp: 2, gf: 30, gc: 20 },
-                    { pos: 5, team: "Universidad Católica", pts: 28, pj: 16, pg: 8, pe: 4, pp: 4, gf: 25, gc: 22 }
-                  ].map((team, i) => (
-                    <div key={i} className={`grid grid-cols-8 gap-2 p-3 rounded-lg text-sm ${i < 3 ? 'bg-green-50 border border-green-200' :
-                      i === 4 ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
-                      }`}>
-                      <div className="font-bold text-center">{team.pos}</div>
-                      <div className="col-span-3 font-medium">{team.team}</div>
-                      <div className="text-center">{team.pts}</div>
-                      <div className="text-center">{team.pj}</div>
-                      <div className="text-center text-green-600">{team.gf}</div>
-                      <div className="text-center text-red-600">{team.gc}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-8 gap-2 p-2 border-t mt-4 text-xs font-medium text-gray-600">
-                  <div className="text-center">Pos</div>
-                  <div className="col-span-3">Equipo</div>
-                  <div className="text-center">Pts</div>
-                  <div className="text-center">PJ</div>
-                  <div className="text-center">GF</div>
-                  <div className="text-center">GC</div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex flex-col space-y-2 flex-grow">
+            <h2 className="text-4xl font-bold">Temporada 2024</h2>
+            <p className="text-xl text-gray-600">
+              Sigue todos los partidos, resultados y noticias de tu liga favorita
+            </p>
           </div>
 
-          {/* Upcoming Matches */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-[#0000db] flex items-center">
-                  <Calendar className="w-5 h-5 mr-2" />
-                  Próximos Partidos
+          <div className="flex-shrink-0 ml-8">
+            <Card className="shadow-lg border border-blue-200 bg-blue-50 hover:shadow-xl transition-all">
+              <CardHeader className="py-0 px-2">
+                <CardTitle
+                  className="text-[#0000db] text-sm text-center leading-none"
+                  style={{
+                    marginTop: 10, marginBottom: 0, paddingBottom: 0, lineHeight: "1rem"
+                  }}
+                >
+                  Fondo de Ayuda Solidaria (FAS)
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    {
-                      date: "15 Sep",
-                      time: "15:00",
-                      local: "FC Barcelona",
-                      visitante: "Real Madrid",
-                      stadium: "Estadio Nacional"
-                    },
-                    {
-                      date: "16 Sep",
-                      time: "17:00",
-                      local: "Universidad Chile",
-                      visitante: "Colo-Colo",
-                      stadium: "Santa Laura"
-                    },
-                    {
-                      date: "17 Sep",
-                      time: "19:00",
-                      local: "Católica",
-                      visitante: "La Serena",
-                      stadium: "San Carlos"
-                    }
-                  ].map((match, i) => (
-                    <div key={i} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-[#0000db]">{match.date}</Badge>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {match.time}
-                        </div>
-                      </div>
-                      <div className="text-center mb-1">
-                        <div className="font-medium">{match.local}</div>
-                        <div className="text-xs text-gray-500">vs</div>
-                        <div className="font-medium">{match.visitante}</div>
-                      </div>
-                      <div className="flex items-center justify-center text-xs text-gray-600">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {match.stadium}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <CardContent
+                className="flex flex-col items-center justify-center text-center py-0"
+                style={{ marginTop: "-1rem" }} // 👈 fuerza el contenido hacia arriba
+              >
+                <p className="text-gray-700 text-xs">
+                  Monto Inicial:{" "}
+                  <strong>
+                    {montoInicial !== null
+                      ? `$${montoInicial.toLocaleString("es-CL")}`
+                      : "Consultando..."}
+                  </strong>
+                </p>
+                <p className="text-gray-700 text-xs">
+                  Disponible:{" "}
+                  <strong>
+                    {montoDisponible !== null
+                      ? `$${montoDisponible.toLocaleString("es-CL")}`
+                      : "Consultando..."}
+                  </strong>
+                </p>
+                <Button
+                  className="bg-green-600 hover:bg-green-700 text-black text-xs px-3 py-1 mt-1 rounded-lg shadow-md"
+                  onClick={() => setIsFasDialogOpen(true)}
+                  disabled={montoDisponible === null}
+                >
+                  Ver detalles
+                </Button>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Recent Results */}
-        <div className="mt-8">
+        {/* Dialogo FAS */}
+        <Dialog open={isFasDialogOpen} onOpenChange={setIsFasDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-[#0000db] text-center">
+                Uso del Fondo FAS
+              </DialogTitle>
+            </DialogHeader>
+            {detalleFas.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto text-sm text-gray-600">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Club</th>
+                      <th className="px-3 py-2 text-center">Personas</th>
+                      <th className="px-3 py-2 text-right">Monto Utilizado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalleFas.map((f, i) => (
+                      <tr key={i} className="border-b">
+                        <td className="px-3 py-2">{f.club}</td>
+                        <td className="px-3 py-2 text-center">{f.personas}</td>
+                        <td className="px-3 py-2 text-right">
+                          ${f.monto.toLocaleString("es-CL")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 py-4">
+                No hay registros disponibles del FAS.
+              </p>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* 🔹 Tabla de Posiciones */}
+        <div className="mb-12">
           <Card>
             <CardHeader>
-              <CardTitle className="text-[#0000db]">Resultados Recientes</CardTitle>
+              <div className="flex items-center justify-between w-full">
+                <CardTitle className="text-[#0000db] flex items-center">
+                  <Trophy className="w-5 h-5 mr-2" />
+                  Tabla de Posiciones
+                </CardTitle>
+                <Select>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Seleccionar serie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {series.length > 0 ? (
+                      series.map((serie, i) => (
+                        <SelectItem key={i} value={serie}>
+                          {serie}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        Cargando series...
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { local: "FC Barcelona", golesLocal: 3, golesVisitante: 1, visitante: "Universidad Chile", fecha: "08 Sep" },
-                  { local: "Real Madrid", golesLocal: 2, golesVisitante: 0, visitante: "Colo-Colo", fecha: "07 Sep" },
-                  { local: "Católica", golesLocal: 1, golesVisitante: 1, visitante: "La Serena", fecha: "06 Sep" }
-                ].map((result, i) => (
-                  <div key={i} className="border rounded-lg p-4 text-center">
-                    <div className="text-xs text-gray-500 mb-2">{result.fecha}</div>
-                    <div className="font-medium text-sm">{result.local}</div>
-                    <div className="text-2xl font-bold text-[#0000db] my-2">
-                      {result.golesLocal} - {result.golesVisitante}
-                    </div>
-                    <div className="font-medium text-sm">{result.visitante}</div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto text-sm text-gray-600">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <AbbrevTh abbr="Pos" hint="Posición" />
+                      <th className="px-3 py-2 text-left">Equipo</th>
+                      <AbbrevTh abbr="Pts" hint="Puntos" />
+                      <AbbrevTh abbr="PJ" hint="Partidos Jugados" />
+                      <AbbrevTh abbr="PG" hint="Partidos Ganados" />
+                      <AbbrevTh abbr="PE" hint="Partidos Empatados" />
+                      <AbbrevTh abbr="PP" hint="Partidos Perdidos" />
+                      <AbbrevTh abbr="GF" hint="Goles a Favor" />
+                      <AbbrevTh abbr="GC" hint="Goles en Contra" />
+                      <AbbrevTh abbr="Dif" hint="Diferencia de Goles" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colSpan={10} className="text-center text-gray-500 py-6">
+                        No hay datos disponibles.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* News Section */}
-        <div className="mt-8">
+        {/* 🔹 Próximos Partidos */}
+        <div className="mb-12">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-[#0000db]">Próximos Partidos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-gray-500 py-6">
+                No hay partidos programados.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 🔹 Resultados Recientes */}
+        <div className="mb-12">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-[#0000db]">Resultados Recientes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-gray-500 py-6">
+                No hay resultados recientes.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 🔹 Noticias */}
+        <div className="mb-12">
           <Card>
             <CardHeader>
               <CardTitle className="text-[#0000db]">Noticias de la Asociación</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  {
-                    title: "Nuevo reglamento para la próxima temporada",
-                    description: "Se han implementado nuevas reglas que entrarán en vigor a partir del próximo campeonato.",
-                    date: "10 Sep 2024",
-                    category: "Reglamento"
-                  },
-                  {
-                    title: "Inauguración de nuevas instalaciones deportivas",
-                    description: "Se inauguraron dos nuevas canchas que estarán disponibles para todos los clubes afiliados.",
-                    date: "08 Sep 2024",
-                    category: "Infraestructura"
-                  },
-                  {
-                    title: "Fechas importantes del calendario 2024",
-                    description: "Conoce todas las fechas importantes del resto de la temporada incluyendo playoffs y finales.",
-                    date: "05 Sep 2024",
-                    category: "Calendario"
-                  }
-                ].map((news, i) => (
-                  <div key={i} className="border-l-4 border-[#0000db] pl-4 py-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <Badge variant="outline" className="text-xs">{news.category}</Badge>
-                      <span className="text-xs text-gray-500">{news.date}</span>
-                    </div>
-                    <h3 className="font-medium mb-1">{news.title}</h3>
-                    <p className="text-sm text-gray-600">{news.description}</p>
-                  </div>
-                ))}
-              </div>
+              <p className="text-center text-gray-500 py-6">
+                No hay noticias disponibles.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -222,7 +362,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             <Trophy className="w-6 h-6" />
             <span className="font-bold">Asociación de Fútbol</span>
           </div>
-          <p className="text-gray-400">© 2024 Todos los derechos reservados</p>
+          <p className="text-gray-400">
+            © {new Date().getFullYear()} Todos los derechos reservados
+          </p>
         </div>
       </footer>
     </div>

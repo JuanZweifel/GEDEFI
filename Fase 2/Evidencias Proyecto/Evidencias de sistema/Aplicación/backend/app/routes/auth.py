@@ -8,11 +8,13 @@ from app.schemas import (
     Token,
     PasswordRecoveryRequest,
     ResetPasswordRequest,
+    RefreshRequest,
 )
 from app.services.auth import (
     login_for_access_token,
     send_recovery_email,
     reset_user_password,
+    refresh_access_token,
 )
 from app.db import get_db
 from app.models.recuperacion_contrasena import RecuperacionContrasena
@@ -22,8 +24,6 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/login", response_model=Token)
 def login(form_data: LoginRequest, db: Session = Depends(get_db)):
-    print(form_data.email)
-    print(form_data.password)
     token = login_for_access_token(db, form_data.email, form_data.password)
     if not token:
         raise HTTPException(
@@ -46,3 +46,8 @@ def recover_password(recovery: PasswordRecoveryRequest, db: Session = Depends(ge
 @router.post("/reset-password")
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
     return reset_user_password(db, request.token, request.new_password)
+
+
+@router.post("/refresh")
+def refresh_token(req: RefreshRequest, db: Session = Depends(get_db)):
+    return refresh_access_token(req.refresh_token, db)

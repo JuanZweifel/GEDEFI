@@ -1,40 +1,44 @@
-import { API_BASE_URL } from "../config";
+import { fetchAPI } from "../utils/fetchApi";
 
-async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-            "Content-Type": "application/json",
-        },
-        ...options,
-    });
-
-    if (!res.ok) {
-        const errorData = await res.text();
-        throw new Error(`Error ${res.status}: ${errorData}`);
-    }
-
-    return res.json() as Promise<T>;
+export interface GetUsersParams {
+    skip?: number;
+    limit?: number;
+    search?: string;
+    estado?: number;
+    club?: number;
 }
 
+export const getUsers = <T>(
+    token?: string,
+    params?: GetUsersParams
+): Promise<T> => {
+    const query = new URLSearchParams(
+        Object.entries(params || {}).reduce((acc, [key, value]) => {
+            if (value !== undefined && value !== null) acc[key] = String(value);
+            return acc;
+        }, {} as Record<string, string>)
+    ).toString();
 
-export const getUsers = <T>(): Promise<T> => fetchAPI<T>("/usuarios/");
+    const endpoint = query ? `/usuarios?${query}` : `/usuarios`;
+    return fetchAPI<T>(endpoint, {}, token);
+};
 
-export const getUserById = <T>(rut: number | string): Promise<T> =>
-    fetchAPI<T>(`/usuarios/${rut}/`);
+export const getUserById = <T>(rut: number | string, token: string): Promise<T> =>
+    fetchAPI<T>(`/usuarios/${rut}/`, {}, token);
 
-export const createUser = <T>(data: unknown): Promise<T> =>
+export const createUser = <T>(data: unknown, token: string): Promise<T> =>
     fetchAPI<T>("/usuarios/", {
         method: "POST",
         body: JSON.stringify(data),
-    });
+    }, token);
 
-export const updateUser = <T>(rut: number | string, data: unknown): Promise<T> =>
+export const updateUser = <T>(rut: number | string, data: unknown, token: string): Promise<T> =>
     fetchAPI<T>(`/usuarios/${rut}/`, {
         method: "PUT",
         body: JSON.stringify(data),
-    });
+    }, token);
 
-export const deleteUser = <T>(rut: number | string): Promise<T> =>
+export const deleteUser = <T>(rut: number | string, token: string): Promise<T> =>
     fetchAPI<T>(`/usuarios/${rut}/`, {
         method: "DELETE",
-    });
+    }, token);

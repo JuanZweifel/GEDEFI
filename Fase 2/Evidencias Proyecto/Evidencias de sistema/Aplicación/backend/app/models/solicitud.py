@@ -35,11 +35,12 @@ class Solicitud(Base):
         "Usuario",
         foreign_keys=[usuario_solicitud],
         back_populates="solicitudes_realizadas",
+        passive_deletes=False,
     )
 
     usuario_resp: Mapped["Usuario"] = relationship(
         "Usuario",
         foreign_keys=[usuario_respuesta],
         back_populates="solicitudes_respondidas",
+        passive_deletes=False,
     )
-

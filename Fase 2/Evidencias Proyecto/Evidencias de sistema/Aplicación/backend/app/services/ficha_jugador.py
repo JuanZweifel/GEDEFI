@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from app.models import FichaJugador
+from app.models import FichaJugador, Serie, Jugador
 from app.schemas import FichaJugadorCreate, FichaJugadorUpdate
+from fastapi import HTTPException
 
 
 def get_ficha_jugador(db: Session, rut_jugador: str, id_serie: int) -> FichaJugador | None:
@@ -12,6 +13,50 @@ def get_ficha_jugador(db: Session, rut_jugador: str, id_serie: int) -> FichaJuga
 
 def get_fichas_jugador(db: Session, skip: int = 0, limit: int = 100):
     return db.query(FichaJugador).offset(skip).limit(limit).all()
+
+
+def get_fichas_por_filtro(
+    db: Session,
+    current_user: dict,
+    id_club: int | None = None,
+    id_serie: int | None = None
+):
+
+    print("\n📌 FILTRANDO FICHAS")
+    print("👤 USER:", current_user)
+
+    query = (
+        db.query(FichaJugador)
+        .join(Serie, FichaJugador.id_serie == Serie.id_serie)
+        .join(Jugador, FichaJugador.rut_jugador == Jugador.rut_jugador)
+    )
+
+    # 🔹 ASOCIACIÓN: ve todo
+    if current_user.get("asociacion", False):
+        print("🟢 ASOCIACIÓN → VE TODAS LAS FICHAS")
+        if id_club:
+            query = query.filter(Serie.id_club == id_club)
+        if id_serie:
+            query = query.filter(FichaJugador.id_serie == id_serie)
+        return query.all()
+
+    # 🔹 USUARIO DE CLUB
+    id_club_usuario = current_user.get("id_club")
+
+    if not id_club_usuario:
+        print("⚠️ SIN CLUB → RETORNA VACÍO")
+        return []
+
+    print(f"🏟️ FILTRANDO POR CLUB DEL TOKEN: {id_club_usuario}")
+
+    # Forzamos el filtro por su club
+    query = query.filter(Serie.id_club == id_club_usuario)
+
+    # Si además quiere filtrar por serie
+    if id_serie:
+        query = query.filter(FichaJugador.id_serie == id_serie)
+
+    return query.all()
 
 
 def create_ficha_jugador(db: Session, ficha: FichaJugadorCreate) -> FichaJugador:
@@ -37,8 +82,34 @@ def update_ficha_jugador(
 
 def delete_ficha_jugador(db: Session, rut_jugador: str, id_serie: int) -> bool:
     db_ficha = get_ficha_jugador(db, rut_jugador, id_serie)
+
     if not db_ficha:
         return False
+
+    # Campos que deben estar vacíos para permitir eliminación
+    campos_relevantes = [
+        "fecha_fin",
+        "talla_camiseta",
+        "talla_short",
+        "talla_media",
+        "talla_botin",
+        "estatura",
+        "Peso",
+        "imc",
+    ]
+
+    # Revisar si alguno de estos campos tiene datos
+    for campo in campos_relevantes:
+        valor = getattr(db_ficha, campo)
+
+        # Si el campo tiene valor NO vacío → bloquear eliminación
+        if valor not in (None, "", 0):
+            raise HTTPException(
+                status_code=400,
+                detail=f"No se puede eliminar la ficha porque el campo '{campo}' contiene datos."
+            )
+
+    # Si todos están vacíos → eliminar
     db.delete(db_ficha)
     db.commit()
     return True

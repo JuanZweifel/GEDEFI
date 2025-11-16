@@ -2,13 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import services, schemas
+from sqlalchemy.exc import IntegrityError
+from app.security import get_current_user
 
 router = APIRouter(prefix="/jugadores", tags=["Jugadores"])
 
 
 @router.post("/", response_model=schemas.JugadorRead)
 def create_jugador(jugador: schemas.JugadorCreate, db: Session = Depends(get_db)):
-    return services.create_jugador(db, jugador)
+    try:
+        return services.create_jugador(db, jugador)
+    except HTTPException:
+        # Permite que los HTTPException lleguen al cliente tal cual
+        raise
+    except Exception as e:
+        # Cualquier otro error será 500
+        raise HTTPException(status_code=500, detail=f"Error al crear jugador: {str(e)}")
 
 
 @router.get("/{rut_jugador}", response_model=schemas.JugadorRead)
@@ -20,8 +29,13 @@ def read_jugador(rut_jugador: str, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[schemas.JugadorRead])
-def read_jugadores(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return services.get_jugadores(db, skip=skip, limit=limit)
+def read_jugadores(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    return services.get_jugadores(db, current_user, skip=skip, limit=limit)
 
 
 @router.put("/{rut_jugador}", response_model=schemas.JugadorRead)
@@ -35,7 +49,7 @@ def update_jugador(
 
 
 @router.delete("/{rut_jugador}", status_code=204)
-def delete_jugador(rut_jugador: str, db: Session = Depends(get_db)):
-    deleted = services.delete_jugador(db, rut_jugador)
+def delete_jugador(rut_jugador: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    deleted = services.delete_jugador(db, rut_jugador, current_user)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Jugador not found")
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")

@@ -29,18 +29,25 @@ class JugadorBase(BaseModel):
 
     @field_validator("primer_nombre", "segundo_nombre", "primer_apellido", "segundo_apellido", mode="before")
     @classmethod
-    def validar_nombre_jugador(cls, v) -> str:
-        return validar_nombre(v)
+    def validar_nombre_jugador(cls, v, info) -> str:
+        field_name = info.field_name  
+        if field_name in ("primer_nombre", "primer_apellido"):
+            return validar_nombre(v)
+        else:
+            if v is not None and v.strip() != "":
+                return validar_nombre(v)
 
     @field_validator("fecha_nacimiento")
     @classmethod
     def validar_fecha_nacimiento(cls, v) -> date:
         return validar_fecha(v, True)
 
-    #@field_validator("fono_jugador")
-    #@classmethod
-    #def validar_fono_jugador(cls, v) -> str:
-    #    return validar_celular_chile(v)
+    @field_validator("fono_jugador")
+    @classmethod
+    def validar_fono_jugador(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v.strip() == "":
+            return None  
+        return validar_celular_chile(v) 
 
 class JugadorCreate(JugadorBase):
     pass

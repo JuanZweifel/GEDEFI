@@ -1,8 +1,8 @@
 from sqlalchemy import ForeignKey
-from sqlalchemy import String, Integer, Date, Boolean, DateTime
+from sqlalchemy import String, Integer, Date, Boolean, DateTime, Time
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, time
 from app.db import Base
 
 
@@ -11,6 +11,8 @@ class Entrenamiento(Base):
 
     id_entrenamiento: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     fecha_entrenamiento: Mapped[date] = mapped_column(Date, nullable=False)
+    hora_ini: Mapped[time] = mapped_column(Time, nullable=False)
+    hora_fin: Mapped[time] = mapped_column(Time, nullable=False)
     descripcion_entrenamiento: Mapped[str] = mapped_column(String(500), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(
@@ -24,10 +26,17 @@ class Entrenamiento(Base):
     )
     rut_usuario: Mapped[str] = mapped_column(String(10), ForeignKey("USUARIO.rut_usuario"), nullable=False)
     id_cancha:Mapped[int] = mapped_column(Integer, ForeignKey("CANCHA.id_cancha"), nullable=False)
+    id_serie:Mapped[int] = mapped_column(Integer, ForeignKey("SERIE.id_serie"), nullable=False)
 
     # Relaciones
     usuario: Mapped["Usuario"] = relationship(
         "Usuario", back_populates="entrenamientos"
     )
-    # rendimientos_entrenamiento: Mapped[list["RendimientoEntrenamiento"]] = relationship("RendimientoEntrenamiento", back_populates="entrenamiento", cascade="all, delete-orphan")
-    # cancha: Mapped["Cancha"] = relationship("Cancha", back_populates="entrenamientos")
+
+    rendimientos_entrenamiento: Mapped[list["RendimientoEntrenamiento"]] = relationship(
+        "RendimientoEntrenamiento", back_populates="entrenamiento"
+        )
+    
+    cancha: Mapped["Cancha"] = relationship("Cancha", back_populates="entrenamientos")
+
+    serie: Mapped["Serie"] = relationship("Serie", back_populates="entrenamientos")

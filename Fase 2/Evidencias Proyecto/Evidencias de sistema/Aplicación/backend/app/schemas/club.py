@@ -1,20 +1,29 @@
 from datetime import date, datetime
 from pydantic import BaseModel, Field, ConfigDict, field_validator, EmailStr
-from typing import Optional, List
+from typing import Optional, List, Union
 from .orden_pago import OrdenPagoRead
-from .serie import SerieRead
+from .serie import SerieWithDetails
 from ..utils.validaciones import *
-from .usuario import UsuarioRead
-from .serie import SerieRead
-from .jugador import JugadorRead
+from .usuario import UsuarioForClub
+from .jugador import JugadorBase
 
 
 class ClubBase(BaseModel):
-    nombre_club: str = Field(..., max_length=120, min_length=4, description="Nombre del club")
-    fecha_fundacion: date = Field(..., description="Fecha de fundación del club")
-    fono_club: Optional[str] = Field(None, max_length=12, description="Teléfono del club")
-    direccion_club: str = Field(..., max_length=500, min_length=10, description="Dirección del club")
-    email_club: EmailStr = Field(..., max_length=320, description="Email del club")
+    rut_club: str = Field(..., min_length=9, max_length=10, description="RUT del club.")
+    nombre_club: str = Field(..., max_length=120, min_length=4, description="Nombre del club.")
+    fecha_fundacion: date = Field(..., description="Fecha de fundación del club.")
+    fono_club: Optional[str] = Field(None, max_length=12, description="Teléfono del club.")
+    direccion_club: str = Field(..., max_length=500, min_length=5, description="Dirección del club.")
+    email_club: EmailStr = Field(..., max_length=320, description="Email del club.")
+    logo_club: Optional[str] = Field(None, description="Ruta del archivo del logo.")
+    color_primario: str = Field(..., min_length=7, max_length=7, description="Color principal del club en formato hexadecimal (ej: #ABC123).")
+    color_secundario: str = Field(..., min_length=7, max_length=7, description="Color secundario del club en formato hexadecimal (ej: #ABC123).")
+    color_respaldo: Optional[str] = Field(None, description="Color respaldo del club en formato hexadecimal (ej: #ABC123).")
+
+    @field_validator("rut_club")
+    @classmethod
+    def validar_rut_club(cls, v) -> str:
+        return validar_rut(v)
 
     @field_validator("nombre_club", mode="before")
     @classmethod
@@ -51,14 +60,43 @@ class ClubRead(ClubBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-
 class ClubUpdate(BaseModel):
+    rut_club: Optional[str] = Field(None, max_length=10, min_length=9)
     nombre_club: Optional[str] = Field(None, max_length=120, min_length=4, description="Nombre del club")
     fecha_fundacion: Optional[date] = Field(None, description="Fecha de fundación del club")
     fono_club: Optional[str] = Field(None, max_length=12, description="Teléfono del club")
     direccion_club: Optional[str] = Field(None, max_length=500, min_length=10, description="Dirección del club")
     email_club: Optional[str] = Field(None, max_length=320, description="Email del club")
-    club_activo: Optional[bool] = Field(None, description="Club activo")
+    logo_club: Optional[str] = Field(None, description="Ruta del archivo del logo.")
+    color_primario: str = Field(..., min_length=7, max_length=8, description="Color principal del club en formato hexadecimal (ej: #ABC123).")
+    color_secundario: str = Field(..., min_length=7, max_length=8, description="Color secundario del club en formato hexadecimal (ej: #ABC123).")
+    color_respaldo: Optional[str] = Field(None, description="Color respaldo del club en formato hexadecimal (ej: #ABC123).")
+
+    @field_validator("rut_club")
+    @classmethod
+    def validar_rut_club(cls, v) -> str:
+        return validar_rut(v)
+
+    @field_validator("nombre_club", mode="before")
+    @classmethod
+    def validar_nombre_club(cls, v) -> str:
+        return validar_nombre(v)
+    
+    def validar_fecha_fundacion(cls, v):
+        if isinstance(v, str):
+            # convierte el string "YYYY-MM-DD" a date
+            v = date.fromisoformat(v)
+        elif isinstance(v, datetime):
+            # si viene un datetime, tomar solo la fecha
+            v = v.date()
+        return validar_fecha(v)
+    
+    @field_validator("fono_club")
+    @classmethod
+    def validar_fono_club(cls, v) -> Optional[str]:
+        if v is not None:
+            return validar_celular_chile(v)
+        return v
 
 
 class ClubWithOrdenPago(ClubRead):
@@ -68,7 +106,12 @@ class ClubList(BaseModel):
     clubs: List[ClubRead] = Field(default_factory=list)
 
 class ClubWithDetails(ClubRead):
-    directiva: List[UsuarioRead] = Field(default_factory=list)
-    series: int
-    jugadores: int
+    directiva: List[UsuarioForClub] = Field(default_factory=list)
+    series: list[SerieWithDetails] = Field(default_factory=list)
+    jugadores: list[JugadorBase] = Field(default_factory=list)
 
+class PaginatedClubs(BaseModel):
+    items: List[ClubWithDetails]
+    total: int
+
+    model_config = ConfigDict(from_attributes=True)

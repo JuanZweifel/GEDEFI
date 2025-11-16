@@ -3,31 +3,32 @@ from typing import Optional
 from datetime import date
 
 class RendimientoPartidoBase(BaseModel):
+    id_partido: int
+    rut_jugador: str
+    id_serie: int
     tiempo_jugado: Optional[int] = None
-    goles: str
-    asistencias: int
-    amonestaciones: Optional[str] = None
-    amonestaciones_amarillas: bool
-    amonestaciones_rojas: bool
-    fecha_ini: date
+    goles: Optional[int]
+    asistencias: Optional[int]
+    amonestaciones: Optional[int] = None
+    amonestaciones_amarillas: Optional[bool] = None
+    amonestaciones_rojas: Optional[bool] = None
 
 class RendimientoPartidoCreate(RendimientoPartidoBase):
-    id_partido: int
-    rut_jugador: str
-    id_serie: int
+    pass
 
 class RendimientoPartidoRead(RendimientoPartidoBase):
-    id_partido: int
-    rut_jugador: str
-    id_serie: int
+    primer_nombre: str
+    segundo_nombre: Optional[str] = None
+    primer_apellido: str
+    segundo_apellido: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 class RendimientoPartidoUpdate(BaseModel):
+    rut_jugador: str
     tiempo_jugado: Optional[int] = None
-    goles: Optional[str] = None
+    goles: Optional[int] = None
     asistencias: Optional[int] = None
-    amonestaciones: Optional[str] = None
+    amonestaciones: Optional[int] = None
     amonestaciones_amarillas: Optional[bool] = None
     amonestaciones_rojas: Optional[bool] = None
-    fecha_ini: Optional[date] = None
 

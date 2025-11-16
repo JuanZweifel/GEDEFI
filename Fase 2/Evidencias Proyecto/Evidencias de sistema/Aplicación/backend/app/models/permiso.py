@@ -24,5 +24,5 @@ class Permiso(Base):
 
     # Relaciones
     permisos_roles: Mapped["PermisoRol"] = relationship(
-        "PermisoRol", back_populates="permiso"
+        "PermisoRol", back_populates="permiso", passive_deletes=False
     )

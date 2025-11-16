@@ -16,4 +16,4 @@ class Reunion(Base):
     fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
     # Relaciones
-    detalles_reunion: Mapped[list["DetalleReunion"]] = relationship("DetalleReunion", back_populates="reunion", cascade="all, delete-orphan")
+    detalles_reunion: Mapped[list["DetalleReunion"]] = relationship("DetalleReunion", back_populates="reunion", passive_deletes=False)

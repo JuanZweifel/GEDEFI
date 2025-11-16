@@ -1,8 +1,10 @@
 from sqlalchemy.orm import Session
 from app.models import permiso
 from app.schemas import PermisoCreate, PermisoUpdate
+from app.utils.decorators import handle_db_exceptions
 
-
+# TODO: Aplicar auth security para poder implementar auditoria
+@handle_db_exceptions
 def get_permiso(db: Session, id_permiso: int) -> permiso.Permiso | None:
     return (
         db.query(permiso.Permiso)
@@ -11,10 +13,12 @@ def get_permiso(db: Session, id_permiso: int) -> permiso.Permiso | None:
     )
 
 
+@handle_db_exceptions
 def get_permisos(db: Session, skip: int = 0, limit: int = 100):
     return db.query(permiso.Permiso).offset(skip).limit(limit).all()
 
 
+@handle_db_exceptions
 def create_permiso(db: Session, permiso_data: PermisoCreate) -> permiso.Permiso:
     db_permiso = permiso.Permiso(**permiso_data.dict())
     db.add(db_permiso)
@@ -23,6 +27,7 @@ def create_permiso(db: Session, permiso_data: PermisoCreate) -> permiso.Permiso:
     return db_permiso
 
 
+@handle_db_exceptions
 def update_permiso(
     db: Session, id_permiso: int, permiso_update: PermisoUpdate
 ) -> permiso.Permiso | None:
@@ -36,6 +41,7 @@ def update_permiso(
     return db_permiso
 
 
+@handle_db_exceptions
 def delete_permiso(db: Session, id_permiso: int) -> bool:
     db_permiso = get_permiso(db, id_permiso)
     if not db_permiso:

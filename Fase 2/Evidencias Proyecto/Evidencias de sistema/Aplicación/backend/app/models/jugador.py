@@ -15,7 +15,7 @@ class Jugador(Base):
     genero: Mapped[bool] = mapped_column(Boolean, nullable=False)
     fecha_nacimiento: Mapped[date] = mapped_column(Date, nullable=False)
     enfermedades_cronicas: Mapped[str] = mapped_column(String(500), nullable=True, default="Sin enfermedades crónicas")
-    fono_jugador: Mapped[str] = mapped_column(String, nullable=True)
+    fono_jugador: Mapped[str] = mapped_column(String(12), nullable=True)
     jugador_activo:Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False, onupdate=datetime.now(timezone.utc))
@@ -26,13 +26,15 @@ class Jugador(Base):
     )
 
     detalles_club_jugador: Mapped[list["DetalleClubJugador"]] = relationship(
-        "DetalleClubJugador", back_populates="jugador"
+        "DetalleClubJugador", back_populates="jugador", passive_deletes=False
     )
 
     fichas_jugador: Mapped[list["FichaJugador"]] = relationship(
-        "FichaJugador", back_populates="jugador"
+        "FichaJugador", back_populates="jugador", passive_deletes=False
     )
 
     rendimientos_entrenamiento: Mapped[list["RendimientoEntrenamiento"]] = relationship(
-        "RendimientoEntrenamiento", back_populates="jugador"
+        "RendimientoEntrenamiento", back_populates="jugador", passive_deletes=False
     )
+
+    usos_fas: Mapped[list["UsoFas"]] = relationship("UsoFas", back_populates="jugador")

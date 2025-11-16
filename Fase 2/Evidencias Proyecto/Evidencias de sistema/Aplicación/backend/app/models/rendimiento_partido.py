@@ -9,10 +9,10 @@ from datetime import date
 class RendimientoPartido(Base):
     __tablename__ = "RENDIMIENTO_PARTIDO"
 
-    tiempo_jugado: Mapped[int] = mapped_column(Integer, index=True)
-    goles: Mapped[str] = mapped_column(String(50), nullable=False)
+    tiempo_jugado: Mapped[int] = mapped_column(Integer, nullable=True)
+    goles: Mapped[int] = mapped_column(Integer, nullable=False)
     asistencias: Mapped[int] = mapped_column(Integer, nullable=False)
-    amonestaciones: Mapped[str] = mapped_column(String(300), nullable=True)
+    amonestaciones: Mapped[int] = mapped_column(Integer, nullable=True)
     amonestaciones_amarillas: Mapped[bool] = mapped_column(Boolean, nullable=False)
     amonestaciones_rojas: Mapped[bool] = mapped_column(Boolean, nullable=False)
     id_partido: Mapped[int] = mapped_column(
@@ -22,16 +22,19 @@ class RendimientoPartido(Base):
         nullable=False,
         index=True,
     )
-    fecha_ini: Mapped[date] = mapped_column(Date, nullable=False)
     rut_jugador: Mapped[str] = mapped_column(
-        String(10), ForeignKey("JUGADOR.rut_jugador"), nullable=False
+        String(10), nullable=False, primary_key=True, index=True
     )
-    id_serie: Mapped[int] = mapped_column(Integer, nullable=False)
+    id_serie: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+
+    fecha_ini: Mapped[date] = mapped_column(Date, nullable=False, primary_key=True)
+
+    fecha_ini: Mapped[date] = mapped_column(Date, nullable= False)
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["rut_jugador", "id_serie"],
-            ["FICHA_JUGADOR.rut_jugador", "FICHA_JUGADOR.id_serie"],
+            ["rut_jugador", "id_serie", "fecha_ini"],
+            ["FICHA_JUGADOR.rut_jugador", "FICHA_JUGADOR.id_serie", "FICHA_JUGADOR.fecha_ini"],
         ),
     )
 

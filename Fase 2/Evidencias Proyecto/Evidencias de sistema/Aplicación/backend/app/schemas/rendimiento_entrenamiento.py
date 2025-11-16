@@ -1,12 +1,13 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-#from .entrenamiento import EntrenamientoRead  # si tienes un esquema de Entrenamiento
 
 class RendimientoEntrenamientoBase(BaseModel):
-    frecuencia_cardiaca: int
-    velocidad: Optional[int] = None
-    duracion_recorrido: int
-    nivel_oxigeno: int
+    frecuencia_cardiaca: Optional [int] = None
+    velocidad: Optional[int] = None 
+    duracion_recorrido: Optional [int] = None
+    nivel_oxigeno: Optional [int] = None
+    observaciones: Optional [str] = None
+    asistencia: bool
 
 class RendimientoEntrenamientoCreate(RendimientoEntrenamientoBase):
     rut_jugador: str
@@ -22,4 +23,5 @@ class RendimientoEntrenamientoUpdate(BaseModel):
     velocidad: Optional[int] = None
     duracion_recorrido: Optional[int] = None
     nivel_oxigeno: Optional[int] = None
+    observaciones: Optional [str] = None
 

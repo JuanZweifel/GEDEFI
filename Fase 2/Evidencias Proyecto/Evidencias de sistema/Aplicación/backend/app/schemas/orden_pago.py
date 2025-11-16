@@ -1,43 +1,41 @@
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional
 from ..utils.validaciones import validar_fecha, validar_rut
 
 
 class OrdenPagoBase(BaseModel):
-    tipo_orden: int = Field(..., description="Tipo de orden de pago", ge=0, le=4)
-    tipo_pago: int = Field(..., description="Tipo de pago", ge=0, le=4)
+    tipo_orden: str = Field(..., max_length=100, description="Tipo de orden de pago")
+    tipo_movimiento: str = Field(..., max_length=25, description="Tipo de movimiento [Ingreso, Egreso]")
     monto: float = Field(..., gt=0, description="Monto de la orden de pago")
-    metodo_pago: Optional[int] = Field(None, description="Método de pago", ge=0, le=4)
-    numero_transaccion: Optional[str] = Field(None, max_length=50, description="Número de transacción.")
     descripcion: Optional[str] = Field(None, max_length=500, description="Descripción de la orden de pago.")
-    fecha_vencimiento: Optional[datetime] = Field(None, description="Fecha de vencimiento de la orden de pago.")
-    fecha_pago: Optional[datetime] = Field(None, description="Fecha de pago de la orden de pago.")
+    fecha_vencimiento: Optional[date] = Field(None, description="Fecha de vencimiento de la orden de pago.")
     id_club: Optional[int] = Field(None, description="ID del club asociado a la orden de pago.")
-    fecha_modificacion: Optional[datetime] = Field(None, description="Fecha de la última modificación.")
-    usuario_emisor: str = Field(..., max_length=10, description="Rut del usuario emisor de la orden de pago.")
-    usuario_pago: Optional[str] = Field(None, max_length=10, description="Rut del usuario que realizó el pago.")
 
     @field_validator("fecha_vencimiento")
     @classmethod
     def validar_fecha_vencimiento(cls, v):
+        class_name = cls.__name__
         if v is not None:
-            return validar_fecha(v, False)
+            if "Create" in class_name or "Update" in class_name:
+                return validar_fecha(v, False)
         return v
     
-    @field_validator("fecha_pago")
-    @classmethod
-    def validar_fecha_pago(cls, v):
-        if v is not None:
-            return validar_fecha(v, True)
-        return v
+    #@field_validator("fecha_pago")
+    #@classmethod
+    #def validar_fecha_pago(cls, v):
+    #    class_name = cls.__name__
+    #    if v is not None:
+    #        if "Create" in class_name or "Update" in class_name:
+    #            return validar_fecha(v, True)
+    #    return v
     
-    @field_validator("usuario_emisor", "usuario_pago")
-    @classmethod
-    def validar_rut_pago(cls, v):
-        if v is not None:
-            return validar_rut(v)
-        return v
+    #@field_validator("usuario_pago")
+    #@classmethod
+    #def validar_rut_pago(cls, v):
+    #    if v is not None:
+    #        return validar_rut(v)
+    #    return v
 
 
 class OrdenPagoCreate(OrdenPagoBase):
@@ -45,24 +43,51 @@ class OrdenPagoCreate(OrdenPagoBase):
 
 
 class OrdenPagoRead(OrdenPagoBase):
-    id_orden: int
+    id_orden_pago: str
+    tipo_pago: Optional[str] = None
+    metodo_pago: Optional[str] = None
+    numero_transaccion: Optional[str] = None
+    estado_orden: str
+    fecha_pago: Optional[datetime] = None
+    nombre_club: Optional[str] = None
+    usuario_emisor: Optional[str]
+    usuario_pago: Optional[str]
     fecha_emision: datetime = Field(..., description="Fecha de emisión de la orden de pago.")
+    fecha_modificacion: datetime = Field(..., description="Fecha de la ultima modificación de la orden de pago.")
+
     model_config = ConfigDict(from_attributes=True)
 
 class OrdenPagoUpdate(BaseModel):
     tipo_orden: Optional[int] = None
     tipo_pago: Optional[int] = None
     monto: Optional[float] = Field(None, gt=0, description="Monto de la orden de pago")
-    metodo_pago: Optional[int] = None
+    metodo_pago: Optional[str] = None
     numero_transaccion: Optional[str] = Field(None, max_length=50)
     descripcion: Optional[str] = Field(None, max_length=500)
-    orden_activa: Optional[bool] = None
+    estado_orden: Optional[str]
     fecha_emision: Optional[datetime] = None
     fecha_vencimiento: Optional[datetime] = None
     fecha_pago: Optional[datetime] = None
     id_club: Optional[int] = None
-    usuario_emisor: Optional[str] = Field(None, max_length=10)
     usuario_pago: Optional[str] = Field(None, max_length=10)
 
 class OrdenPagoList(BaseModel):
     ordenes_pago: list[OrdenPagoRead]
+
+
+class IngresosMes(BaseModel):
+    total_ingresos: int      # ejemplo: "2.245.000"
+    variacion: str           # ejemplo: "+12% vs mes anterior"
+
+class EgresosMes(BaseModel):
+    total_egresos: int
+    variacion: str
+
+class OrdenPagoPay(BaseModel):
+    tipo_pago: str
+    metodo_pago: str
+    numero_transaccion: Optional[str]
+    usuario_pago: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
+

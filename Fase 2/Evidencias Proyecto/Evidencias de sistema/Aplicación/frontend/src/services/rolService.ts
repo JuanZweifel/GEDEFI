@@ -1,39 +1,23 @@
-import { API_BASE_URL } from "../config";
+import { fetchAPI } from "../utils/fetchApi";
 
-async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-            "Content-Type": "application/json",
-        },
-        ...options,
-    });
+export const getRoles = <T>(token: string): Promise<T> => fetchAPI<T>("/roles/", {}, token);
 
-    if (!res.ok) {
-        const errorData = await res.text();
-        throw new Error(`Error ${res.status}: ${errorData}`);
-    }
+export const getRoleById = <T>(roleId: number | string, token: string): Promise<T> =>
+    fetchAPI<T>(`/roles/${roleId}/`, {}, token);
 
-    return res.json() as Promise<T>;
-}
-
-export const getRoles = <T>(): Promise<T> => fetchAPI<T>("/roles/");
-
-export const getRoleById = <T>(roleId: number | string): Promise<T> =>
-    fetchAPI<T>(`/roles/${roleId}/`);
-
-export const createRole = <T>(data: unknown): Promise<T> =>
+export const createRole = <T>(data: unknown, token: string): Promise<T> =>
     fetchAPI<T>("/roles/", {
         method: "POST",
         body: JSON.stringify(data),
-    });
+    }, token);
 
-export const updateRole = <T>(roleId: number | string, data: unknown): Promise<T> =>
+export const updateRole = <T>(roleId: number | string, data: unknown, token: string): Promise<T> =>
     fetchAPI<T>(`/roles/${roleId}/`, {
         method: "PUT",
         body: JSON.stringify(data),
-    });
+    }, token);
 
-export const deleteRole = <T>(roleId: number | string): Promise<T> =>
+export const deleteRole = <T>(roleId: number | string, token: string): Promise<T> =>
     fetchAPI<T>(`/roles/${roleId}/`, {
         method: "DELETE",
-    });
+    }, token);
