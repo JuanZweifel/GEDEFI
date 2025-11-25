@@ -147,10 +147,11 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
                         value={rutClub}
                         onChange={(e) => {
                             const value = e.target.value;
+                            console.log(value)
                             setRutClub(value);
 
                             // Validación con tu función
-                            if (!validarRut(value)) {
+                            if (!validarRut(value) || e.target.value === "11111111-1") {
                                 e.currentTarget.setCustomValidity("RUT inválido. Verifica el formato y dígito verificador.");
                             } else {
                                 e.currentTarget.setCustomValidity(""); // limpio el mensaje si es válido

@@ -195,11 +195,11 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
                             <>
                                 <div>
                                     <Label>Goles local:</Label>
-                                    <Input type="number" min={0} value={golesLocal ?? ''} onChange={e => setGolesLocal(Number(e.target.value))} />
+                                    <Input min={0} value={golesLocal || 0} onChange={e => setGolesLocal(Number(e.target.value))} />
                                 </div>
                                 <div>
                                     <Label>Goles visitante:</Label>
-                                    <Input type="number" min={0} value={golesVisita ?? ''} onChange={e => setGolesVisita(Number(e.target.value))} />
+                                    <Input min={0} value={golesVisita || 0} onChange={e => setGolesVisita(Number(e.target.value))} />
                                 </div>
                             </>
                         }
@@ -399,7 +399,6 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                         <TableCell className="font-medium">
                                             {!!isEdit ? (
                                                 <Input
-                                                    type="number"
                                                     value={r.tiempo_jugado || 0}
                                                     onChange={(e) =>
                                                         setFormData((prev: any) => ({
@@ -424,7 +423,6 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                         <TableCell className="font-medium">
                                             {!!isEdit ? (
                                                 <Input
-                                                    type="number"
                                                     value={r.goles || 0}
                                                     onChange={(e) =>
                                                         setFormData((prev: any) => ({
@@ -448,7 +446,6 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                         <TableCell className="font-medium">
                                             {!!isEdit ? (
                                                 <Input
-                                                    type="number"
                                                     value={r.asistencias || 0}
                                                     onChange={(e) =>
                                                         setFormData((prev: any) => ({
@@ -472,7 +469,6 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                         <TableCell className="font-medium">
                                             {!!isEdit ? (
                                                 <Input
-                                                    type="number"
                                                     value={r.amonestaciones || 0}
                                                     onChange={(e) =>
                                                         setFormData((prev: any) => ({
@@ -591,13 +587,13 @@ export const CalendarioPartidoForm: React.FC<PartidoFormProps> = ({ token, onSuc
             <div>
                 <Label className="block mb-2">Vueltas*:</Label>
                 <Input
-                    type="number"
-                    value={calendario["total_jornadas"]}
+                    value={calendario["total_jornadas"] || 0}
                     onChange={(e) => setCalendario((prev) => ({
                         ...prev,
                         total_jornadas: Number(e.target.value)
                     }))}
                     required
+                    min={1}
                     max={17}
                 />
             </div>

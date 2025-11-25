@@ -77,19 +77,21 @@ export const PartidoCoreModule: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2>Gestión de Partidos y Entrenamientos</h2>
-                <div className="flex space-x-2">
-                    <Button style={{ backgroundColor: '#0000db' }} className="text-white" onClick={() => navigate('/dashboard/partidos/new')}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nuevo Partido
-                    </Button>
+                {!! admin && 
+                    <div className="flex space-x-2">
+                        {/*<Button style={{ backgroundColor: '#0000db' }} className="text-white" onClick={() => navigate('/dashboard/partidos/new')}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Nuevo Partido
+                        </Button>*/}
 
-                    <ReportePartidosDialog token={token} />
+                        <ReportePartidosDialog token={token} />
 
-                    <Button style={{ backgroundColor: '#0000db' }} className="text-white" onClick={() => navigate('/dashboard/partidos/calendario')}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Crear calendario
-                    </Button>
-                </div>
+                        <Button style={{ backgroundColor: '#0000db' }} className="text-white" onClick={() => navigate('/dashboard/partidos/calendario')}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Crear calendario
+                        </Button>
+                    </div>
+                }
             </div>
             <Card>
                 <CardHeader>

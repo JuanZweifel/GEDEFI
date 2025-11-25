@@ -9,6 +9,9 @@ def validar_rut(rut: str) -> str:
     """
     try:
         rut = rut.replace(".", "").upper()  # quitar puntos y poner mayúscula a 'K'
+
+        if(len(rut) < 9 or len(rut) > 10 or rut=="11111111-1"):
+            raise ValueError("El RUN es invalido")
         numero, dv = rut.split("-")
         numero = int(numero)
 

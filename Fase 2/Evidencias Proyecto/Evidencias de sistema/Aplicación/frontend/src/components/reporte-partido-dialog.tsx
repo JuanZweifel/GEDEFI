@@ -15,12 +15,15 @@ export const ReportePartidosDialog: React.FC<Props> = ({ token }) => {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`/reportes/partidos/pdf?month=${month}&year=${year}`, {
+      console.log("reporteria")
+      const response = await fetch(`http://localhost:8000/reportes/partidos?month=${month}&year=${year}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
+          Accept: "application/pdf",
         },
       });
+      console.log(response)
       if (!response.ok) throw new Error("Error al generar el reporte");
 
       const blob = await response.blob();

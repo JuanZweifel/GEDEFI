@@ -142,7 +142,7 @@ export const OrdenPagoForm: React.FC<OrdenFormProps> = ({ onSuccess }) => {
                                 }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione una superficie" />
+                                    <SelectValue placeholder="Seleccione tipo de orden" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {TipoOrden.map((tp) => (
@@ -238,7 +238,6 @@ export const OrdenPagoForm: React.FC<OrdenFormProps> = ({ onSuccess }) => {
 
 
 export const PagoForm: React.FC<OrdenFormProps & { id_orden_pago: string }> = ({ onSuccess, id_orden_pago }) => {
-    console.log(id_orden_pago)
     const [tipoPago, setTipoPago] = useState("Efectivo")
     const [metodoPago, setMetodoPago] = useState("")
     const [transaccion, setTransaccion] = useState("")
