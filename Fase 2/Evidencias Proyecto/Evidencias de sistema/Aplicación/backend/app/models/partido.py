@@ -80,3 +80,9 @@ class Partido(Base):
         foreign_keys=[id_serie_visitante],
         passive_deletes=False,
     )
+
+    estados_partido: Mapped[list["DetalleEstadoPartido"]] = relationship(
+        "DetalleEstadoPartido",
+        back_populates="partido",
+        passive_deletes=False
+    )

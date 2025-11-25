@@ -132,8 +132,8 @@ app.add_middleware(
 # TODO: CREACIÓN DE TRIGGER, SE DEBE DESCOMENTAR JUNTO A LA ELIMINACION DE TODO EN LA BASE DE DATOS, WARNING DE ARRIBA
 # WARNING: Recordar comentar la siguiente linea si se quiere mantener las tablas
 # Configuracion para desarrollo
-#Base.metadata.drop_all(bind=engine)
-#Base.metadata.create_all(bind=engine)
+Base.metadata.drop_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 @app.on_event("startup")
 def startup_event():
     #    insertar_ordenes_egresos_demo()

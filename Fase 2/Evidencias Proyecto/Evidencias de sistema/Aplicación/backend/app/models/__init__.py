@@ -27,6 +27,8 @@ from .detalle_club_jugador import DetalleClubJugador
 from .detalle_reunion import DetalleReunion
 from .auditoria import Auditoria
 from .detalle_usuario_club import DetalleUsuarioClub
+from .estado_partido import EstadoPartido
+from .detalle_estado_partido import DetalleEstadoPartido
 
 from .fas import Fas
 from .uso_fas import UsoFas
