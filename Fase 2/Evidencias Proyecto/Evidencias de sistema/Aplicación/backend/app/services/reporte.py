@@ -7,6 +7,7 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from app.models.partido import Partido
+from sqlalchemy.orm import joinedload
 
 
 def get_partidos_by_month(db: Session, month: int, year: int) -> List[Partido]:
@@ -17,6 +18,11 @@ def get_partidos_by_month(db: Session, month: int, year: int) -> List[Partido]:
 
     partidos = (
         db.query(Partido)
+        .options(
+            joinedload(Partido.cancha),
+            joinedload(Partido.serie_local),
+            joinedload(Partido.serie_visitante),
+        )
         .filter(
             Partido.fecha_partido >= start_date,
             Partido.fecha_partido < end_date,
@@ -44,7 +50,7 @@ def generate_partidos_pdf(partidos: List[Partido], month: int, year: int) -> byt
             "Goles Visita",
             "Estado",
             "Tipo",
-            "ID Cancha",
+            "Cancha",
             "Serie Local",
             "Serie Visitante",
         ]
@@ -62,9 +68,9 @@ def generate_partidos_pdf(partidos: List[Partido], month: int, year: int) -> byt
                 p.goles_visita,
                 p.estado_partido.value,
                 p.tipo_partido.value,
-                p.id_cancha if p.id_cancha else "-",
-                p.id_serie_local,
-                p.id_serie_visitante,
+                p.cancha.nombre_cancha if p.cancha else "-",
+                p.serie_local.nombre_serie if p.serie_local else "-",
+                (p.serie_visitante.nombre_serie if p.serie_visitante else "-"),
             ]
         )
 
