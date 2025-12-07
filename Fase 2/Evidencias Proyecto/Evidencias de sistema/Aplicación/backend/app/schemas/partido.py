@@ -8,7 +8,7 @@ from ..models.partido import EstadoPartidoEnum, TipoPartidoEnum
 class PartidoBase(BaseModel):
     fecha_partido: date
     hora_ini_partido: time
-    hora_fin_partido: Optional[time]
+    hora_fin_partido: Optional[time] = None
     goles_local: Optional[int] = None
     goles_visita: Optional[int] = None
     estado_partido: EstadoPartidoEnum = EstadoPartidoEnum.PROGRAMADO
@@ -30,14 +30,13 @@ class PartidoRead(PartidoBase):
     id_partido: int
     fecha_creacion: datetime
     fecha_modificacion: datetime
+    club_local: str
+    club_visitante: str
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class PartidoUpdate(BaseModel):
-    fecha_partido: Optional[date] = None
-    hora_ini_partido: Optional[time] = None
-    hora_fin_partido: Optional[time] = None
     goles_local: Optional[int] = None
     goles_visita: Optional[int] = None
     estado_partido: Optional[EstadoPartidoEnum] = None

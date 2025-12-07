@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 import { useAuth } from '../contexts/authContext.tsx';
 import { createPartido, generarCalendario, getRendimientosPartido, updatePartido, updateRendimientoPartido } from '../services/partidosService.ts';
-import { getSeries } from '../services/serieService.ts';
+import { getSeries, getUniqueSeries } from '../services/serieService.ts';
 import { getCanchas } from '../services/canchaService.ts';
 import { getClubs } from '../services/clubServices.ts';
 import type { PartidoType, SerieType, CanchaType, ClubType, RendimientoPartidoType } from '../types.tsx';
@@ -26,7 +26,7 @@ type PartidoFormProps = {
     onSuccess: (...args: any[]) => void
 }
 
-export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuccess }) => {
+export const PartidoForm: React.FC<PartidoFormProps> = ({ onSuccess }) => {
     const [fecha, setFecha] = useState('')
     const [horaIni, setHoraIni] = useState('')
     const [horaFin, setHoraFin] = useState('')
@@ -49,48 +49,21 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
 
     useEffect(() => {
         fetchData(token)
-    }, [isEdit, partido])
+    }, [token])
 
     const fetchData = async (token: string | null) => {
         setIsLoading(20)
         const [seriesData, canchasData, clubesData] = await Promise.all([
-            getSeries<SerieType[]>(token),
+            getSeries<any>(token),
             getCanchas<CanchaType[]>(token),
             getClubs<any>(token, null, null, null, null),
         ]);
         setIsLoading(60)
-        setSerieList(seriesData)
+        setSerieList(seriesData.items)
         setCanchaList(canchasData)
         setClubList(clubesData.items)
         setIsLoading(100)
     }
-    useEffect(() => {
-        if (
-            isEdit &&
-            partido &&
-            serieList.length > 0
-        ) {
-            const serie = serieList.find((s) => partido.id_serie_local === s.id_serie)?.nombre_serie;
-            const clubL = serieList.find((s) => partido.id_serie_local === s.id_serie)?.nombre_club;
-            const clubV = serieList.find((s) => partido.id_serie_visitante === s.id_serie)?.nombre_club;
-            const cancha = canchaList.find((c) => c.id_cancha === partido.id_cancha)?.nombre_cancha;
-
-            setFecha(partido.fecha_partido || '');
-            setHoraIni(partido.hora_ini_partido || '');
-            setHoraFin(partido.hora_fin_partido || '');
-            setGolesLocal(partido.goles_local || 0);
-            setGolesVisita(partido.goles_visita || 0);
-            setEstado(partido.estado_partido || "programado");
-            setTipo(partido.tipo_partido || undefined);
-            setObservaciones(partido.observaciones || '');
-            setCancha(cancha || "");
-            setClubLocal(clubL || "");
-            setClubVisita(clubV || "");
-            setSerie(serie || "");
-
-            console.log("Partido cargado correctamente:", partido, clubL, clubV, cancha, serie);
-        }
-    }, [isEdit, partido, serieList, canchaList]);
 
     const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -100,6 +73,20 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
     const handleSubmit = async () => {
         try {
             setIsLoading(20)
+
+            // La serie seleccionada es una categoría (mismo nombre para ambos clubes).
+            // Buscamos la serie correspondiente a cada club por nombre + id_club
+            const id_club_local = clubLocal ? Number(clubLocal) : null;
+            const id_club_visitante = clubVisita ? Number(clubVisita) : null;
+
+            const id_local = serieList.find((s: SerieType) => s.id_club === id_club_local && s.nombre_serie === serie)?.id_serie ?? null;
+            const id_visitante = serieList.find((s: SerieType) => s.id_club === id_club_visitante && s.nombre_serie === serie)?.id_serie ?? null;
+
+            console.log({ clubLocal, clubVisita, serie, id_club_local, id_club_visitante, id_local, id_visitante });
+
+            if (!id_local || !id_visitante) {
+                console.warn('No se encontró la serie para club local o visitante', { id_club_local, id_club_visitante, serie });
+            }
             const partidoObject = {
                 fecha_partido: fecha,
                 hora_ini_partido: horaIni,
@@ -110,19 +97,13 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
                 estado_partido: estado,
                 observaciones,
                 id_cancha: canchaList.find((c: CanchaType) => c.nombre_cancha === cancha)?.id_cancha || null,
-                id_serie_local: serieList.find((s: SerieType) => s.id_club === Number(clubLocal) && s.nombre_serie === serie)?.id_serie,
-                id_serie_visitante: serieList.find((s: SerieType) => s.id_club === Number(clubVisita) && s.nombre_serie === serie)?.id_serie,
-                id_club_local: clubList.find((c: ClubType) => c.nombre_club === clubLocal)?.id_club,
-                id_club_visitante: clubList.find((c: ClubType) => c.nombre_club === clubVisita)?.id_club,
+                id_serie_local: id_local,
+                id_serie_visitante: id_visitante,
             };
+            console.log(partidoObject)
             setIsLoading(60)
-            if (isEdit && partido?.id_partido) {
-                const response: any = await updatePartido<any>(partido.id_partido, partidoObject, token);
-                toast.success(response.message);
-            } else {
-                const response: any = await createPartido<any>(partidoObject, token);
-                toast.success(response.message);
-            }
+            const response: any = await createPartido<any>(partidoObject, token);
+            toast.success(response.message);
             setIsLoading(100)
             onSuccess()
             setOpen(false)
@@ -138,13 +119,13 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
                 <form onSubmit={handleAlert} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <Label>Fecha del partido (*):</Label>
-                            <Input type="date" value={fecha} min={new Date().toISOString().split("T")[0]} onChange={e => setFecha(e.target.value)} required disabled={!!isEdit && partido?.estado_partido !== "programado"} />
+                            <Label>Fecha del partido*:</Label>
+                            <Input type="date" value={fecha} min={new Date().toISOString().split("T")[0]} onChange={e => setFecha(e.target.value)} required />
                         </div>
 
                         <div>
-                            <Label>Tipo de partido (*):</Label>
-                            <Select value={tipo} onValueChange={(v: any) => setTipo(v)} disabled={!!isEdit && partido?.estado_partido !== "programado"}>
+                            <Label>Tipo de partido*:</Label>
+                            <Select value={tipo} onValueChange={(v: any) => setTipo(v)}>
                                 <SelectTrigger><SelectValue placeholder="Seleccione tipo" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="campeonato">Campeonato</SelectItem>
@@ -155,62 +136,13 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
                             </Select>
                         </div>
 
-                        <div className={!isEdit ? "col-span-2" : ""}>
-                            <Label>Hora inicio (*):</Label>
-                            <Input type="time" value={horaIni} onChange={e => setHoraIni(e.target.value)} required disabled={!!isEdit && partido?.estado_partido !== "programado"} />
-                        </div>
-                        {!!isEdit &&
-                            <div>
-                                <Label>Hora fin:</Label>
-                                <Input
-                                    type="time"
-                                    value={horaFin}
-                                    min={horaIni} // evita horas menores
-                                    onChange={e => setHoraFin(e.target.value)}
-                                    disabled={horaIni === "" || (!!isEdit && partido?.estado_partido !== "programado")}
-                                />
-                            </div>
-                        }
-                        {!!isEdit &&
-                            <div className='col-span-2'>
-                                <Label>Estado del partido (*):</Label>
-                                <Select value={estado} onValueChange={(v: any) => {
-                                    if (v !== "finalizado") {
-                                        setGolesLocal(0)
-                                        setGolesVisita(0)
-                                    }
-                                    setEstado(v)
-                                }}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccione estado" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="programado">Programado</SelectItem>
-                                        <SelectItem value="en_curso">En curso</SelectItem>
-                                        <SelectItem value="finalizado">Finalizado</SelectItem>
-                                        <SelectItem value="cancelado">Cancelado</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        }
-                        {estado === "finalizado" &&
-                            <>
-                                <div>
-                                    <Label>Goles local:</Label>
-                                    <Input type="number" min={0} value={golesLocal ?? ''} onChange={e => setGolesLocal(Number(e.target.value))} />
-                                </div>
-                                <div>
-                                    <Label>Goles visitante:</Label>
-                                    <Input type="number" min={0} value={golesVisita ?? ''} onChange={e => setGolesVisita(Number(e.target.value))} />
-                                </div>
-                            </>
-                        }
                         <div className="col-span-2">
-                            <Label>Observaciones:</Label>
-                            <Textarea value={observaciones} onChange={e => setObservaciones(e.target.value)} />
+                            <Label>Hora inicio*:</Label>
+                            <Input type="time" value={horaIni} onChange={e => setHoraIni(e.target.value)} required />
                         </div>
-
                         <div>
-                            <Label>Cancha (*):</Label>
-                            <Select value={cancha} onValueChange={(v: string) => setCancha(v)} disabled={!!isEdit && partido?.estado_partido !== "programado"}>
+                            <Label>Cancha*:</Label>
+                            <Select value={cancha} onValueChange={(v: string) => setCancha(v)} required>
                                 <SelectTrigger><SelectValue placeholder="Seleccione cancha" /></SelectTrigger>
                                 <SelectContent>
                                     {canchaList.map(c => <SelectItem key={c.id_cancha} value={c.nombre_cancha}>{c.nombre_cancha}</SelectItem>)}
@@ -219,53 +151,39 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
                         </div>
 
                         <div>
-                            <Label>Club local (*):</Label>
-                            {isEdit ? (
-                                <Input value={clubLocal} readOnly />
-                            ) : (
-                                <Select value={clubLocal || undefined} onValueChange={(v: string) => setClubLocal(v)}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccione club local" /></SelectTrigger>
-                                    <SelectContent>
-                                        {clubList.map(c => (
-                                            <SelectItem key={c.id_club} value={c.nombre_club}>{c.nombre_club}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
+                            <Label>Club local*:</Label>
+                            <Select value={clubLocal || undefined} onValueChange={(v: string) => setClubLocal(v)}>
+                                <SelectTrigger><SelectValue placeholder="Seleccione club local" /></SelectTrigger>
+                                <SelectContent>
+                                    {clubList.map(c => (
+                                        <SelectItem key={c.id_club} value={String(c.id_club)} disabled={String(c.id_club) === clubVisita}>{c.nombre_club}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div>
-                            <Label>Club visitante (*):</Label>
-                            {isEdit ? (
-                                <Input value={clubVisita} readOnly />
-                            ) : (
-                                <Select value={clubVisita || undefined} onValueChange={(v: string) => setClubVisita(v)}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccione club visitante" /></SelectTrigger>
-                                    <SelectContent>
-                                        {clubList.map(c => (
-                                            <SelectItem key={c.id_club} value={c.nombre_club}>{c.nombre_club}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
+                            <Label>Club visitante*:</Label>
+                            <Select value={clubVisita || undefined} onValueChange={(v: string) => setClubVisita(v)}>
+                                <SelectTrigger><SelectValue placeholder="Seleccione club visitante" /></SelectTrigger>
+                                <SelectContent>
+                                    {clubList.map(c => (
+                                        <SelectItem key={c.id_club} value={String(c.id_club)} disabled={String(c.id_club) === clubLocal}>{c.nombre_club}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div>
-                            <Label>Serie (*):</Label>
-                            {isEdit ? (
-                                <Input value={serie} readOnly />
-                            ) : (
-                                <Select value={serie} onValueChange={setSerie}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccione serie" /></SelectTrigger>
-                                    <SelectContent>
-                                        {Array.from(new Set(serieList.map((s: SerieType) => s.nombre_serie))).map(nombre => (
-                                            <SelectItem key={nombre} value={nombre}>
-                                                {nombre}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
+                            <Label>Serie*:</Label>
+                            <Select value={serie || undefined} onValueChange={(v: string) => setSerie(v)} required>
+                                <SelectTrigger><SelectValue placeholder="Seleccione serie" /></SelectTrigger>
+                                <SelectContent>
+                                    {Array.from(new Set(serieList.map((s: SerieType) => s.nombre_serie))).map(nombre => (
+                                        <SelectItem key={nombre} value={nombre}>{nombre}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="col-span-2">
@@ -281,13 +199,13 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
                                 Cancelar
                             </Button>
                             <Button type="submit" style={{ backgroundColor: '#0000db' }} className="text-white" >
-                                {!isEdit && <Plus className="w-4 h-4 mr-2" />}
+                                <Plus className="w-4 h-4 mr-2" />
                                 {isLoading !== 100 ? "Guardando..." : "Guardar"}
                             </Button>
                             <AlertDialogHandle
-                                title={isEdit ? `Modificar partido?` : `Registrar partido?`}
-                                description={isEdit ? "¿Está seguro de guardar los cambios?" : "¿Está seguro de crear el partido?"}
-                                confirmLabel={isEdit ? "Modificar" : "Registrar"}
+                                title="¿Registrar partido?"
+                                description="¿Está seguro de crear el partido?"
+                                confirmLabel="Registrar"
                                 cancelLabel="Cancelar"
                                 onConfirm={handleSubmit}
                                 open={open}
@@ -301,32 +219,118 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ partido, isEdit, onSuc
     )
 }
 
-export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSuccess, admin, token }) => {
+export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSuccess, token }) => {
     const [formData, setFormData] = useState<any>({})
     const [isEdit, setIsEdit] = useState<boolean>(false)
     const [open, setOpen] = useState<boolean>(false)
     const [submit, setSubmit] = useState<boolean>(false)
+    const [golesTotal, setGolesTotal] = useState<number>(0)
+    const [tiempoTotal, setTiempoTotal] = useState<number>(0)
+    const [asistenciasTotal, setAsistenciasTotal] = useState<number>(0)
+    const [golesIniciales, setGolesIniciales] = useState<number>(0)
+    const [tiempoInicial, setTiempoInicial] = useState<number>(0)
+    const [asistenciasIniciales, setAsistenciasIniciales] = useState<number>(0)
 
+    const {admin} = useAuth()
     useEffect(() => {
-        console.log("use")
         if (!partido) return
         fetchRendimientos(partido.id_partido, token)
     }, [partido])
 
+    // Recalcular totales cuando formData cambie
+    useEffect(() => {
+        if(!isEdit) return;
+        const nuevoTiempo = Object.values(formData).reduce((sum: number, r: any) => sum + (r.tiempo_jugado || 0), 0)
+        const nuevoGoles = Object.values(formData).reduce((sum: number, r: any) => sum + (r.goles || 0), 0)
+        const nuevoAsistencias = Object.values(formData).reduce((sum: number, r: any) => sum + (r.asistencias || 0), 0)
+        
+        // Restar los totales modificados de los iniciales
+        console.log("USEeFFECT")
+        console.log(golesTotal)
+        setTiempoTotal(tiempoInicial - nuevoTiempo)
+        setGolesTotal(golesIniciales - nuevoGoles)
+        setAsistenciasTotal(asistenciasIniciales - nuevoAsistencias)
+    }, [formData, golesIniciales, tiempoInicial, asistenciasIniciales])
+
     const fetchRendimientos = async (id_partido: number, token: string | null) => {
         try {
             const formObject: any = {}
-            const data = await getRendimientosPartido<RendimientoPartidoType[]>(id_partido, token)
-            data.map((r: RendimientoPartidoType) => {
+            const data = await getRendimientosPartido<any>(id_partido, token)
+            console.log(data)
+            // Manejar si data es un array o un objeto con items
+            const items = Array.isArray(data) ? data : data.items || [];
+            
+            // Calcular los totales de los rendimientos existentes
+            let totalGolesExistentes = 0;
+            let totalAsistenciasExistentes = 0;
+            let totalTiempoExistente = 0;
+            
+            items.map((r: any) => {
                 formObject[r.rut_jugador] = {
                     ...r
                 }
+                totalGolesExistentes += r.goles || 0;
+                totalAsistenciasExistentes += r.asistencias || 0;
+                totalTiempoExistente += r.tiempo_jugado || 0;
             })
+            
+            // Establecer los valores iniciales disponibles a partir de los totales menos lo que ya se usó
+            // La API devuelve data.goles pero NO data.asistencias
+            // Las asistencias se inicializan con el mismo valor que goles
+            const golesDisponibles = (data.goles || 0) - totalGolesExistentes;
+            console.log(golesDisponibles, totalGolesExistentes)
+            const asistenciasDisponibles = (data.goles || 0) - totalAsistenciasExistentes;
+            const tiempoDisponible = (data.tiempo_jugado || 0) - totalTiempoExistente;
+            
+            // Actualizamos el estado del formulario y los valores iniciales
             setFormData(formObject)
-            console.log(data)
+            setGolesIniciales(golesDisponibles)
+            console.log(golesTotal)
+            setAsistenciasIniciales(asistenciasDisponibles)
+            setTiempoInicial(tiempoDisponible)
+            
+            // También establecer los totales actuales con los mismos valores
+            setGolesTotal(golesDisponibles)
+            setAsistenciasTotal(asistenciasDisponibles)
+            setTiempoTotal(tiempoDisponible)
+
         } catch (error) {
-            toast.info(String(error))
+            toast.error(String(error))
         }
+    }
+
+    // Calcular el máximo permitido para cada tipo de estadística
+    const getMaxTiempo = (rutJugador: string): number => {
+        const tiempoActual = formData[rutJugador]?.tiempo_jugado || 0;
+        const tiempoOtrosJugadores = Object.values(formData).reduce((sum: number, r: any) => {
+            return r.rut_jugador === rutJugador ? sum : sum + (r.tiempo_jugado || 0);
+        }, 0);
+        const disponible = tiempoInicial - tiempoOtrosJugadores;
+        return Math.min(90, disponible); // El menor entre 90 y lo disponible
+    }
+
+    const getMaxGoles = (rutJugador: string): number => {
+        const golesOtrosJugadores = Object.values(formData).reduce((sum: number, r: any) => {
+            return r.rut_jugador === rutJugador ? sum : sum + (r.goles || 0);
+        }, 0);
+        return golesIniciales - golesOtrosJugadores; // Solo lo disponible
+    }
+
+    const getMaxAsistencias = (rutJugador: string): number => {
+        const asistenciasOtrosJugadores = Object.values(formData).reduce((sum: number, r: any) => {
+            return r.rut_jugador === rutJugador ? sum : sum + (r.asistencias || 0);
+        }, 0);
+        
+        // Si el jugador tiene todos los goles, no puede tener asistencias
+        const golesDelJugador = formData[rutJugador]?.goles || 0;
+        if (golesDelJugador === golesIniciales && golesIniciales > 0) {
+            return 0; // No puede tener asistencias si tiene todos los goles
+        }
+        
+        // Las asistencias disponibles = asistencias iniciales - asistencias de otros - goles de este jugador
+        // Porque los goles que hace este jugador no pueden ser asistencias suyas
+        const asistenciasDisponibles = asistenciasIniciales - asistenciasOtrosJugadores - golesDelJugador;
+        return Math.max(0, asistenciasDisponibles);
     }
 
     const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
@@ -340,9 +344,11 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
             if (!partido?.id_partido) return
             const formArray = Object.values(formData)
             const response = await updateRendimientoPartido<any>(token, partido?.id_partido, formArray)
-            toast.success(response.message)
+            // Convertir objeto a string si es necesario
+            const message = typeof response === 'string' ? response : response?.message || 'Actualizado correctamente'
+            toast.success(message)
         } catch (error) {
-            toast.info(String(error))
+            toast.error(String(error))
         } finally {
             onSuccess()
         }
@@ -360,18 +366,30 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                     <Label>Horario:</Label>
                     <Input value={`${partido?.hora_ini_partido} - ${partido?.hora_fin_partido}`} readOnly />
                 </div>
-                <div className="col-span-2 flex flex-col items-center">
-                    <Label className="text-lg">Resultado</Label>
-                    <p className="text-4xl font-bold">{partido?.goles_local} - {partido?.goles_visita}</p>
-                </div>
-                <div className='col-span-2 flex justify-end'>
-                    {!isEdit ? (
-                        <Button type="button" className="bg-blue-500" onClick={() => { setIsEdit(!isEdit) }}>Modificar</Button>
+                {!!admin && 
+                    <div className="col-span-2 flex flex-col items-center">
+                        <Label className="text-lg">Resultado</Label>
+                        <p className="text-4xl font-bold">{partido?.goles_local} - {partido?.goles_visita}</p>
+                    </div>
+                }
+                {!admin && 
+                    <div className="col-span-2 flex justify-between items-center">
+                        <div className="flex-1 flex justify-center">
+                            <div className="flex flex-col items-center">
+                                <Label className="text-lg">Estadísticas: </Label>
+                                <p className="font-bold">{golesTotal} goles | {tiempoTotal} minutos de juego | {asistenciasTotal} asistencias</p>
+                            </div>
+                        </div>
+                        <div className='flex justify-end'>
+                            {!isEdit ? (
+                                <Button type="button" className="bg-blue-500" onClick={() => { setIsEdit(!isEdit) }}>Modificar</Button>
 
-                    ) : (
-                        <Button type="submit" form='formRendimientos' className="bg-blue-500">Guardar</Button>
-                    )}
-                </div>
+                            ) : (
+                                <Button type="submit" form='formRendimientos' className="bg-blue-500">Guardar</Button>
+                            )}
+                        </div>
+                    </div>
+                }
                 <div className='col-span-2'>
                     <form onSubmit={handleAlert} id='formRendimientos'>
                         <Table className='col-span-4'>
@@ -400,18 +418,22 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                             {!!isEdit ? (
                                                 <Input
                                                     type="number"
-                                                    value={r.tiempo_jugado || 0}
-                                                    onChange={(e) =>
-                                                        setFormData((prev: any) => ({
-                                                            ...prev,
-                                                            [r.rut_jugador]: {
-                                                                ...prev[r.rut_jugador],
-                                                                tiempo_jugado: Number(e.target.value)
-                                                            }
-                                                        }))
-                                                    }
+                                                    value={r.tiempo_jugado || ''}
+                                                    onChange={(e) => {
+                                                        const valor = e.target.value ? Number(e.target.value) : 0;
+                                                        const maxPermitido = getMaxTiempo(r.rut_jugador);
+                                                        if (valor <= maxPermitido) {
+                                                            setFormData((prev: any) => ({
+                                                                ...prev,
+                                                                [r.rut_jugador]: {
+                                                                    ...prev[r.rut_jugador],
+                                                                    tiempo_jugado: valor
+                                                                }
+                                                            }))
+                                                        }
+                                                    }}
                                                     min={0}
-                                                    max={90}
+                                                    max={getMaxTiempo(r.rut_jugador)}
                                                 />
                                             ) : (
                                                 <Input
@@ -425,17 +447,29 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                             {!!isEdit ? (
                                                 <Input
                                                     type="number"
-                                                    value={r.goles || 0}
-                                                    onChange={(e) =>
-                                                        setFormData((prev: any) => ({
-                                                            ...prev,
-                                                            [r.rut_jugador]: {
-                                                                ...prev[r.rut_jugador],
-                                                                goles: Number(e.target.value)
-                                                            }
-                                                        }))
-                                                    }
+                                                    value={r.goles || ''}
+                                                    onChange={(e) => {
+                                                        const valor = e.target.value ? Number(e.target.value) : 0;
+                                                        const maxPermitido = getMaxGoles(r.rut_jugador);
+                                                        const asistenciasActuales = formData[r.rut_jugador]?.asistencias || 0;
+                                                        
+                                                        // Validar que goles + asistencias no excedan el total disponible
+                                                        if (valor + asistenciasActuales > asistenciasIniciales) {
+                                                            return;
+                                                        }
+                                                        
+                                                        if (valor <= maxPermitido) {
+                                                            setFormData((prev: any) => ({
+                                                                ...prev,
+                                                                [r.rut_jugador]: {
+                                                                    ...prev[r.rut_jugador],
+                                                                    goles: valor
+                                                                }
+                                                            }))
+                                                        }
+                                                    }}
                                                     min={0}
+                                                    max={getMaxGoles(r.rut_jugador)}
                                                 />
                                             ) : (
                                                 <Input
@@ -449,17 +483,34 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                             {!!isEdit ? (
                                                 <Input
                                                     type="number"
-                                                    value={r.asistencias || 0}
-                                                    onChange={(e) =>
-                                                        setFormData((prev: any) => ({
-                                                            ...prev,
-                                                            [r.rut_jugador]: {
-                                                                ...prev[r.rut_jugador],
-                                                                asistencias: Number(e.target.value)
-                                                            }
-                                                        }))
-                                                    }
+                                                    value={r.asistencias || ''}
+                                                    onChange={(e) => {
+                                                        const valor = e.target.value ? Number(e.target.value) : 0;
+                                                        const maxPermitido = getMaxAsistencias(r.rut_jugador);
+                                                        const golesDelJugador = formData[r.rut_jugador]?.goles || 0;
+                                                        
+                                                        if (golesDelJugador === golesIniciales && golesIniciales > 0 && valor > 0) {
+                                                            return;
+                                                        }
+                                                        
+                                                        // Validar que goles + asistencias no excedan el total disponible
+                                                        if (golesDelJugador + valor > asistenciasIniciales) {
+                                                            return;
+                                                        }
+                                                        
+                                                        if (valor <= maxPermitido) {
+                                                            setFormData((prev: any) => ({
+                                                                ...prev,
+                                                                [r.rut_jugador]: {
+                                                                    ...prev[r.rut_jugador],
+                                                                    asistencias: valor
+                                                                }
+                                                            }))
+                                                        }
+                                                    }}
                                                     min={0}
+                                                    max={getMaxAsistencias(r.rut_jugador)}
+                                                    disabled={getMaxAsistencias(r.rut_jugador) === 0}
                                                 />
                                             ) : (
                                                 <Input
@@ -483,7 +534,7 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                                             }
                                                         }))
                                                     }
-                                                    min={0}
+                                                    min={(formData[r.rut_jugador]?.amonestaciones_amarillas ? 1 : 0) + (formData[r.rut_jugador]?.amonestaciones_rojas ? 1 : 0)}
                                                 />
                                             ) : (
                                                 <Input
@@ -496,7 +547,24 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                         <TableCell className="font-medium">
                                             {!!isEdit ? (<Checkbox
                                                 checked={r.amonestaciones_amarillas || false}
-                                                onCheckedChange={(checked: boolean) =>
+                                                onCheckedChange={(checked: boolean) => {
+                                                    if (!!checked) {
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                amonestaciones: (prev[r.rut_jugador].amonestaciones || 0) + 1,
+                                                            }
+                                                        }))
+                                                    } else {
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                amonestaciones: (prev[r.rut_jugador].amonestaciones || 0) - 1,
+                                                            }
+                                                        }))
+                                                    }
                                                     setFormData((prev: any) => ({
                                                         ...prev,
                                                         [r.rut_jugador]: {
@@ -504,7 +572,7 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                                             amonestaciones_amarillas: checked
                                                         }
                                                     }))
-                                                }
+                                                }}
                                             />) : (
                                                 <>{r.amonestaciones_amarillas ? "SI" : "NO"}</>
                                             )}
@@ -512,7 +580,24 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                         <TableCell className="font-medium">
                                             {!!isEdit ? (<Checkbox
                                                 checked={r.amonestaciones_rojas || false}
-                                                onCheckedChange={(checked: boolean) =>
+                                                onCheckedChange={(checked: boolean) => {
+                                                    if (!!checked) {
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                amonestaciones: (prev[r.rut_jugador].amonestaciones || 0) + 1,
+                                                            }
+                                                        }))
+                                                    } else {
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                amonestaciones: (prev[r.rut_jugador].amonestaciones || 0) - 1,
+                                                            }
+                                                        }))
+                                                    }
                                                     setFormData((prev: any) => ({
                                                         ...prev,
                                                         [r.rut_jugador]: {
@@ -520,7 +605,7 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                                             amonestaciones_rojas: checked
                                                         }
                                                     }))
-                                                }
+                                                }}
                                             />) : (
                                                 <>{r.amonestaciones_rojas ? "SI" : "NO"}</>
                                             )}
@@ -564,9 +649,7 @@ export const CalendarioPartidoForm: React.FC<PartidoFormProps> = ({ token, onSuc
             toast.info(String(error))
         } finally {
             setIsLoading(false)
-            // cerramos modal y notificamos al padre (true/false = abierto?)
-            // here we use false to mean "cerrar"
-            if (onSuccess) onSuccess(false)
+            onSuccess()
         }
     }
 
@@ -606,7 +689,7 @@ export const CalendarioPartidoForm: React.FC<PartidoFormProps> = ({ token, onSuc
                     variant="outline"
                     type="button"
                     disabled={isLoading}
-                    onClick={() => onSuccess ? onSuccess(false) : undefined} // <<--- importante
+                    onClick={() => onSuccess()}
                 >
                     Cancelar
                 </Button>
@@ -627,5 +710,176 @@ export const CalendarioPartidoForm: React.FC<PartidoFormProps> = ({ token, onSuc
                 />
             </div>
         </form>
+    )
+}
+
+
+export const PartidoEditForm: React.FC<PartidoFormProps> = ({ token, admin, onSuccess, partido }) => {
+    const [estado, setEstado] = useState<"programado" | "en_curso" | "cancelado" | "finalizado">("programado")
+    const [observaciones, setObservaciones] = useState<string>("")
+    const [isLoading, setIsLoading] = useState<number>(0)
+    const [open, setOpen] = useState<boolean>(false)
+    const [golesLocal, setGolesLocal] = useState<number>(0)
+    const [golesVisita, setgolesVisita] = useState<number>(0)
+    const [tipo, setTipo] = useState<"campeonato" | "amistoso" | "playoff" | "final">()
+    const [cancha, setCancha] = useState<number>(partido?.id_cancha || 0)
+    const [canchaList, setCanchaList] = useState<CanchaType[]>([])
+    const [isUpdating, setIsUpdating] = useState<boolean>(false)
+
+    useEffect(() => {
+        if (!partido) return
+        fetchData();
+    }, [partido])
+
+    const fetchData = async () => {
+        try {
+            setIsLoading(20)
+            if (!partido) return
+            console.log(partido)
+            setEstado(partido.estado_partido)
+            setObservaciones(partido.observaciones || "")
+            setGolesLocal(partido.goles_local || 0)
+            setgolesVisita(partido.goles_visita || 0)
+            setTipo(partido.tipo_partido)
+            setIsLoading(60)
+            const data = await getCanchas<CanchaType[]>(token)
+            setCanchaList(data)
+            setCancha(partido.id_cancha)
+
+        } catch (error) {
+            toast.info(String(error))
+        } finally {
+            setIsLoading(100)
+        }
+    }
+
+    const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (e.currentTarget.reportValidity()) setOpen(true);
+    };
+
+    const handleSubmit = async () => {
+        try {
+            setIsUpdating(true)
+            if (!partido) return
+            const partidoObject = {
+                estado_partido: estado,
+                goles_local: golesLocal,
+                goles_visita: golesVisita,
+                observaciones,
+                tipo_partido: tipo,
+                id_cancha: cancha
+            }
+            const response = await updatePartido<any>(partido?.id_partido, partidoObject, token)
+            // Convertir objeto a string si es necesario
+            const message = typeof response === 'string' ? response : response?.message || 'Partido actualizado correctamente'
+            toast.success(message)
+            onSuccess()
+        } catch (error) {
+            toast.error(String(error))
+        } finally {
+            setIsUpdating(false)
+        }
+    }
+    return (
+        <>
+            {isLoading < 100 && <Loading isLoading={isLoading} component="Partido" />}
+            {isLoading === 100 &&
+                <form onSubmit={handleAlert} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <Label>Tipo de partido:</Label>
+                            <Select value={tipo} onValueChange={(v: any) => setTipo(v)}>
+                                <SelectTrigger><SelectValue placeholder="Seleccione tipo" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="campeonato">Campeonato</SelectItem>
+                                    <SelectItem value="amistoso">Amistoso</SelectItem>
+                                    <SelectItem value="playoff">Playoff</SelectItem>
+                                    <SelectItem value="final">Final</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Cancha:</Label>
+                            <Select value={cancha} onValueChange={(v: string) => setCancha(Number(v))} required>
+                                <SelectTrigger><SelectValue placeholder="Seleccione cancha" /></SelectTrigger>
+                                <SelectContent>
+                                    {canchaList.map(c => <SelectItem key={c.id_cancha} value={c.id_cancha}>{c.nombre_cancha}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Estado Partido:</Label>
+                            <Select value={estado} onValueChange={(v: any) => setEstado(v)}>
+                                <SelectTrigger><SelectValue placeholder="Seleccione tipo" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="programado">Programado</SelectItem>
+                                    <SelectItem value="en_curso">En curso</SelectItem>
+                                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                                    <SelectItem value="finalizado">Finalizado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {estado === "finalizado" &&
+                            <div className='col-span-3 grid grid-cols-2 gap-4'>
+                                <div>
+                                    <Label>Goles local ({partido?.club_local}):</Label>
+                                    <Input
+                                        type='number'
+                                        value={golesLocal}
+                                        onChange={(e) => setGolesLocal(Number(e.target.value))}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <Label>Goles visitante ({partido?.club_visitante}):</Label>
+                                    <Input
+                                        type='number'
+                                        value={golesVisita}
+                                        onChange={(e) => setgolesVisita(Number(e.target.value))}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        }
+                        <div className='col-span-3'>
+                            <Label>Observaciones:</Label>
+                            <Textarea
+                                value={observaciones}
+                                onChange={(e) => setObservaciones(e.target.value)}
+                                rows={3}
+                                placeholder="Observaciones del partido"
+                                maxLength={500}
+                            />
+                        </div>
+                        <div className="col-span-3">
+                            <Separator />
+                        </div>
+                        <div className="flex justify-end col-span-2 space-x-2">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                disabled={isLoading !== 100}
+                                onClick={() => onSuccess()}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button type="submit" style={{ backgroundColor: '#0000db' }} className="text-white" >
+                                {!!isUpdating ? "Guardando..." : "Guardar"}
+                            </Button>
+                            <AlertDialogHandle
+                                title="¿Modificar partido?"
+                                description="¿Está seguro de modificar el partido?"
+                                confirmLabel="Guardar"
+                                cancelLabel="Cancelar"
+                                onConfirm={handleSubmit}
+                                open={open}
+                                onOpenChange={setOpen}
+                            />
+                        </div>
+                    </div>
+                </form>
+            }
+        </>
     )
 }

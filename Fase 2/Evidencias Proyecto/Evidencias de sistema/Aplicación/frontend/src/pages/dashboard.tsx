@@ -44,7 +44,7 @@ import { PerfilUsuarioModule } from './perfilUsuario.tsx';
 import { MatchesTrainingModule } from './entrenamiento.tsx';
 import { FasModule } from './fas.tsx';
 import { ComunicadosModule } from './comunicados.tsx';
-import { PartidoCoreModule } from './partidos.tsx';
+import { PartidoModule } from './partidos.tsx';
 import { HuellaModule } from './huella.tsx';
 
 
@@ -249,7 +249,7 @@ export default function DashboardComponent() {
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: RegistroJugadoresModule, permission: 'players' },
         { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
-        { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidoCoreModule, permission: 'matches' },
+        { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidoModule, permission: 'matches' },
         //{ id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
         { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
@@ -398,10 +398,12 @@ export default function DashboardComponent() {
                                 <Route path=':id_entrenamiento' element={<MatchesTrainingModule />} />
                                 <Route path=':id_entrenamiento/edit' element={<MatchesTrainingModule />} />
                             </Route>
-                            <Route path="partidos" element={<PartidoCoreModule />}>
-                                <Route index element={<PartidoCoreModule />} />
-                                <Route path=":accion" element={<PartidoCoreModule />} />
-                                <Route path=":accion/:id_partido" element={<PartidoCoreModule />} />
+                            <Route path="partidos" element={<PartidoModule />}>
+                                <Route index element={<PartidoModule />} />
+                                <Route path="calendar" element={<PartidoModule />} />
+                                <Route path="new" element={<PartidoModule />} />
+                                <Route path=":id_partido" element={<PartidoModule />} />
+                                <Route path=":id_partido/:accion" element={<PartidoModule />} />
                             </Route>
                             <Route path="meetings" element={<MeetingsModule />} />
                             <Route path="canchas" element={<CanchasModule />}>

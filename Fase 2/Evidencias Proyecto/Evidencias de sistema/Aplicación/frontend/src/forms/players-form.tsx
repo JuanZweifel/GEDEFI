@@ -11,6 +11,7 @@ import { postDetalleClubJugador } from '../services/detalleClubJugadorService';
 import { AlertDialogHandle } from '../components/alert-dialog-component';
 import { getSeries } from '../services/serieService';
 import { useAuth } from '../contexts/authContext';
+import type { SerieType } from '../types';
 
 type DialogAddJugadorProps = {
     refreshJugadores: () => Promise<void>;
@@ -70,10 +71,10 @@ export const DialogAddJugador: React.FC<DialogAddJugadorProps> = ({ refreshJugad
     const { id_club, token } = useAuth();
 
     useEffect(() => {
-        getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token)
+        getSeries<any>(token)
             .then(data => {
                 if (id_club) {
-                    const filtradas = data.filter(s => s.id_club === Number(id_club));
+                    const filtradas = data.items.filter((s:SerieType) => s.id_club === Number(id_club));
                     setSeries(filtradas);
                 }
             })
@@ -444,10 +445,10 @@ export const DialogEditJugador: React.FC<DialogEditJugadorProps> = ({
 
     // ✅ Cargar series del club
     useEffect(() => {
-        getSeries<{ id_serie: number; nombre_serie: string; id_club: number }[]>(token)
+        getSeries<any>(token)
             .then(data => {
                 if (id_club) {
-                    const filtradas = data.filter(s => s.id_club === Number(id_club));
+                    const filtradas = data.items.filter((s:SerieType) => s.id_club === Number(id_club));
                     setSeries(filtradas);
                 }
             })

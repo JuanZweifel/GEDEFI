@@ -3,7 +3,7 @@ import type {
     ClubType,
 } from '../types.tsx';
 import { useAuth } from '../contexts/authContext.tsx';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { replace, useNavigate, useParams } from 'react-router';
 
 // !import de estilos 
 
@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Progress } from '../components/ui/progress.tsx';
 
 // !Componentes
 import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
@@ -40,6 +39,7 @@ import { Loading } from '../components/loading-bar-component.tsx';
 export const ClubCoreModule: React.FC = () => {
     // ! Estados (UseState)
     const [action, setAction] = useState<string>("")
+    const [selectedClub, setSelectedClub] = useState<ClubType>()
 
     // ! Auth
     const { token, id_club, admin } = useAuth();
@@ -67,10 +67,8 @@ export const ClubCoreModule: React.FC = () => {
     // ! Funciones logicas (() =>)
     const getModule = (action: string) => {
         switch (action) {
-            case "view":
-                return <ClubListModule token={token} id_club={id_club} admin={admin} />
             case "details":
-                return <ClubDetailsModule isOpen={true} token={token} id_club={id_club} admin={admin} handleClose={handleCloseDialog} />
+                return <ClubDetailsModule club={selectedClub} isOpen={true} token={token} id_club={id_club} admin={admin} handleClose={handleCloseDialog} />
             case "edit":
                 return <ClubEditModule isOpen={true} token={token} id_club={id_club} admin={admin} handleClose={handleCloseDialog} />
             case "new":
@@ -104,7 +102,7 @@ export const ClubCoreModule: React.FC = () => {
                         <CardTitle>Clubes registrados</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {getModule(action)}
+                        <ClubListModule setSelected={setSelectedClub} />
                     </CardContent>
                 </Card>
                 {action !== "view" && getModule(action)}
@@ -113,10 +111,8 @@ export const ClubCoreModule: React.FC = () => {
     )
 }
 
-const ClubListModule: React.FC<{ token: string | null, id_club: number | null, admin: boolean | null }> = ({
-    token,
-    id_club,
-    admin
+const ClubListModule: React.FC<{ setSelected: React.Dispatch<React.SetStateAction<ClubType | undefined>> }> = ({
+    setSelected
 }) => {
     // ! Estados (UseState)
     const [isLoading, setIsLoading] = useState<number>(0)
@@ -127,13 +123,16 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
     const [selectedEstado, setSelectedEstado] = useState<string | null>("");
     const [selectedDelete, setSelectedDelete] = useState<number | null>(null)
 
+    // ! Auth
+    const {token, admin, id_club} = useAuth();
     // ! Router
     const navigate = useNavigate();
 
     // ! Control de estados (UseEffect)
     useEffect(() => {
-        if(!admin) fetchClub(token, id_club)
-    }, [])
+        if (!admin) fetchClub(token, id_club)
+    }, [token])
+
     useEffect(() => {
         const timer = setTimeout(() => {
             const rawTerm = searchTerm.trim();
@@ -189,13 +188,14 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
     const fetchClubs = async (filter: boolean, token: string | null, searchTerm: string, selectedEstado: string | null) => {
         try {
             setClubList([])
-            const response = await getClubs<any>(token, searchTerm, selectedEstado, page)
-            setIsLoading(50)
+            setIsLoading(40)
+            const response = await getClubs<any>(token, searchTerm, selectedEstado, page, 9)
+            setIsLoading(60)
             let clubes: ClubType[] = response.items
             setClubList(clubes)
-            setTotalPages((Math.ceil(response.total / 10)) | 0)
+            setTotalPages((Math.ceil(response.total / 9)) | 0)
             setIsLoading(100)
-            if (!filter && clubes.length == 0) toast.info("No hay clubes registrados en la base de datos")
+            if (!filter && clubes.length === 0) toast.info("No hay clubes registrados en la base de datos")
         } catch (error) {
             toast.info(String(error))
         }
@@ -278,7 +278,7 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                     }
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {clubList.map(c => (
                         <Card key={c.id_club}>
                             <CardHeader>
@@ -341,7 +341,10 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
 
                                 {/* Buttons */}
                                 <div className="flex space-x-2 pt-2">
-                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/details/${c.id_club}`, { replace: true })}>
+                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => {
+                                        setSelected(c)
+                                        navigate(`/dashboard/clubes/details/${c.id_club}`, { replace: true })
+                                    }}>
                                         <Eye className="w-4 h-4 mr-1" /> Ver Detalles
                                     </Button>
                                     <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/dashboard/clubes/edit/${c.id_club}`, { replace: true })}>
@@ -378,14 +381,15 @@ const ClubListModule: React.FC<{ token: string | null, id_club: number | null, a
                             </CardContent>
                         </Card>
                     ))}
-                    {isLoading === 100 && clubList.length === 0 &&
-                        <div className="text-center py-8 text-gray-500 col-span-2">
-                            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>{searchTerm === "" && selectedEstado !== null ? "No hay clubs registrados" : "No se encontraron clubs que coincidan con la busqueda."}</p>
-                        </div>
-                    }
+                    
                 </div>
             </>}
+            {isLoading === 100 && clubList.length === 0 &&
+                <div className="text-center py-8 text-gray-500 col-span-2">
+                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>{searchTerm === "" && selectedEstado !== null ? "No hay clubs registrados" : "No se encontraron clubs que coincidan con la busqueda."}</p>
+                </div>
+            }
         </>
     )
 }
@@ -479,16 +483,14 @@ const ClubEditModule: React.FC<{ isOpen: boolean, token: string | null, id_club:
     )
 }
 
-const ClubDetailsModule: React.FC<{ isOpen: boolean, token: string | null, id_club: number | null, admin: boolean | null, handleClose: (open: boolean) => void }> = ({
+const ClubDetailsModule: React.FC<{ club: ClubType | undefined, isOpen: boolean, token: string | null, id_club: number | null, admin: boolean | null, handleClose: (open: boolean) => void }> = ({
+    club,
     isOpen,
     token,
     id_club,
     admin,
     handleClose
 }) => {
-    // !Estados (UseState)
-    const [isLoading, setIsLoading] = useState<number>(0)
-    const [club, setClub] = useState<ClubType>()
 
     // !Router
     const params = useParams()
@@ -497,26 +499,11 @@ const ClubDetailsModule: React.FC<{ isOpen: boolean, token: string | null, id_cl
     // !Control de estados (UseEffect)
     useEffect(() => {
         try {
-            let id = Number(params.id_club)
-            if (Number.isNaN(id)) throw new Error("ID no numerico")
-            if (!!id || (!!admin || id_club === id)) fetchClub(token, id);
+            if (!club) navigate("/dashboard/clubes/", { replace: true })
         } catch (error) {
             navigate("/dashboard/clubes/view", { replace: true })
         }
     }, [])
-
-    // !Funciones logicas (() =>)
-    const fetchClub = async (token: string | null, id_club: number | null) => {
-        try {
-            const response = await getClub<any>(id_club, token)
-            setClub(response)
-            setIsLoading(100)
-            if (!response) navigate("/dashboard/clubes/view", { replace: true })
-        } catch (error) {
-            toast.info(String(error))
-            navigate("/dashboard/clubes/view", { replace: true })
-        }
-    }
 
     return (
         <DialogHandle<ClubType>
@@ -528,13 +515,8 @@ const ClubDetailsModule: React.FC<{ isOpen: boolean, token: string | null, id_cl
             size='w-full'
         >
             {() => {
-                if (isLoading < 100 || !club) {
-                    return (
-                        <Loading isLoading={isLoading} component='Club' />
-                    );
-                }
-
-                return <ClubDetailsForm club={club} setIsLoading={setIsLoading} />;
+                if (club === undefined) return
+                return <ClubDetailsForm club={club} />;
             }}
         </DialogHandle>
     )

@@ -7,7 +7,7 @@ from app.security import get_current_user
 router = APIRouter(prefix="/rendimientos-partido", tags=["Rendimientos Partido"])
 
 # Obtener todos los rendimientos (con paginación opcional)
-@router.get("/{id_partido}", response_model=list[schemas.RendimientoPartidoRead])
+@router.get("/{id_partido}")
 def read_rendimientos_partido(id_partido: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return services.get_rendimientos_partido(id_partido, db, current_user)
 

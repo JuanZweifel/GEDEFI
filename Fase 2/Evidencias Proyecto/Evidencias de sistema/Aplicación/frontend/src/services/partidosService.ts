@@ -1,6 +1,6 @@
 import { fetchAPI } from "../utils/fetchApi";
 
-export const getPartidos = <T>(token: string | null): Promise<T> =>
+export const getPartidos = <T>(token: string | null, skip: number | null, limit: number | null): Promise<T> =>
     fetchAPI<T>("/partidos/", {}, !!token ? token : undefined);
 
 export const getPartidoById = <T>(id: number, token: string): Promise<T> =>
@@ -36,3 +36,6 @@ export const generarCalendario= <T>(token: string | null, calendario: any): Prom
     fetchAPI<T>(`/calendario/calendar/?start_date=${calendario.start_date}&total_jornadas=${calendario.total_jornadas}`, {
         method: "POST",
     }, !!token ? token : undefined)
+
+export const getPartidosbySerie = <T>(token: string | null, id_serie: number): Promise<T> =>
+    fetchAPI<T>(`/partidos/${id_serie}`, {}, !!token ? token : undefined);

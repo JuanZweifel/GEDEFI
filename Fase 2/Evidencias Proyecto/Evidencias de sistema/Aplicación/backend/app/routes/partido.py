@@ -24,9 +24,9 @@ def read_partido(partido_id: int, db: Session = Depends(get_db)):
 
 
 # Obtener todos los partidos
-@router.get("/", response_model=list[schemas.PartidoRead])
-def read_partidos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return services.get_partidos(db, {"admin": True, "id_club": 1}, skip=skip, limit=limit)
+@router.get("/")
+def read_partidos(skip: int = 0, limit: int = 20, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    return services.get_partidos(db, current_user, skip=skip, limit=limit)
 
 
 # Actualizar partido
@@ -46,4 +46,12 @@ def delete_partido(partido_id: int, db: Session = Depends(get_db)):
     deleted = services.delete_partido(db, partido_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Partido not found")
+    return {"message": "Partido eliminado correctamente"}
+
+@router.get("/partidos/{id_serie}", response_model=list[schemas.PartidoRead])
+def get_partidos_by_serie(id_serie: int, db: Session = Depends(get_db)):
+    try:
+        return services.get_partidos_by_serie(db, id_serie)
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
 

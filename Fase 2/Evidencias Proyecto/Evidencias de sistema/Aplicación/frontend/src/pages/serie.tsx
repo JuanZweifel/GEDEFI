@@ -9,27 +9,57 @@ import { DialogHandle } from '../components/dialog-component.tsx';
 import { Input } from '../components/ui/input.tsx';
 import {
     Eye,
-    Trash2, RefreshCcw, FileText
+    RefreshCcw, FileText
 } from 'lucide-react';
 
 import { toast } from 'sonner';
-import { type SerieType, type SerieDetailsProps, type JugadorType } from '../types.tsx';
+import { type SerieType, type SerieDetailsProps, type JugadorType, type PartidoType } from '../types.tsx';
 import { getSeries, updateStateSerie } from '../services/serieService.ts';
 import { AlertDialogHandle } from '../components/alert-dialog-component.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { NavLink, useLocation, useNavigate, useParams } from 'react-router';
 import { useAuth } from '../contexts/authContext.tsx';
+import { Loading } from '../components/loading-bar-component.tsx';
+import { getPartidosbySerie } from '../services/partidosService.ts';
 
 export const SerieDetailsContent: React.FC<SerieDetailsProps> = ({ serie }) => {
     const [activeTab, setActiveTab] = useState("jugadores")
     const [jugadores, setJugadores] = useState<JugadorType[]>([])
+    const [isLoading, setIsLoading] = useState(0)
     // TODO: Se utilizaran los partidos y entrenamientos cuando esten sus modulos listos
-    const [partidos, setPartidos] = useState([])
+    const [partidos, setPartidos] = useState<PartidoType[]>([])
     const [entrenamientos, setEntrenamientos] = useState([])
 
+    const { token, admin } = useAuth()
     useEffect(() => {
         setJugadores(serie.jugadores)
+        fetchPartidos()
+        fetchEntrenamientos()
     }, [serie])
+
+    const fetchPartidos = async () => {
+        try {
+            setIsLoading(40)
+            const response = await getPartidosbySerie<PartidoType[]>(token, serie.id_serie)
+            setPartidos(response)
+            setIsLoading(100)
+        } catch (error) {
+            toast.info(String(error))
+        }
+    }
+    const fetchEntrenamientos = async () => {
+        //logica de entrenamiento
+    }
+    const renderBadge = (estado: string) => {
+            switch (estado) {
+                case "Finalizado":
+                    return <Badge className="bg-green-500">{estado}</Badge>;
+                case "Pendiente":
+                    return <Badge className="bg-yellow-500">{estado}</Badge>;
+                default:
+                    return <Badge>{estado}</Badge>;
+            }
+        };
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -137,10 +167,44 @@ export const SerieDetailsContent: React.FC<SerieDetailsProps> = ({ serie }) => {
                             <CardTitle className='font-medium'>Partidos jugados</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-center py-8 text-gray-500">
-                                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <p>EN DESARROLLO</p>
-                            </div>
+                            {partidos.length > 0 &&
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Fecha partido</TableHead>
+                                            <TableHead>Horario</TableHead>
+                                            <TableHead>Club</TableHead>
+                                            <TableHead>Serie</TableHead>
+                                            <TableHead>Resultado</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Acciones</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {partidos.map((p) => (
+                                            <TableRow >
+                                                <TableCell className="font-medium">{p.fecha_partido}</TableCell>
+                                                <TableCell className="font-medium">{p.hora_ini_partido} - {p.hora_fin_partido}</TableCell>
+                                                <TableCell className="font-medium">{p.club_local} vs {p.club_visitante}</TableCell>
+                                                <TableCell className="font-medium">{p.nombre_serie}</TableCell>
+                                                <TableCell className="font-medium">{p.goles_local} - {p.goles_visita}</TableCell>
+                                                <TableCell className="font-medium">{renderBadge(p.estado_partido)}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Button variant="outline" size="sm">
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            }
+                            {partidos.length === 0 &&
+                                <div className="text-center py-8 text-gray-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>La serie no tiene partidos jugados.</p>
+                                </div>
+                            }
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -152,12 +216,14 @@ export const SerieDetailsContent: React.FC<SerieDetailsProps> = ({ serie }) => {
 export const SerieModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState('series');
     const [serieList, setSerieList] = useState<SerieType[]>([]);
-    const [isFetching, setIsFetching] = useState(true)
+    const [isFetching, setIsFetching] = useState(0)
     const [isSelected, setIsSelected] = useState<number | null>(null)
     const [selectedAction, setSelectedAction] = useState<'delete' | 'toggle' | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedEstado, setSelectedEstado] = useState<string | undefined>("0");
+    const [selectedEstado, setSelectedEstado] = useState<string | null>("");
+    const [page, setPage] = useState(1)
+    const [totalPage, setTotalPage] = useState(0)
 
     // auth
     const { token, logout } = useAuth()
@@ -174,47 +240,73 @@ export const SerieModule: React.FC = () => {
         if (!open) navigate("/dashboard/series");
     };
 
+    // Filtro con debounce de series por estado y nombre
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const rawTerm = searchTerm.trim();
+            const term = rawTerm.toLowerCase();
 
-    // Filtro de series por estado y nombre
-    const filteredSeries = (() => {
-        let baseList = serieList;
-        if (selectedEstado === "1") {
-            baseList = serieList.filter((serie) => serie.serie_activa === true);
-        } else if (selectedEstado === "2") {
-            baseList = serieList.filter((serie) => serie.serie_activa === false);
-        }
-        if (!searchTerm.trim()) return baseList;
-        const term = searchTerm.toLowerCase();
-        return baseList.filter(
-            (serie) =>
-                serie.nombre_serie.toLowerCase().includes(term) ||
-                serie.nombre_club.toLowerCase().includes(term)
-        );
-    })();
+            if (!term) {
+                fetchSeries(false, token, searchTerm, selectedEstado);
+                return;
+            }
 
-    const fetchSeries = async () => {
-        setSerieList([])
-        setIsLoading(false)
-        let data: SerieType[] = []
+            const cacheToSearch =
+                selectedEstado === "1"
+                    ? serieList.filter(s => s.serie_activa === true)
+                    : selectedEstado === "2"
+                        ? serieList.filter(s => s.serie_activa === false)
+                        : serieList;
+
+            const foundInCache = cacheToSearch.some(s => {
+                const nombre_serie = (s.nombre_serie ?? "").toLowerCase();
+                const nombre_club = (s.nombre_club ?? "").toLowerCase();
+
+                return nombre_serie.includes(term) || nombre_club.includes(term);
+            });
+
+            if (foundInCache) {
+                const filtered = cacheToSearch.filter(s => {
+                    const nombre_serie = (s.nombre_serie ?? "").toLowerCase();
+                    const nombre_club = (s.nombre_club ?? "").toLowerCase();
+
+                    return nombre_serie.includes(term) || nombre_club.includes(term);
+                });
+                setSerieList(filtered);
+                return;
+            }
+
+            fetchSeries(false, token, searchTerm, selectedEstado);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm, selectedEstado, page]);
+
+    const fetchSeries = async (filter: boolean, token: string | null, searchTerm: string, selectedEstado: string | null) => {
         try {
-            setIsFetching(true)
-            data = await getSeries<SerieType[]>(token);
-            setSerieList(data);
-            if (data.length === 0) {
-                toast.info("No hay series registradas en la base de datos.")
+            setSerieList([])
+            if (filter) {
+                setIsFetching(40)
             }
-        } catch (error: any) {
-            if(error.message === "Token inválido" || error.message === "Usuario no encontrado") logout()
-            toast.warning(String(error))
-        } finally {
-            if (data.length === 0) {
-                setSerieList([])
+            const response = await getSeries<any>(token, searchTerm, selectedEstado, page, 10)
+            if (filter) {
+                setIsFetching(60)
             }
-            setIsFetching(false)
+            let series: SerieType[] = response.items
+            setSerieList(series)
+            setTotalPage((Math.ceil(response.total / 10)) | 0)
+            if (filter) {
+                setIsFetching(100)
+            }
+            if (!filter && series.length === 0) toast.info("No hay series registradas en la base de datos")
+        } catch (error) {
+            toast.info(String(error))
         }
     }
+
     useEffect(() => {
-        fetchSeries();
+        fetchSeries(true, token, "", selectedEstado);
     }, [])
 
     useEffect(() => {
@@ -235,8 +327,8 @@ export const SerieModule: React.FC = () => {
     // REVISAR
     useEffect(() => {
         if (!params.id_serie) return; // no hay id
-        if (isFetching) return; // todavía cargando
-        if (serieList.length === 0) navigate("/dashboard/series", {replace:true});
+        if (isFetching < 100) return; // todavía cargando
+        if (serieList.length === 0) navigate("/dashboard/series", { replace: true });
 
         const serieEncontrada = serieList.find(
             (s) => s.id_serie === Number(params.id_serie)
@@ -246,7 +338,7 @@ export const SerieModule: React.FC = () => {
             setSelectedSerie(serieEncontrada);
         } else {
             toast.warning("La serie solicitada no existe.");
-            navigate("/dashboard/series", {replace:true});
+            navigate("/dashboard/series", { replace: true });
         }
     }, [params.id_serie, isFetching, serieList]);
 
@@ -263,55 +355,56 @@ export const SerieModule: React.FC = () => {
             setIsSelected(null)
             setSelectedAction(null)
             setIsLoading(false)
-            fetchSeries();
+            fetchSeries(true, token, searchTerm, selectedEstado);
         }
     }
+
+    const handleRefresh = () => {
+        fetchSeries(true, token, "", selectedEstado);
+    }
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2>Gestión de Series</h2>
-                <div className="flex space-x-2">
-                    {isFetching &&
-                        <Button variant="outline" size="sm" className="flex-1" disabled>
-                            <RefreshCcw className="w-4 h-4 mr-1" />
-                            Recargando...
-                        </Button>
-                    }
+        <>
+            {isFetching < 100 &&
+                <Loading isLoading={isFetching} component='Serie' />
+            }
+            {isFetching === 100 &&
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                        <h2>Gestión de Series</h2>
+                        <div className="flex space-x-2">
+                            {isFetching < 100 &&
+                                <Button variant="outline" size="sm" className="flex-1" disabled>
+                                    <RefreshCcw className="w-4 h-4 mr-1" />
+                                    Recargando...
+                                </Button>
+                            }
 
-                    {!isFetching && (
-                        !isLoading ? (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1"
-                                onClick={fetchSeries}
-                            >
-                                <RefreshCcw className="w-4 h-4 mr-1" />
-                                Recargar
-                            </Button>
-                        ) : (
-                            <Button
-                                disabled
-                                variant="outline"
-                                size="sm"
-                                className="flex-1"
-                                onClick={fetchSeries}
-                            >
-                                <RefreshCcw className="w-4 h-4 mr-1" />
-                                Recargar
-                            </Button>
-                        )
-                    )}
-                </div>
-            </div>
-
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="series">Series</TabsTrigger>
-                    <TabsTrigger value="history">Historial</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="series" className="space-y-4">
+                            {isFetching === 100 && (
+                                !isLoading ? (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1"
+                                        onClick={handleRefresh}
+                                    >
+                                        <RefreshCcw className="w-4 h-4 mr-1" />
+                                        Recargar
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        disabled
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1"
+                                        onClick={handleRefresh}
+                                    >
+                                        <RefreshCcw className="w-4 h-4 mr-1" />
+                                        Recargar
+                                    </Button>
+                                )
+                            )}
+                        </div>
+                    </div>
                     <Card>
                         <CardHeader>
                             <CardTitle>Series Registradas</CardTitle>
@@ -353,7 +446,7 @@ export const SerieModule: React.FC = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredSeries.map((serie) => (
+                                    {serieList.map((serie) => (
                                         <TableRow key={serie.id_serie}>
                                             <TableCell className="font-medium">{serie.nombre_serie}</TableCell>
                                             <TableCell>{serie.nombre_club}</TableCell>
@@ -432,66 +525,62 @@ export const SerieModule: React.FC = () => {
                             {serieList.length === 0 && (
                                 <div className="text-center py-8 text-gray-500">
                                     <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p>No hay series registradas.</p>
-                                </div>
-                            )}
-                            {filteredSeries.length === 0 && serieList.length > 0 && (
-                                <div className="text-center py-8 text-gray-500">
-                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p>No se encontraron series que coincidan con la búsqueda.</p>
+                                    <p>No hay series registradas o no coinciden con la búsqueda.</p>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
 
-                <TabsContent value="history" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Historial de Clubes y Series</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Fecha</TableHead>
-                                        <TableHead>Acción</TableHead>
-                                        <TableHead>Club</TableHead>
-                                        <TableHead>Detalle</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+                    <div className="flex justify-between items-center mt-4">
+                        <span className="text-sm text-gray-500">
+                            Página {page} de {totalPage || 1}
+                        </span>
+                        <div className="space-x-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={page === 1}
+                            >
+                                Anterior
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage((prev) => prev + 1)}
+                                disabled={page >= totalPage}
+                            >
+                                Siguiente
+                            </Button>
+                        </div>
+                    </div>
 
-            {/* DIALOGS DE RUTA*/}
-            {action === "view" && (
-                <DialogHandle
-                    title={selectedSerie ? `Detalles de la serie: ${selectedSerie.nombre_serie}` : "Cargando..."}
-                    trigger={<div />}
-                    open={isDialogOpen}
-                    onOpenChange={handleCloseDialog}
-                    initialData={selectedSerie}
-                    size='w-full'
-                >
-                    {() => {
-                        if (!selectedSerie) {
-                            return (
-                                <div className="p-6 flex items-center justify-center">
-                                    <span>Cargando detalles de la serie...</span>
-                                </div>
-                            );
-                        }
+                    {/* DIALOGS DE RUTA*/}
+                    {action === "view" && (
+                        <DialogHandle
+                            title={selectedSerie ? `Detalles de la serie: ${selectedSerie.nombre_serie}` : "Cargando..."}
+                            trigger={<div />}
+                            open={isDialogOpen}
+                            onOpenChange={handleCloseDialog}
+                            initialData={selectedSerie}
+                            size='w-full'
+                        >
+                            {() => {
+                                if (!selectedSerie) {
+                                    return (
+                                        <div className="p-6 flex items-center justify-center">
+                                            <span>Cargando detalles de la serie...</span>
+                                        </div>
+                                    );
+                                }
 
-                        return <SerieDetailsContent serie={selectedSerie} />;
-                    }}
-                </DialogHandle>
-            )}
-        </div >
+                                return <SerieDetailsContent serie={selectedSerie} />;
+                            }}
+                        </DialogHandle>
+                    )}
+                </div >
+            }
+        </>
     );
 };
 

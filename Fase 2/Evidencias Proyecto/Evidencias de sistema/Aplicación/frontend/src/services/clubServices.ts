@@ -7,7 +7,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
         throw new Error(errorData.detail)
     }
     const data: T = await response.json()
-    console.log(data)
     return data
 }
 
@@ -22,7 +21,6 @@ export async function getClubs<T>(
 
     // Solo enviar skip y limit si ambos fueron proporcionados
     if (page != null && limit != null) {
-        console.log("Entre")
         const skip = (page - 1) * limit;
         params.append("skip", String(skip));
         params.append("limit", String(limit));

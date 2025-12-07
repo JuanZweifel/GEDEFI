@@ -349,13 +349,9 @@ export const RegistroJugadoresModule: React.FC = () => {
         if (!token) return;
 
         try {
-            const data = await getSeries<{
-                id_serie: number;
-                nombre_serie: string;
-                id_club: number;
-            }[]>(token);
+            const data = await getSeries<any>(token);
 
-            setAllSeries(data);
+            setAllSeries(data.items);
         } catch (err) {
             console.error("Error al obtener series:", err);
         }

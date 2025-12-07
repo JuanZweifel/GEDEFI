@@ -32,7 +32,7 @@ import { NavLink } from 'react-router';
 type ClubFormProps = {
     club?: ClubType | null
     isEdit: boolean
-    onSuccess: (...args: any[]) => void; 
+    onSuccess: (...args: any[]) => void;
 }
 
 
@@ -70,8 +70,8 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
     }, [club, isEdit])
 
     const validarRut = (rut: string): boolean => {
-        // Limpiar espacios y mayúsculas
-        rut = rut.replace(/\s+/g, "").toUpperCase();
+        // Limpiar espacios, mayúsculas y puntos
+        rut = rut.replace(/\s+/g, "").replace(/\./g, "").toUpperCase();
 
         // Separar número y dígito verificador
         const [numero, dv] = rut.split("-");
@@ -110,10 +110,10 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
         setIsLoading(true)
         try {
             const clubObject: Record<string, any> = {
-                rut_club: rutClub,
+                rut_club: cleanRut(rutClub),
                 nombre_club: nombreClub,
                 fecha_fundacion: fechaFundacion,
-                fono_club: fonoClub,
+                fono_club: cleanPhone(fonoClub),
                 direccion_club: direccionClub,
                 email_club: emailClub,
                 color_primario: colorPrimario === "" ? "#000000" : colorPrimario,
@@ -122,10 +122,10 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
             }
 
             if (isEdit && club?.id_club) {
-                const response = await updateClub<any>(clubObject, club.id_club, token, logoClub )
+                const response = await updateClub<any>(clubObject, club.id_club, token, logoClub)
                 toast.success(response.message)
             } else {
-                const response = await createClub<any>(clubObject, token, logoClub )
+                const response = await createClub<any>(clubObject, token, logoClub)
                 toast.success(response.message)
             }
 
@@ -138,28 +138,129 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
         }
     }
 
+    const formatRut = (input: string) => {
+        // Eliminar todo excepto números y K/k (PRIMERO quitamos puntos y guiones)
+        let clean = input.replace(/[^0-9kK]/g, "").toUpperCase();
+
+        // Si está vacío
+        if (!clean) return "";
+
+        // Si tiene 8+ dígitos, asumir que el último es el DV
+        if (clean.length >= 8) {
+            const cuerpo = clean.slice(0, -1);
+            const dv = clean.slice(-1);
+            // Formatear número con puntos (regex aplica puntos cada 3 dígitos desde la derecha)
+            let cuerpoFormatted = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            return `${cuerpoFormatted}-${dv}`;
+        }
+
+        // Si tiene menos de 8 dígitos, solo formatear números sin DV
+        let numeroFormatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return numeroFormatted;
+    };
+
+    const handleRutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value;
+
+        // Limitar a máximo 12 caracteres (incluye puntos y guión)
+        if (value.length > 12) return;
+
+        const formatted = formatRut(value);
+        setRutClub(formatted);
+        
+        // Validar si está completo (tiene guión) y mostrar error HTML5 si es inválido
+        if (formatted.includes("-")) {
+            if (!validarRut(formatted)) {
+                e.currentTarget.setCustomValidity("RUT inválido. Verifica el formato y dígito verificador.");
+            } else {
+                e.currentTarget.setCustomValidity("");
+            }
+        } else {
+            // Limpiar error si aún no está completo
+            e.currentTarget.setCustomValidity("");
+        }
+    };
+
+    const cleanRut = (rut: string) => {
+        return rut.replace(/\./g, "").replace(/\s+/g, "");
+    };
+
+    const formatPhone = (input: string) => {
+        // Solo números
+        const numbers = input.replace(/\D/g, "");
+
+        // Si aún no hay suficientes dígitos
+        if (!numbers) return "";
+
+        // Chile siempre es +56 (móvil) → +56 9 XXXX XXXX
+        let formatted = "+56 ";
+
+        // Si tiene prefijo 9
+        if (numbers.startsWith("56")) {
+            // Caso: usuario pegó +569 o 569
+            const cleaned = numbers.slice(2); // quitar 56
+            return formatPhone(cleaned);
+        }
+
+        // Insertar 9
+        if (!numbers.startsWith("9")) {
+            formatted += "9 ";
+        } else {
+            formatted += numbers[0] + " ";
+        }
+
+        const body = numbers.startsWith("9") ? numbers.slice(1) : numbers;
+
+        // Separar XXXX XXXX
+        if (body.length > 0) formatted += body.slice(0, 4);
+        if (body.length > 4) formatted += " " + body.slice(4, 8);
+
+        return formatted.trim();
+    };
+
+    const cleanPhone = (input: string) => {
+        // Extraer solo números
+        let numeric = input.replace(/\D/g, "");
+
+        // Si empieza con 569, quitar 56 (mantener el 9 y los 8 dígitos)
+        if (numeric.startsWith("569")) {
+            return numeric.slice(2); // quitar solo "56", deja "9XXXXXXXX"
+        }
+        
+        // Si empieza con 56 pero no es 569, quitar 56
+        if (numeric.startsWith("56")) {
+            return numeric.slice(2);
+        }
+
+        // Si empieza con 9, retornar tal cual
+        if (numeric.startsWith("9")) {
+            return numeric;
+        }
+
+        // Si no empieza con 9, agregar 9 al inicio
+        return "9" + numeric;
+    };
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formatted = formatPhone(e.target.value);
+
+        // Máximo 14 caracteres: "+56 9 1234 5678"
+        if (formatted.length > 15) return;
+
+        setFonoClub(formatted);
+    };
+
     return (
         <form className="space-y-4" onSubmit={(e) => { handleAlert(e) }}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <Label className="block mb-2">RUT (*):</Label>
+                    <Label className="block mb-2">RUT*:</Label>
                     <Input
                         value={rutClub}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setRutClub(value);
-
-                            // Validación con tu función
-                            if (!validarRut(value)) {
-                                e.currentTarget.setCustomValidity("RUT inválido. Verifica el formato y dígito verificador.");
-                            } else {
-                                e.currentTarget.setCustomValidity(""); // limpio el mensaje si es válido
-                            }
-                        }}
+                        onChange={handleRutChange}
                         required
-                        pattern="^\d{7,8}-[0-9Kk]$"
-                        title="Ingrese un RUT válido (ej: 12345678-9)"
-                        disabled={id_club? true : false}
+                        title="Ingrese un RUT válido"
+                        disabled={id_club ? true : false}
                     />
                 </div>
                 <div>
@@ -170,11 +271,11 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
                         onChange={(e) => setFechaFundacion(e.target.value)}
                         required
                         max={new Date().toISOString().split("T")[0]}
-                        disabled={id_club? true : false}
+                        disabled={id_club ? true : false}
                     />
                 </div>
                 <div className='col-span-2'>
-                    <Label className="block mb-2">Nombre del club (*):</Label>
+                    <Label className="block mb-2">Nombre del club*:</Label>
                     <Input
                         placeholder="Ej: Estadio Municipal"
                         value={nombreClub}
@@ -183,11 +284,11 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
                         maxLength={120}
                         minLength={4}
                         pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$"
-                        disabled={id_club? true : false}
+                        disabled={id_club ? true : false}
                     />
                 </div>
                 <div className="col-span-2">
-                    <Label className="block mb-2">Dirección (*):</Label>
+                    <Label className="block mb-2">Dirección*:</Label>
                     <Input
                         placeholder="Dirección del club"
                         value={direccionClub}
@@ -195,18 +296,16 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
                         required
                         minLength={10}
                         maxLength={500}
-                        disabled={id_club? true : false}
+                        disabled={id_club ? true : false}
                     />
                 </div>
                 <div>
                     <Label className="block mb-2">Teléfono:</Label>
                     <Input
-                        placeholder="Ej: 987654321"
                         value={fonoClub}
-                        onChange={(e) => setFonoClub(e.target.value)}
+                        onChange={handlePhoneChange}
                         required
-                        pattern="^[0-9]{9}$"
-                        disabled={id_club? true : false}
+                        title="Ingrese teléfono chileno: +56 9 XXXX XXXX"
                     />
                 </div>
                 <div>
@@ -217,7 +316,7 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
                         value={emailClub}
                         onChange={(e) => setEmailClub(e.target.value)}
                         required
-                        disabled={id_club? true : false}
+                        disabled={id_club ? true : false}
                     />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -326,9 +425,8 @@ export function ClubForm({ club, isEdit, onSuccess }: ClubFormProps) {
     )
 }
 
-export const ClubDetailsForm: React.FC<{club: ClubType, setIsLoading:React.Dispatch<React.SetStateAction<number>> }> = ({
-    club, 
-    setIsLoading
+export const ClubDetailsForm: React.FC<{ club: ClubType }> = ({
+    club,
 }) => {
 
     // !Estados (UseState)
@@ -342,7 +440,6 @@ export const ClubDetailsForm: React.FC<{club: ClubType, setIsLoading:React.Dispa
         setDirectiva(club.directiva)
         setSeries(club.series)
         setJugadores(club.jugadores)
-        setIsLoading(100)
     }, [club])
 
     return (

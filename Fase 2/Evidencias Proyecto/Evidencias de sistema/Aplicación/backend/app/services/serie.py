@@ -8,6 +8,7 @@ from app.utils.decorators import handle_db_exceptions, handle_audit
 from fastapi import HTTPException, status
 from datetime import date
 from app.utils.constantes import lista_series
+from typing import Optional
 
 
 @handle_db_exceptions
@@ -83,7 +84,14 @@ def create_massive_series(
             ) from e
 
 @handle_db_exceptions
-def get_series_with_details(db: Session, current_user: dict) -> list[SerieWithDetails]:
+def get_series_with_details(
+    db: Session,
+    current_user: dict,
+    search: Optional[str] = None,
+    estado: Optional[int] = None,
+    skip: Optional[int] = None,
+    limit: Optional[int] = None,
+) -> dict:
     """
     Obtiene todas las series junto con sus detalles asociados (club y jugadores).
 
@@ -111,25 +119,54 @@ def get_series_with_details(db: Session, current_user: dict) -> list[SerieWithDe
     """
     try:
 
-        # Traemos todas las series con su club asociado
-        match current_user["asociacion"]:
-            case True: 
-                db_series = db.query(Serie).join(Club).all()
-            case False:
-                hoy = date.today()
-                db_detalle = db.query(DetalleUsuarioClub).filter(
-                    and_(
-                        DetalleUsuarioClub.id_club == current_user["id_club"], 
-                        DetalleUsuarioClub.rut_usuario == current_user["rut_usuario"],
-                        or_(
-                            DetalleUsuarioClub.fecha_fin == None,
-                            DetalleUsuarioClub.fecha_fin >= hoy,
-                        ),
-                    )
-                ).first()
-                if not db_detalle: raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo asociar la cuenta al club")
+        # Construir query base según permisos (unimos con Club para poder filtrar por nombre de club)
+        hoy = date.today()
 
-                db_series = db.query(Serie).join(Club).filter(Serie.id_club == current_user["id_club"]).all()
+        if current_user.get("asociacion"):
+            base_query = db.query(Serie).join(Club).order_by(Serie.id_serie.asc())
+        else:
+            # validar que el usuario esté asociado al club
+            db_detalle = db.query(DetalleUsuarioClub).filter(
+                and_(
+                    DetalleUsuarioClub.id_club == current_user.get("id_club"),
+                    DetalleUsuarioClub.rut_usuario == current_user.get("rut_usuario"),
+                    or_(
+                        DetalleUsuarioClub.fecha_fin == None,
+                        DetalleUsuarioClub.fecha_fin >= hoy,
+                    ),
+                )
+            ).first()
+            if not db_detalle:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo asociar la cuenta al club")
+
+            base_query = (
+                db.query(Serie).join(Club).filter(Serie.id_club == current_user.get("id_club")).order_by(Serie.id_serie.asc())
+            )
+
+        # --- Filtro por estado ---
+        if estado == 1:
+            base_query = base_query.filter(Serie.serie_activa == True)
+        elif estado == 2:
+            base_query = base_query.filter(Serie.serie_activa == False)
+
+        # --- Filtro por texto: nombre de serie o nombre de club ---
+        if search:
+            like_pattern = f"%{search}%"
+            base_query = base_query.filter(
+                or_(
+                    Serie.nombre_serie.ilike(like_pattern),
+                    Club.nombre_club.ilike(like_pattern),
+                )
+            )
+
+        # total antes de paginar
+        count = base_query.count()
+
+        # aplicar paginación
+        if skip is not None and limit is not None:
+            db_series = base_query.offset(skip).limit(limit).all()
+        else:
+            db_series = base_query.all()
         
         series_with_details = []
 
@@ -167,7 +204,7 @@ def get_series_with_details(db: Session, current_user: dict) -> list[SerieWithDe
 
             series_with_details.append(serie_detail)
 
-        return series_with_details
+        return {"total": count, "items": series_with_details}
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Serie no encontrada.")
 
