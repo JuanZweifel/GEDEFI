@@ -96,3 +96,12 @@ class UsuarioForClub(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PasswordUpdate(BaseModel):
+    current_password: str = Field(
+        ..., min_length=6, description="Contraseña actual del usuario"
+    )
+    new_password: str = Field(
+        ..., min_length=6, description="Nueva contraseña del usuario"
+    )

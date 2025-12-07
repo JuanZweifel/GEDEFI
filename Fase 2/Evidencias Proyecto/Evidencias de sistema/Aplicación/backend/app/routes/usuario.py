@@ -58,7 +58,7 @@ def update_usuario(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    db_usuario = services.update_usuario(db, rut_usuario, usuario)
+    db_usuario = services.update_usuario(db, rut_usuario, usuario, current_user)
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario not found")
     return db_usuario
@@ -86,3 +86,19 @@ def is_user_active(
     if not is_active:
         return True
     raise HTTPException(status_code=404, detail="User not found or inactive")
+
+
+@router.put("/{rut}/password")
+def update_user_password(
+    rut: str,
+    payload: schemas.PasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    return services.update_password(
+        db,
+        rut_usu=rut,
+        current_pass=payload.current_password,
+        new_pass=payload.new_password,
+        current_user=current_user,
+    )

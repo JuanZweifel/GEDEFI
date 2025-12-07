@@ -49,6 +49,7 @@ export const Login: React.FC = () => {
     setRecoveryMessage('');
     setRecoveryError('');
     try {
+      setRecoveryLoading(true);
       await recoverUser<{ detail?: string }>(recoveryEmail);
       setRecoveryMessage('Se ha enviado un correo para recuperar tu cuenta.');
     } catch (err: any) {
@@ -75,43 +76,45 @@ export const Login: React.FC = () => {
 
           {!showRecovery ? (
             <>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">Correo</label>
-                <Input
-                  placeholder="Ingrese su email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
+              <form className='space-y-4' onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+                <div>
+                  <label className="block text-sm font-medium">Correo</label>
+                  <Input
+                    placeholder="Ingrese su email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">Contraseña</label>
-                <Input
-                  type="password"
-                  placeholder="Ingrese su contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium">Contraseña</label>
+                  <Input
+                    type="password"
+                    placeholder="Ingrese su contraseña"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
 
-              <div className="text-center">
-                <button
-                  type="button"
-                  className="text-sm text-blue-600 hover:underline"
-                  onClick={() => setShowRecovery(true)}
+                <div className="text-center">
+                  <button
+                    type="button"
+                    className="text-sm text-blue-600 hover:underline"
+                    onClick={() => setShowRecovery(true)}
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
+
+                <Button
+                  style={{ backgroundColor: '#0000db' }}
+                  className="w-full text-white"
+                  disabled={loading}
+                  type='submit'
                 >
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
-
-              <Button
-                style={{ backgroundColor: '#0000db' }}
-                className="w-full text-white"
-                onClick={handleLogin}
-                disabled={loading}
-              >
-                {loading ? 'Ingresando...' : 'Iniciar Sesión'}
-              </Button>
+                  {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+                </Button>
+              </form>
             </>
           ) : (
             <>

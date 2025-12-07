@@ -42,3 +42,9 @@ export const deleteUser = <T>(rut: number | string, token: string): Promise<T> =
     fetchAPI<T>(`/usuarios/${rut}/`, {
         method: "DELETE",
     }, token);
+
+export const updatePassword = <T>(rut: number | string, data: unknown, token: string): Promise<T> =>
+    fetchAPI<T>(`/usuarios/${rut}/password/`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+    }, token);

@@ -15,7 +15,7 @@ from app.models import (
     Auditoria,
 )
 from app.schemas import UsuarioCreate, UsuarioUpdate
-from app.security import get_password_hash
+from app.security import get_password_hash, verify_password
 from app.utils.decorators import handle_db_exceptions, handle_audit
 from fastapi import HTTPException
 from app.services.correo import send_user_deactivated_email
@@ -329,3 +329,27 @@ def is_user_active(db: Session, rut_usu: str) -> bool:
     return db.query(
         exists().where(Usuario.rut_usuario == rut_usu, Usuario.usuario_activo.is_(True))
     ).scalar()
+
+
+@handle_db_exceptions
+def update_password(
+    db: Session, rut_usu: str, current_pass: str, new_pass: str, current_user: dict
+):
+    usuario = db.query(Usuario).filter(Usuario.rut_usuario == rut_usu).first()
+
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if not verify_password(current_pass, usuario.pass_usuario):
+        raise HTTPException(
+            status_code=400, detail="La contraseña actual es incorrecta"
+        )
+
+    hashed = get_password_hash(new_pass)
+    usuario.pass_usuario = hashed
+    usuario.fecha_modificacion = datetime.now()
+
+    db.commit()
+    db.refresh(usuario)
+
+    return {"message": "Contraseña actualizada correctamente"}
