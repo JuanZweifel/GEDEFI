@@ -1,7 +1,7 @@
-from sqlalchemy import String, Integer, DateTime, Date
+from sqlalchemy import String, Integer, DateTime, Date, Time
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, time
 from app.db import Base
 
 
@@ -9,11 +9,23 @@ class Reunion(Base):
     __tablename__ = "REUNION"
 
     id_reunion: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    titulo_reunion: Mapped[str] = mapped_column(String(320), nullable=False)
     tipo_reunion: Mapped[int] = mapped_column(Integer, nullable=False)
     fecha_reunion: Mapped[date] = mapped_column(Date, nullable=False)
+    hora_reunion: Mapped[time] = mapped_column(Time, nullable=False)
+    lugar_reunion: Mapped[str] = mapped_column(String(500), nullable=False)
     desc_reunion: Mapped[str] = mapped_column(String(500), nullable=True)
-    fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False)
-    fecha_modificacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
+    fecha_creacion: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    fecha_modificacion: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+        nullable=False,
+    )
 
     # Relaciones
-    detalles_reunion: Mapped[list["DetalleReunion"]] = relationship("DetalleReunion", back_populates="reunion", passive_deletes=False)
+    detalles_reunion: Mapped[list["DetalleReunion"]] = relationship(
+        "DetalleReunion", back_populates="reunion", passive_deletes=False
+    )

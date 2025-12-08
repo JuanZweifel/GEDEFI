@@ -58,6 +58,25 @@ class FingerprintService {
             console.warn("stopCapture warning:", err);
         }
     }
+
+    async verifyFingerprint(
+        fingerprint: string,
+        email: string,
+    ): Promise<any> {
+        const res = await fetch("http://localhost:8000/huella/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email,
+                fingerprint,
+            }),
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw json;
+        return json;
+    }
+
 }
 
 export const fingerprintService = new FingerprintService();

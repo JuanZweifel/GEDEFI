@@ -8,5 +8,4 @@ class EnrollRequest(BaseModel):
 
 
 class VerifyRequest(BaseModel):
-    email: str
-    probe: str  # base64 FMD
+    fingerprint: str  # base64 FMD

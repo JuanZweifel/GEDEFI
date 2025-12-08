@@ -79,35 +79,26 @@ async def enroll_fingerprint(req: schemas.EnrollRequest, db: Session = Depends(g
 
 @router.post("/verify")
 async def verify_fingerprint(req: schemas.VerifyRequest, db: Session = Depends(get_db)):
-    """
-    Verifies a fingerprint by delegating the comparison to the PHP client.
-    """
+    users = db.query(Usuario).filter(Usuario.huella_indice.isnot(None)).all()
 
-    # 1. Look up the user
-    user: Usuario = db.query(Usuario).filter(Usuario.email_usuario == req.email).first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-    enrolled_fp = user.huella_indice
-    if not enrolled_fp:
+    if not users:
         raise HTTPException(
-            status_code=400, detail="Usuario no tiene huella registrada"
+            status_code=404, detail="No hay usuarios con huella registrada"
         )
 
-    # 2. Prepare payload for PHP client
-    post_data = {
-        "data": (
-            "{"
-            f'"pre_enrolled_finger_data": "{req.fingerprint}",'
-            f'"enrolled_index_finger_data": "{enrolled_fp}",'
-            f'"enrolled_middle_finger_data": "{enrolled_fp}"'
-            "}"
-        )
-    }
+    for user in users:
+        enrolled_fp = user.huella_indice
 
-    # 3. Send to PHP verification endpoint
-    try:
+        post_data = {
+            "data": (
+                "{"
+                f'"pre_enrolled_finger_data": "{req.fingerprint}",'
+                f'"enrolled_index_finger_data": "{enrolled_fp}",'
+                f'"enrolled_middle_finger_data": "{enrolled_fp}"'
+                "}"
+            )
+        }
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 PHP_VERIFY_URL,
@@ -116,24 +107,13 @@ async def verify_fingerprint(req: schemas.VerifyRequest, db: Session = Depends(g
                 timeout=20,
             )
 
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=500, detail=f"Engine error: {response.text}"
-            )
+        result = response.text.strip().replace('"', "").strip()
 
-        engine_result = response.text.strip()
+        if result == "match":
+            return {
+                "status": "ok",
+                "rut_usuario": user.rut_usuario,
+                "nombre_usuario": user.nombre_usuario,
+            }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    # 4. Interpret engine result
-    if engine_result == "match":
-        return {"status": "ok", "message": "Huellas verificadas correctamente"}
-
-    elif engine_result == "no_match":
-        raise HTTPException(status_code=401, detail="Las huellas no coinciden")
-
-    else:
-        raise HTTPException(
-            status_code=500, detail=f"Respuesta inesperada del motor: {engine_result}"
-        )
+    raise HTTPException(status_code=401, detail="Huella no coincide con ningún usuario")

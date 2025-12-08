@@ -46,6 +46,7 @@ import { FasModule } from './fas.tsx';
 import { ComunicadosModule } from './comunicados.tsx';
 import { PartidoModule } from './partidos.tsx';
 import { HuellaModule } from './huella.tsx';
+import ReunionesModule from './reuniones.tsx';
 
 
 // Mock user data with roles
@@ -250,7 +251,7 @@ export default function DashboardComponent() {
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: RegistroJugadoresModule, permission: 'players' },
         { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
         { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidoModule, permission: 'matches' },
-        //{ id: 'meetings', label: 'Reuniones', icon: Calendar, component: MeetingsModule, permission: 'meetings' },
+        { id: 'meetings', label: 'Reuniones', icon: Calendar, component: ReunionesModule, permission: 'meetings' },
         { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
         //{ id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
@@ -405,7 +406,7 @@ export default function DashboardComponent() {
                                 <Route path=":id_partido" element={<PartidoModule />} />
                                 <Route path=":id_partido/:accion" element={<PartidoModule />} />
                             </Route>
-                            <Route path="meetings" element={<MeetingsModule />} />
+                            <Route path="meetings" element={<ReunionesModule />} />
                             <Route path="canchas" element={<CanchasModule />}>
                                 <Route index element={<CanchasModule />} />
                                 <Route path='new' element={<CanchasModule />} />
