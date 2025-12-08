@@ -186,6 +186,9 @@ export default function DashboardComponent() {
         showPlayerDetails: false,
         showClubDetails: false
     });
+
+    // HECHO POR LUCHO, NO CONFIAR
+    const {admin } = useAuth();
     const [activeModule, setActiveModule] = useState('dashboard');
     const [resetToken, setResetToken] = useState<string | null>(null);
 
@@ -247,19 +250,19 @@ export default function DashboardComponent() {
 
     const modules = [
         { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
-        { id: 'usuarios-roles', label: 'Usuarios y Roles', icon: Users, component: UsuarioRolModule, permission: 'users' },
+        { id: 'usuarios-roles', label: 'Usuarios y Roles', icon: Users, component: UsuarioRolModule, permission: "user" },
         { id: 'clubes', label: 'Clubes', icon: Building, component: ClubCoreModule, permission: 'clubs' },
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: RegistroJugadoresModule, permission: 'players' },
         { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
         { id: 'partidos', label: 'Partidos', icon: Trophy, component: PartidoModule, permission: 'matches' },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: ReunionesModule, permission: 'meetings' },
-        { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
+        { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'admin' },
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
         //{ id: 'analytics', label: 'Analítica', icon: BarChart3, component: AnalyticsModule, permission: 'analytics' },
-        { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
-        { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: HuellaModule, permission: 'fingerprint' },
-        { id: 'fas', label: 'FAS', icon: Ambulance, component: FasModule, permission: 'fas' },
+        { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'admin' },
+        { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: HuellaModule, permission: 'admin' },
+        { id: 'fas', label: 'FAS', icon: Ambulance, component: FasModule, permission: 'admin' },
         //{ id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
         //{ id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
         { id: 'solicitudes', label: 'Solicitudes', icon: Send, component: SolicitudesModule, permission: 'admin' },
@@ -268,7 +271,7 @@ export default function DashboardComponent() {
     ];
 
     const filteredModules = modules.filter(module =>
-        !module.permission || mockUser.permissions.includes(module.permission) || module.permission === 'calendar'
+        !module.permission || (module.permission !== "admin" && !admin) || !!admin
     );
 
     const ActiveComponent = modules.find(m => m.id === activeModule)?.component || Dashboard;
