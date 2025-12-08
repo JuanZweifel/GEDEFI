@@ -185,8 +185,9 @@ def create_rendimiento_partido(db: Session, id_partido: int) -> bool:
     ).all()
 
     rendimientos = []
-    
+    print("LLEGAMOS AL FOR")
     for ficha in jugadores_local + jugadores_visitante:
+        print(ficha.rut_jugador)
         rendimiento = RendimientoPartido(
             id_partido=id_partido,
             rut_jugador=ficha.jugador.rut_jugador,

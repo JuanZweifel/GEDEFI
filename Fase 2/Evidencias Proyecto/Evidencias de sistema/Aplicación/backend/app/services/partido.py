@@ -69,7 +69,7 @@ def get_partidos(db: Session, current_user: dict, skip: Optional[int] = None, li
     db_partidos = db_query.all()
 
     if not db_partidos:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hay partidos registrados.")
+        return None
 
     # Convertir a PartidoRead con nombres de clubs
     partidos_read = []

@@ -35,6 +35,7 @@ import {
     Ambulance,
     Mail,
     Send,
+    Trophy,
 } from 'lucide-react';
 import { Toaster } from '../components/ui/sonner.tsx';
 import { SerieModule } from './serie.tsx';
@@ -46,6 +47,7 @@ import { FasModule } from './fas.tsx';
 import { ComunicadosModule } from './comunicados.tsx';
 import { PartidoModule } from './partidos.tsx';
 import { HuellaModule } from './huella.tsx';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar.tsx';
 import ReunionesModule from './reuniones.tsx';
 
 
@@ -250,7 +252,7 @@ export default function DashboardComponent() {
         { id: 'series', label: 'Series', icon: Building2, component: SerieModule, Permission: 'series' },
         { id: 'registro-jugadores', label: 'Jugadores y Registros', icon: FileText, component: RegistroJugadoresModule, permission: 'players' },
         { id: 'entrenamientos', label: 'Entrenamientos', icon: Activity, component: MatchesTrainingModule, permission: 'matches' },
-        { id: 'partidos', label: 'Partidos', icon: Activity, component: PartidoModule, permission: 'matches' },
+        { id: 'partidos', label: 'Partidos', icon: Trophy, component: PartidoModule, permission: 'matches' },
         { id: 'meetings', label: 'Reuniones', icon: Calendar, component: ReunionesModule, permission: 'meetings' },
         { id: 'canchas', label: 'Canchas', icon: MapPin, component: CanchasModule, permission: 'fields' },
         { id: 'finanzas', label: 'Finanzas', icon: DollarSign, component: FinanzasModule, permission: 'finances' },
@@ -258,7 +260,7 @@ export default function DashboardComponent() {
         { id: 'audit', label: 'Auditoría', icon: Archive, component: AuditModule, permission: 'audit' },
         { id: 'fingerprint', label: 'Huellas', icon: Fingerprint, component: HuellaModule, permission: 'fingerprint' },
         { id: 'fas', label: 'FAS', icon: Ambulance, component: FasModule, permission: 'fas' },
-        { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
+        //{ id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarioModule, permission: 'calendar' },
         //{ id: 'admin', label: 'Configuración', icon: Settings, component: () => <div>Panel Administrativo</div>, permission: 'admin' },
         { id: 'solicitudes', label: 'Solicitudes', icon: Send, component: SolicitudesModule, permission: 'admin' },
         { id: 'comunicados', label: 'Comunicados', icon: Mail, component: ComunicadosModule, permission: 'admin' },
@@ -281,8 +283,20 @@ export default function DashboardComponent() {
                 <Sidebar className="border-r" style={{ borderColor: '#e2e8f0' }}>
                     <SidebarHeader className="border-b p-4" style={{ borderColor: '#e2e8f0' }}>
                         <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 rounded-lg bg-[#0000db] text-white flex items-center justify-center">
-                                <Shield className="w-5 h-5" />
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-[#0000db] text-white flex items-center justify-center">
+                                <Avatar className="w-full h-full">
+                                    <AvatarImage
+                                        className="w-full h-full object-cover"
+                                        src="/src/assets/logo_asociacion.png"
+                                        alt="Caupolicán Chiguayante"
+                                    />
+                                    <AvatarFallback
+                                        className="leading-1 flex w-full h-full items-center justify-center bg-white text-[12px] font-medium text-violet11"
+                                        delayMs={600}
+                                    >
+                                        CC
+                                    </AvatarFallback>
+                                </Avatar>
                             </div>
                             <div>
                                 <h2 className="font-medium">Asociación de Futbol</h2>

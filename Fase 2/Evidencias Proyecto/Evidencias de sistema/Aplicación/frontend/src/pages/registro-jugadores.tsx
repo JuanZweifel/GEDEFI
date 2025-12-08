@@ -611,9 +611,9 @@ export const RegistroJugadoresModule: React.FC = () => {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="jugadores" onClick={() => navigate("/dashboard/registro-jugadores/jugadores")}>Jugadores (JUGADOR)</TabsTrigger>
-                    <TabsTrigger value="lesiones" onClick={() => navigate("/dashboard/registro-jugadores/lesiones")}>Lesiones (LESION)</TabsTrigger>
-                    <TabsTrigger value="fichas" onClick={() => navigate("/dashboard/registro-jugadores/fichas")}>Fichas (FICHA_JUGADOR)</TabsTrigger>
+                    <TabsTrigger value="jugadores" onClick={() => navigate("/dashboard/registro-jugadores/jugadores")}>Jugadores</TabsTrigger>
+                    <TabsTrigger value="lesiones" onClick={() => navigate("/dashboard/registro-jugadores/lesiones")}>Lesiones</TabsTrigger>
+                    <TabsTrigger value="fichas" onClick={() => navigate("/dashboard/registro-jugadores/fichas")}>Fichas</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="jugadores" className="space-y-4">
