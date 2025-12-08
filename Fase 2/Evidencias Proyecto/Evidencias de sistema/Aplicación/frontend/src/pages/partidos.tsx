@@ -90,6 +90,7 @@ export const PartidoModule: React.FC = () => {
     const fetchPartidos = async () => {
         try {
             const data = await getPartidos<any>(token, null, null);
+            if(!data) return
             setPartidoList(data.items);
             setTotalPage(Math.ceil(data.total / 20))
         } catch (error) {

@@ -220,117 +220,42 @@ export const PartidoForm: React.FC<PartidoFormProps> = ({ onSuccess }) => {
 }
 
 export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSuccess, token }) => {
-    const [formData, setFormData] = useState<any>({})
+    const [formData, setFormData] = useState<Record<string, any>>({})
     const [isEdit, setIsEdit] = useState<boolean>(false)
     const [open, setOpen] = useState<boolean>(false)
     const [submit, setSubmit] = useState<boolean>(false)
-    const [golesTotal, setGolesTotal] = useState<number>(0)
-    const [tiempoTotal, setTiempoTotal] = useState<number>(0)
-    const [asistenciasTotal, setAsistenciasTotal] = useState<number>(0)
-    const [golesIniciales, setGolesIniciales] = useState<number>(0)
-    const [tiempoInicial, setTiempoInicial] = useState<number>(0)
-    const [asistenciasIniciales, setAsistenciasIniciales] = useState<number>(0)
+    const [totales, setTotales] = useState({goles: 0, asistencias: 0, tiempo: 0})
+
+    // valores iniciales disponibles (después de restar rendimientos ya guardados)
+    const [restantes, setRestantes] = useState({ goles: 0, asistencias: 0, tiempo: 0 })
 
     const {admin} = useAuth()
+
     useEffect(() => {
         if (!partido) return
         fetchRendimientos(partido.id_partido, token)
     }, [partido])
 
-    // Recalcular totales cuando formData cambie
-    useEffect(() => {
-        if(!isEdit) return;
-        const nuevoTiempo = Object.values(formData).reduce((sum: number, r: any) => sum + (r.tiempo_jugado || 0), 0)
-        const nuevoGoles = Object.values(formData).reduce((sum: number, r: any) => sum + (r.goles || 0), 0)
-        const nuevoAsistencias = Object.values(formData).reduce((sum: number, r: any) => sum + (r.asistencias || 0), 0)
-        
-        // Restar los totales modificados de los iniciales
-        console.log("USEeFFECT")
-        console.log(golesTotal)
-        setTiempoTotal(tiempoInicial - nuevoTiempo)
-        setGolesTotal(golesIniciales - nuevoGoles)
-        setAsistenciasTotal(asistenciasIniciales - nuevoAsistencias)
-    }, [formData, golesIniciales, tiempoInicial, asistenciasIniciales])
-
     const fetchRendimientos = async (id_partido: number, token: string | null) => {
         try {
-            const formObject: any = {}
+            const formObject: Record<string, any> = {}
             const data = await getRendimientosPartido<any>(id_partido, token)
-            console.log(data)
-            // Manejar si data es un array o un objeto con items
-            const items = Array.isArray(data) ? data : data.items || [];
-            
-            // Calcular los totales de los rendimientos existentes
-            let totalGolesExistentes = 0;
-            let totalAsistenciasExistentes = 0;
-            let totalTiempoExistente = 0;
-            
-            items.map((r: any) => {
-                formObject[r.rut_jugador] = {
-                    ...r
-                }
-                totalGolesExistentes += r.goles || 0;
-                totalAsistenciasExistentes += r.asistencias || 0;
-                totalTiempoExistente += r.tiempo_jugado || 0;
+            console.log(data, data.items)
+            setTotales({tiempo: 990, goles: data.goles, asistencias: data.goles})
+            setRestantes({tiempo: 990, goles: data.goles, asistencias: data.goles})
+            data.items.map((item: RendimientoPartidoType) => {
+                formObject[item.rut_jugador] = { ...item }
+                setRestantes(prev => ({
+                    goles: prev.goles - (item.goles || 0), 
+                    asistencias: prev.asistencias - (item.asistencias || 0), 
+                    tiempo: prev.tiempo - (item.tiempo_jugado || 0)
+                }))
             })
-            
-            // Establecer los valores iniciales disponibles a partir de los totales menos lo que ya se usó
-            // La API devuelve data.goles pero NO data.asistencias
-            // Las asistencias se inicializan con el mismo valor que goles
-            const golesDisponibles = (data.goles || 0) - totalGolesExistentes;
-            console.log(golesDisponibles, totalGolesExistentes)
-            const asistenciasDisponibles = (data.goles || 0) - totalAsistenciasExistentes;
-            const tiempoDisponible = (data.tiempo_jugado || 0) - totalTiempoExistente;
-            
-            // Actualizamos el estado del formulario y los valores iniciales
             setFormData(formObject)
-            setGolesIniciales(golesDisponibles)
-            console.log(golesTotal)
-            setAsistenciasIniciales(asistenciasDisponibles)
-            setTiempoInicial(tiempoDisponible)
-            
-            // También establecer los totales actuales con los mismos valores
-            setGolesTotal(golesDisponibles)
-            setAsistenciasTotal(asistenciasDisponibles)
-            setTiempoTotal(tiempoDisponible)
 
         } catch (error) {
             toast.error(String(error))
         }
-    }
-
-    // Calcular el máximo permitido para cada tipo de estadística
-    const getMaxTiempo = (rutJugador: string): number => {
-        const tiempoActual = formData[rutJugador]?.tiempo_jugado || 0;
-        const tiempoOtrosJugadores = Object.values(formData).reduce((sum: number, r: any) => {
-            return r.rut_jugador === rutJugador ? sum : sum + (r.tiempo_jugado || 0);
-        }, 0);
-        const disponible = tiempoInicial - tiempoOtrosJugadores;
-        return Math.min(90, disponible); // El menor entre 90 y lo disponible
-    }
-
-    const getMaxGoles = (rutJugador: string): number => {
-        const golesOtrosJugadores = Object.values(formData).reduce((sum: number, r: any) => {
-            return r.rut_jugador === rutJugador ? sum : sum + (r.goles || 0);
-        }, 0);
-        return golesIniciales - golesOtrosJugadores; // Solo lo disponible
-    }
-
-    const getMaxAsistencias = (rutJugador: string): number => {
-        const asistenciasOtrosJugadores = Object.values(formData).reduce((sum: number, r: any) => {
-            return r.rut_jugador === rutJugador ? sum : sum + (r.asistencias || 0);
-        }, 0);
-        
-        // Si el jugador tiene todos los goles, no puede tener asistencias
-        const golesDelJugador = formData[rutJugador]?.goles || 0;
-        if (golesDelJugador === golesIniciales && golesIniciales > 0) {
-            return 0; // No puede tener asistencias si tiene todos los goles
-        }
-        
-        // Las asistencias disponibles = asistencias iniciales - asistencias de otros - goles de este jugador
-        // Porque los goles que hace este jugador no pueden ser asistencias suyas
-        const asistenciasDisponibles = asistenciasIniciales - asistenciasOtrosJugadores - golesDelJugador;
-        return Math.max(0, asistenciasDisponibles);
     }
 
     const handleAlert = (e: React.FormEvent<HTMLFormElement>) => {
@@ -377,7 +302,7 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                         <div className="flex-1 flex justify-center">
                             <div className="flex flex-col items-center">
                                 <Label className="text-lg">Estadísticas: </Label>
-                                <p className="font-bold">{golesTotal} goles | {tiempoTotal} minutos de juego | {asistenciasTotal} asistencias</p>
+                                <p className="font-bold">{restantes.goles} goles | {restantes.asistencias} asistencias | {restantes.tiempo} tiempo jugado</p>
                             </div>
                         </div>
                         <div className='flex justify-end'>
@@ -420,20 +345,24 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                                     type="number"
                                                     value={r.tiempo_jugado || ''}
                                                     onChange={(e) => {
-                                                        const valor = e.target.value ? Number(e.target.value) : 0;
-                                                        const maxPermitido = getMaxTiempo(r.rut_jugador);
-                                                        if (valor <= maxPermitido) {
-                                                            setFormData((prev: any) => ({
-                                                                ...prev,
-                                                                [r.rut_jugador]: {
-                                                                    ...prev[r.rut_jugador],
-                                                                    tiempo_jugado: valor
-                                                                }
-                                                            }))
-                                                        }
+                                                        let valor = Number(e.target.value)
+                                                        const diff = valor - r.tiempo_jugado
+                                                        if((restantes.tiempo - diff) < 0) return
+                                                        setRestantes((prev) => ({
+                                                            ...prev,
+                                                            tiempo: prev.tiempo - diff
+                                                        }))
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                tiempo_jugado: valor
+                                                            }
+                                                        }))
+                                                        
                                                     }}
                                                     min={0}
-                                                    max={getMaxTiempo(r.rut_jugador)}
+                                                    max={90}
                                                 />
                                             ) : (
                                                 <Input
@@ -449,27 +378,24 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                                     type="number"
                                                     value={r.goles || ''}
                                                     onChange={(e) => {
-                                                        const valor = e.target.value ? Number(e.target.value) : 0;
-                                                        const maxPermitido = getMaxGoles(r.rut_jugador);
-                                                        const asistenciasActuales = formData[r.rut_jugador]?.asistencias || 0;
+                                                        let valor = Number(e.target.value)
+                                                        const diff = valor - r.goles
+                                                        const flag = (valor + r.asistencias > totales.goles)
+                                                        if((restantes.goles - diff) < 0 || flag) return
+                                                        setRestantes((prev) => ({
+                                                            ...prev,
+                                                            goles: prev.goles - diff
+                                                        }))
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                goles: valor
+                                                            }
+                                                        }))
                                                         
-                                                        // Validar que goles + asistencias no excedan el total disponible
-                                                        if (valor + asistenciasActuales > asistenciasIniciales) {
-                                                            return;
-                                                        }
-                                                        
-                                                        if (valor <= maxPermitido) {
-                                                            setFormData((prev: any) => ({
-                                                                ...prev,
-                                                                [r.rut_jugador]: {
-                                                                    ...prev[r.rut_jugador],
-                                                                    goles: valor
-                                                                }
-                                                            }))
-                                                        }
                                                     }}
                                                     min={0}
-                                                    max={getMaxGoles(r.rut_jugador)}
                                                 />
                                             ) : (
                                                 <Input
@@ -485,32 +411,24 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                                     type="number"
                                                     value={r.asistencias || ''}
                                                     onChange={(e) => {
-                                                        const valor = e.target.value ? Number(e.target.value) : 0;
-                                                        const maxPermitido = getMaxAsistencias(r.rut_jugador);
-                                                        const golesDelJugador = formData[r.rut_jugador]?.goles || 0;
+                                                        let valor = Number(e.target.value)
+                                                        const diff = valor - r.asistencias
+                                                        const flag = (valor + r.goles > totales.goles)
+                                                        if((restantes.asistencias - diff) < 0 || flag) return
+                                                        setRestantes((prev) => ({
+                                                            ...prev,
+                                                            asistencias: prev.asistencias - diff
+                                                        }))
+                                                        setFormData((prev: any) => ({
+                                                            ...prev,
+                                                            [r.rut_jugador]: {
+                                                                ...prev[r.rut_jugador],
+                                                                asistencias: valor
+                                                            }
+                                                        }))
                                                         
-                                                        if (golesDelJugador === golesIniciales && golesIniciales > 0 && valor > 0) {
-                                                            return;
-                                                        }
-                                                        
-                                                        // Validar que goles + asistencias no excedan el total disponible
-                                                        if (golesDelJugador + valor > asistenciasIniciales) {
-                                                            return;
-                                                        }
-                                                        
-                                                        if (valor <= maxPermitido) {
-                                                            setFormData((prev: any) => ({
-                                                                ...prev,
-                                                                [r.rut_jugador]: {
-                                                                    ...prev[r.rut_jugador],
-                                                                    asistencias: valor
-                                                                }
-                                                            }))
-                                                        }
                                                     }}
                                                     min={0}
-                                                    max={getMaxAsistencias(r.rut_jugador)}
-                                                    disabled={getMaxAsistencias(r.rut_jugador) === 0}
                                                 />
                                             ) : (
                                                 <Input
@@ -525,7 +443,10 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                                 <Input
                                                     type="number"
                                                     value={r.amonestaciones || 0}
-                                                    onChange={(e) =>
+                                                    onChange={(e) => {
+                                                        const valor = Number(e.target.value)
+                                                        const minimo = (r.amonestaciones_amarillas ? 1 : 0) + (r.amonestaciones_rojas ? 1 : 0)
+                                                        if(valor < minimo) return
                                                         setFormData((prev: any) => ({
                                                             ...prev,
                                                             [r.rut_jugador]: {
@@ -533,8 +454,8 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                                                 amonestaciones: Number(e.target.value)
                                                             }
                                                         }))
-                                                    }
-                                                    min={(formData[r.rut_jugador]?.amonestaciones_amarillas ? 1 : 0) + (formData[r.rut_jugador]?.amonestaciones_rojas ? 1 : 0)}
+                                                    }}
+                                                    min={0}
                                                 />
                                             ) : (
                                                 <Input
@@ -548,30 +469,19 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                             {!!isEdit ? (<Checkbox
                                                 checked={r.amonestaciones_amarillas || false}
                                                 onCheckedChange={(checked: boolean) => {
-                                                    if (!!checked) {
-                                                        setFormData((prev: any) => ({
+                                                    setFormData((prev: any) => {
+                                                        const current = prev[r.rut_jugador] || {}
+                                                        const amos = current.amonestaciones || 0
+                                                        const nextAmos = checked ? amos + 1 : Math.max(0, amos - 1)
+                                                        return {
                                                             ...prev,
                                                             [r.rut_jugador]: {
-                                                                ...prev[r.rut_jugador],
-                                                                amonestaciones: (prev[r.rut_jugador].amonestaciones || 0) + 1,
+                                                                ...current,
+                                                                amonestaciones: nextAmos,
+                                                                amonestaciones_amarillas: checked
                                                             }
-                                                        }))
-                                                    } else {
-                                                        setFormData((prev: any) => ({
-                                                            ...prev,
-                                                            [r.rut_jugador]: {
-                                                                ...prev[r.rut_jugador],
-                                                                amonestaciones: (prev[r.rut_jugador].amonestaciones || 0) - 1,
-                                                            }
-                                                        }))
-                                                    }
-                                                    setFormData((prev: any) => ({
-                                                        ...prev,
-                                                        [r.rut_jugador]: {
-                                                            ...prev[r.rut_jugador],
-                                                            amonestaciones_amarillas: checked
                                                         }
-                                                    }))
+                                                    })
                                                 }}
                                             />) : (
                                                 <>{r.amonestaciones_amarillas ? "SI" : "NO"}</>
@@ -581,30 +491,19 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
                                             {!!isEdit ? (<Checkbox
                                                 checked={r.amonestaciones_rojas || false}
                                                 onCheckedChange={(checked: boolean) => {
-                                                    if (!!checked) {
-                                                        setFormData((prev: any) => ({
+                                                    setFormData((prev: any) => {
+                                                        const current = prev[r.rut_jugador] || {}
+                                                        const amos = current.amonestaciones || 0
+                                                        const nextAmos = checked ? amos + 1 : Math.max(0, amos - 1)
+                                                        return {
                                                             ...prev,
                                                             [r.rut_jugador]: {
-                                                                ...prev[r.rut_jugador],
-                                                                amonestaciones: (prev[r.rut_jugador].amonestaciones || 0) + 1,
+                                                                ...current,
+                                                                amonestaciones: nextAmos,
+                                                                amonestaciones_rojas: checked
                                                             }
-                                                        }))
-                                                    } else {
-                                                        setFormData((prev: any) => ({
-                                                            ...prev,
-                                                            [r.rut_jugador]: {
-                                                                ...prev[r.rut_jugador],
-                                                                amonestaciones: (prev[r.rut_jugador].amonestaciones || 0) - 1,
-                                                            }
-                                                        }))
-                                                    }
-                                                    setFormData((prev: any) => ({
-                                                        ...prev,
-                                                        [r.rut_jugador]: {
-                                                            ...prev[r.rut_jugador],
-                                                            amonestaciones_rojas: checked
                                                         }
-                                                    }))
+                                                    })
                                                 }}
                                             />) : (
                                                 <>{r.amonestaciones_rojas ? "SI" : "NO"}</>
@@ -630,6 +529,7 @@ export const PartidoDetailsForm: React.FC<PartidoFormProps> = ({ partido, onSucc
         </>
     )
 }
+
 export const CalendarioPartidoForm: React.FC<PartidoFormProps> = ({ token, onSuccess }) => {
     const [calendario, setCalendario] = useState({ start_date: "", total_jornadas: 0 })
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -712,7 +612,6 @@ export const CalendarioPartidoForm: React.FC<PartidoFormProps> = ({ token, onSuc
         </form>
     )
 }
-
 
 export const PartidoEditForm: React.FC<PartidoFormProps> = ({ token, admin, onSuccess, partido }) => {
     const [estado, setEstado] = useState<"programado" | "en_curso" | "cancelado" | "finalizado">("programado")
